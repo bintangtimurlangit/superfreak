@@ -1,10 +1,10 @@
 import React from 'react'
-import HeroUpload from '@/components/HeroUpload'
-import Features from '@/components/Features'
-import SeamlessProcess from '@/components/SeamlessProcess'
-import MaterialSelection from '@/components/MaterialSelection'
-import SuperfreakOriginal from '@/components/SuperfreakOriginal'
-import FAQ from '@/components/FAQ'
+import HeroUpload from '@/components/sections/HeroUpload'
+import Features from '@/components/sections/Features'
+import SeamlessProcess from '@/components/sections/SeamlessProcess'
+import MaterialSelection from '@/components/sections/MaterialSelection'
+import SuperfreakOriginal from '@/components/sections/SuperfreakOriginal'
+import FAQ from '@/components/sections/FAQ'
 
 export default async function HomePage() {
   return (

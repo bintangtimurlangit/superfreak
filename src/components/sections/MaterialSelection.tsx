@@ -2,7 +2,7 @@
 
 import { Puzzle, Wrench, Shield, Sun, Waves, Layers } from 'lucide-react'
 import Image from 'next/image'
-import Button from './Button'
+import Button from '@/components/ui/Button'
 
 export default function MaterialSelection() {
   return (

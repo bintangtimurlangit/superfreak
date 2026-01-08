@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { lenisInstance } from './SmoothScroll'
+import { lenisInstance } from '@/components/layout/SmoothScroll'
 
 // Register ScrollTrigger plugin
 if (typeof window !== 'undefined') {

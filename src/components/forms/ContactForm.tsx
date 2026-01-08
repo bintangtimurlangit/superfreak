@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, ChevronDown } from 'lucide-react'
-import Button from './Button'
+import Button from '@/components/ui/Button'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({

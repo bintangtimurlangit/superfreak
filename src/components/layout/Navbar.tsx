@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import Button from './Button'
-import SignInModal from './SignInModal'
+import Button from '@/components/ui/Button'
+import SignInModal from '@/components/modals/SignInModal'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X } from 'lucide-react'
 
 const Navbar = () => {

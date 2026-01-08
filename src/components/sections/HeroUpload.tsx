@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { Package, Box, File as FileIcon, ChevronRight } from 'lucide-react'
-import Button from './Button'
+import Button from '@/components/ui/Button'
 
 export default function HeroUpload() {
   return (

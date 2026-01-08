@@ -1,7 +1,7 @@
 'use client'
 
 import { Target, Sliders, DollarSign } from 'lucide-react'
-import Button from './Button'
+import Button from '@/components/ui/Button'
 import Image from 'next/image'
 
 export default function Features() {
