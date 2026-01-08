@@ -23,6 +23,7 @@ export default function ContactForm() {
     { value: 'project', label: 'Project Discussion' },
     { value: 'support', label: 'Technical Support' },
     { value: 'collaboration', label: 'Collaboration' },
+    { value: 'materials', label: 'Request Materials' },
     { value: 'other', label: 'Other' },
   ]
 
@@ -223,7 +224,7 @@ export default function ContactForm() {
                 <label
                   htmlFor="message"
                   className="block text-sm font-medium text-[#292929] mb-2"
-                  style={{ fontFamily: 'var(--font-geist-mono)' }}
+                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Message *
                 </label>
