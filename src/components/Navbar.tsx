@@ -135,10 +135,12 @@ const Navbar = () => {
               )}
             </div>
 
-            <Button variant="secondary" className="hidden lg:flex text-sm">
-              <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
-              Contact Us
-            </Button>
+            <Link href="/contact">
+              <Button variant="secondary" className="hidden lg:flex text-sm">
+                <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
+                Contact Us
+              </Button>
+            </Link>
 
             <Button variant="secondary" className="hidden lg:flex text-sm">
               <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
@@ -310,10 +312,12 @@ const Navbar = () => {
                 )}
               </div>
 
-              <Button variant="secondary" className="w-full justify-center text-sm">
-                <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
-                Contact Us
-              </Button>
+              <Link href="/contact" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="secondary" className="w-full justify-center text-sm">
+                  <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
+                  Contact Us
+                </Button>
+              </Link>
 
               <Button variant="secondary" className="w-full justify-center text-sm">
                 <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />

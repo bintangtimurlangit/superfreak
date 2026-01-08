@@ -120,7 +120,7 @@ export default function FAQ() {
                 <p className="text-[#656565] text-sm md:text-base">Fast, friendly answers</p>
               </div>
               <a
-                href="#contact"
+                href="/contact"
                 className="flex items-center text-sm md:text-base gap-2 bg-[#1D0DF3] hover:bg-[#1a0bd4] text-white px-4 md:px-6 py-3 md:py-2 rounded-[12px] font-medium transition-colors shadow-sm"
               >
                 Contact Us
