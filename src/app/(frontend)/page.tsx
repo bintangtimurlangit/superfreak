@@ -13,8 +13,10 @@ export default async function HomePage() {
       <Features />
       <SeamlessProcess />
       <MaterialSelection />
-      <SuperfreakOriginal />
-      <FAQ />
+      <div className="bg-[#F8F8F8]">
+        <SuperfreakOriginal />
+        <FAQ />
+      </div>
     </div>
   )
 }

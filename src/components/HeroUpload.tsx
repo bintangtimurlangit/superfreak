@@ -46,7 +46,21 @@ export default function HeroUpload() {
         }}
       ></div>
       <div className="flex justify-center pt-4 relative z-10">
-        <div className="inline-flex items-center justify-center gap-[10px] rounded-full border border-[#EFEFEF] bg-[#FFFFFF] p-1.5 text-[12px] text-[#292929] shadow-[0_2px_10px_0_#2929290A]">
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            const element = document.getElementById('superfreak-originals')
+            if (element) {
+              const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+              const offsetPosition = elementPosition - 140
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth',
+              })
+            }
+          }}
+          className="group inline-flex items-center justify-center gap-[10px] rounded-full border border-[#EFEFEF] bg-[#FFFFFF] p-1.5 text-[12px] text-[#292929] shadow-[0_2px_10px_0_#2929290A] cursor-pointer hover:bg-[#F8F8F8] hover:border-[#DCDCDC] hover:shadow-[0_2px_12px_0_#29292915] transition-all duration-200"
+        >
           <span className="inline-flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F8F8F8] text-[#292929] overflow-hidden">
               <Image
@@ -74,9 +88,12 @@ export default function HeroUpload() {
           </span>
           <span className="font-medium text-[14px] leading-none text-[#292929] inline-flex items-center justify-center gap-1">
             100+ Sold This Week!
-            <ChevronRight className="h-5 w-5 text-[#DCDCDC]" aria-hidden />
+            <ChevronRight
+              className="h-5 w-5 text-[#DCDCDC] transition-transform duration-200 group-hover:translate-x-1"
+              aria-hidden
+            />
           </span>
-        </div>
+        </button>
       </div>
 
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-6">
@@ -129,7 +146,7 @@ export default function HeroUpload() {
           <div className="text-sm text-[#292929] text-center">
             <a
               href="#"
-              className="font-medium text-[12px] md:text-[14px] leading-none text-[#656565] underline underline-offset-4"
+              className="font-medium text-[12px] md:text-[14px] leading-none text-[#656565] underline underline-offset-4 cursor-pointer hover:text-[#292929] transition-colors duration-200"
             >
               How it Works?
             </a>
@@ -137,8 +154,20 @@ export default function HeroUpload() {
               or
             </span>
             <a
-              href="#"
-              className="font-medium text-[12px] md:text-[14px] leading-none text-[#656565] underline underline-offset-4"
+              href="#superfreak-originals"
+              onClick={(e) => {
+                e.preventDefault()
+                const element = document.getElementById('superfreak-originals')
+                if (element) {
+                  const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                  const offsetPosition = elementPosition - 140
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth',
+                  })
+                }
+              }}
+              className="font-medium text-[12px] md:text-[14px] leading-none text-[#656565] underline underline-offset-4 cursor-pointer hover:text-[#292929] transition-colors duration-200"
             >
               Check Our Official Products
             </a>

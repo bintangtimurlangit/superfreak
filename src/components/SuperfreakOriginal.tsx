@@ -21,7 +21,10 @@ export default function SuperfreakOriginal() {
   const duplicatedDesigns = [...designs, ...designs]
 
   return (
-    <section className="px-6 md:px-10 py-12 md:py-16 relative bg-[#F8F8F8]">
+    <section
+      id="superfreak-originals"
+      className="px-6 md:px-10 py-12 md:py-16 mb-10 md:mb-14 relative bg-[#F8F8F8]"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="pb-10 md:pb-12 pt-10 md:pt-12 bg-black relative rounded-[20px] overflow-hidden">
           {/* Dot pattern background */}
@@ -89,7 +92,9 @@ export default function SuperfreakOriginal() {
               <div className="flex flex-col sm:flex-row gap-2 md:gap-4 w-full sm:w-auto">
                 {/* Shopee Button */}
                 <a
-                  href="#"
+                  href="https://shopee.co.id/superfreakoriginals"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 md:gap-3 pl-1 pr-2 md:pr-3 py-1.5 md:py-1 bg-[#363636] rounded-full hover:bg-[#353535] transition-colors text-sm md:text-base"
                 >
                   <div className="w-6 h-6 md:w-8 md:h-8 rounded-full flex bg-[#292929] items-center justify-center shrink-0 overflow-hidden">
@@ -119,7 +124,9 @@ export default function SuperfreakOriginal() {
 
                 {/* Tokopedia Button */}
                 <a
-                  href="#"
+                  href="https://www.tokopedia.com/superfreak-originals"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 md:gap-3 pl-1 pr-2 md:pr-3 py-1.5 md:py-1 bg-[#363636] rounded-full hover:bg-[#353535] transition-colors text-sm md:text-base"
                 >
                   <div className="w-6 h-6 md:w-8 md:h-8 rounded-full flex bg-[#292929] items-center justify-center shrink-0 overflow-hidden">
@@ -149,7 +156,9 @@ export default function SuperfreakOriginal() {
 
                 {/* TikTok Shop Button */}
                 <a
-                  href="#"
+                  href="https://vt.tiktok.com/ZS5CXKE4o"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 md:gap-3 pl-1 pr-2 md:pr-3 py-1.5 md:py-1 bg-[#363636] rounded-full hover:bg-[#353535] transition-colors text-sm md:text-base"
                 >
                   <div className="w-6 h-6 md:w-8 md:h-8 bg-[#292929] rounded-full flex items-center justify-center shrink-0">
