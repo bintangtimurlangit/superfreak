@@ -70,12 +70,6 @@ const Navbar = () => {
               style={{ fontFamily: 'var(--font-geist-mono)' }}
             >
               <Link
-                href="#"
-                className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
-              >
-                Statistics
-              </Link>
-              <Link
                 href="/why-us"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
@@ -243,13 +237,6 @@ const Navbar = () => {
               className="flex flex-col gap-4 pt-4"
               style={{ fontFamily: 'var(--font-geist-mono)' }}
             >
-              <Link
-                href="#"
-                className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Statistics
-              </Link>
               <Link
                 href="/why-us"
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
