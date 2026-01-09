@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
+import { adminAuthClient } from '@/lib/auth'
 
 interface SignInModalProps {
   isOpen: boolean
@@ -14,6 +15,15 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { oauth } = adminAuthClient.signin()
+      await oauth('google')
+    } catch (error) {
+      console.error('Google sign-in error:', error)
+    }
+  }
 
   if (!isOpen) return null
 
@@ -152,6 +162,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                   variant="secondary"
                   className="w-full h-12 rounded-[12px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-base flex items-center justify-center gap-3 -mt-2"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  onClick={handleGoogleSignIn}
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path
