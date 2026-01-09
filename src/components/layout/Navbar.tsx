@@ -160,7 +160,6 @@ const Navbar = () => {
                     {user.email}
                   </span>
                 </span>
-                <ChevronDown className="h-4 w-4 text-[#656565]" aria-hidden />
               </Button>
             ) : (
               <Button
@@ -299,19 +298,14 @@ const Navbar = () => {
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
                     aria-hidden
                   >
-                    <span className="text-sm font-bold text-white">
-                      {user.firstName?.[0] || user.email?.[0] || 'U'}
-                    </span>
+                    <span className="text-sm font-bold text-white">{initials}</span>
                   </span>
                   <span className="flex flex-col leading-tight">
-                    <span className="text-sm font-medium">
-                      {user.firstName || user.email?.split('@')[0] || 'User'}
-                    </span>
+                    <span className="text-sm font-medium">{displayName}</span>
                     <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
                       {user.email}
                     </span>
                   </span>
-                  <ChevronDown className="h-4 w-4 text-[#656565]" aria-hidden />
                 </Button>
               ) : (
                 <Button
