@@ -159,10 +159,12 @@ export default function Footer() {
           </div>
           {/* Copyright */}
           <div
-            className="text-[14px] text-[#6b7280]"
+            className="text-[14px] text-[#6b7280] text-center"
             style={{ fontFamily: 'var(--font-geist-mono)' }}
           >
-            © 2025 Superfreak Studio. All right reserved
+            © 2025 PT Orang Aneh Super
+            <br />
+            All Rights Reserved
           </div>
         </div>
       </div>
