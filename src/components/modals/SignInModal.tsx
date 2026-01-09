@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { adminAuthClient } from '@/lib/auth'
+import { appAuthClient } from '@/lib/auth'
 
 interface SignInModalProps {
   isOpen: boolean
@@ -18,8 +18,10 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { oauth } = adminAuthClient.signin()
+      const { oauth } = appAuthClient.signin()
       await oauth('google')
+      // OAuth will redirect, so we don't need to do anything here
+      // The page will refresh after successful OAuth callback
     } catch (error) {
       console.error('Google sign-in error:', error)
     }

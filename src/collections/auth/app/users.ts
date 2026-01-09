@@ -23,6 +23,47 @@ export const AppUsers = withUsersCollection({
   timestamps: true,
   hooks: {
     afterDelete: [deleteLinkedAccounts(AppUsersAccounts.slug)],
+    afterChange: [
+      async ({ doc, operation, req }) => {
+        // After OAuth user creation, try to populate firstName/lastName from OAuth profile
+        if (operation === 'create' && doc?.email && !doc.firstName && !doc.lastName) {
+          // Get the OAuth account to extract name information
+          const accounts = await req.payload.find({
+            collection: 'app-user-accounts',
+            where: {
+              user: { equals: doc.id },
+            },
+            limit: 1,
+          })
+
+          if (accounts.docs.length > 0) {
+            const account = accounts.docs[0]
+            // Google OAuth profile data might be in account.profile or account.data
+            // The auth plugin should handle this, but we can try to extract it
+            const profileData = (account as any).profile || (account as any).data || {}
+            
+            if (profileData.name || profileData.given_name || profileData.family_name) {
+              const nameParts = (profileData.name || '').split(' ')
+              const firstName = profileData.given_name || nameParts[0] || ''
+              const lastName = profileData.family_name || nameParts.slice(1).join(' ') || ''
+
+              if (firstName || lastName) {
+                await req.payload.update({
+                  collection: 'app-users',
+                  id: doc.id,
+                  data: {
+                    firstName: firstName || undefined,
+                    lastName: lastName || undefined,
+                  },
+                  req,
+                })
+              }
+            }
+          }
+        }
+        return doc
+      },
+    ],
   },
   access: {
     // Users can read their own data

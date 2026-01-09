@@ -5,11 +5,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
+import { useSession } from '@/hooks/useSession'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X } from 'lucide-react'
 
 const Navbar = () => {
-  // TODO: Replace with actual authentication state
-  const isAuthenticated = false
+  const { user, isSuccess: isAuthenticated, loading, displayName, initials } = useSession()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('English')
@@ -141,7 +141,7 @@ const Navbar = () => {
               My Cart
             </Button>
 
-            {isAuthenticated ? (
+            {isAuthenticated && user ? (
               <Button
                 variant="secondary"
                 size="md"
@@ -152,12 +152,12 @@ const Navbar = () => {
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
                   aria-hidden
                 >
-                  <span className="text-sm font-bold text-white">R</span>
+                  <span className="text-sm font-bold text-white">{initials}</span>
                 </span>
                 <span className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-sm font-medium">Richard</span>
+                  <span className="text-sm font-medium">{displayName}</span>
                   <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                    richard@gmail.com
+                    {user.email}
                   </span>
                 </span>
                 <ChevronDown className="h-4 w-4 text-[#656565]" aria-hidden />
@@ -173,28 +173,6 @@ const Navbar = () => {
               </Button>
             )}
 
-            {isAuthenticated ? (
-              <Button
-                variant="secondary"
-                size="md"
-                className="hidden lg:flex h-11 py-1 pl-1 pr-2 text-left gap-2"
-                aria-label="Open account menu"
-              >
-                <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                  aria-hidden
-                >
-                  <span className="text-sm font-bold text-white">R</span>
-                </span>
-                <span className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-sm font-medium">Richard</span>
-                  <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                    richard@gmail.com
-                  </span>
-                </span>
-                <ChevronDown className="h-4 w-4 text-[#656565]" aria-hidden />
-              </Button>
-            ) : null}
           </div>
 
           {/* Mobile Actions - Icons Only */}
@@ -311,7 +289,7 @@ const Navbar = () => {
                 My Cart
               </Button>
 
-              {isAuthenticated ? (
+              {isAuthenticated && user ? (
                 <Button
                   variant="secondary"
                   className="w-full justify-center h-11 py-1 px-2 gap-2"
@@ -321,12 +299,16 @@ const Navbar = () => {
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
                     aria-hidden
                   >
-                    <span className="text-sm font-bold text-white">R</span>
+                    <span className="text-sm font-bold text-white">
+                      {user.firstName?.[0] || user.email?.[0] || 'U'}
+                    </span>
                   </span>
                   <span className="flex flex-col leading-tight">
-                    <span className="text-sm font-medium">Richard</span>
+                    <span className="text-sm font-medium">
+                      {user.firstName || user.email?.split('@')[0] || 'User'}
+                    </span>
                     <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                      richard@gmail.com
+                      {user.email}
                     </span>
                   </span>
                   <ChevronDown className="h-4 w-4 text-[#656565]" aria-hidden />
