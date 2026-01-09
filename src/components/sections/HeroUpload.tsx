@@ -1,10 +1,103 @@
 'use client'
 
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Package, Box, File as FileIcon, ChevronRight } from 'lucide-react'
 import Button from '@/components/ui/Button'
 
 export default function HeroUpload() {
+  const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const processFiles = (files: FileList | File[]) => {
+    // Filter only 3D file formats
+    const allowedExtensions = [
+      '.stl',
+      '.obj',
+      '.step',
+      '.stp',
+      '.x_t',
+      '.iges',
+      '.igs',
+      '.sldprt',
+      '.3mf',
+      '.amf',
+      '.ply',
+      '.dae',
+      '.fbx',
+      '.gltf',
+      '.glb',
+    ]
+
+    const validFiles = Array.from(files).filter((file) => {
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+      return allowedExtensions.includes(extension)
+    })
+
+    if (validFiles.length === 0) {
+      alert(
+        'Please select a valid 3D file format (.stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf, .ply, .dae, .fbx, .gltf, .glb)',
+      )
+      return
+    }
+
+    // Store files in sessionStorage as base64 strings
+    const filePromises = Array.from(validFiles).map((file) => {
+      return new Promise<{ name: string; size: number; data: string }>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          resolve({
+            name: file.name,
+            size: file.size,
+            data: reader.result as string,
+          })
+        }
+        reader.readAsDataURL(file)
+      })
+    })
+
+    Promise.all(filePromises).then((fileData) => {
+      sessionStorage.setItem('heroUploadedFiles', JSON.stringify(fileData))
+      router.push('/order')
+    })
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    processFiles(files)
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      processFiles(files)
+    }
+  }
   return (
     <section className="relative min-h-[800px] flex flex-col justify-center bg-white">
       {/* Checkerboard pattern background */}
@@ -126,18 +219,37 @@ export default function HeroUpload() {
 
       <div className="relative z-10 mx-auto mt-6 sm:mt-8 w-full max-w-3xl px-6 pb-4 lg:w-[644px]">
         <div className="rounded-[20px] border border-[#EFEFEF] bg-gradient-to-b from-white to-[#F8F8F8] p-3 shadow-[0_4px_20px_0_rgba(119,119,119,0.10)] flex flex-col gap-3">
-          <div className="rounded-[12px] border border-dashed border-[#DCDCDC] p-8 bg-transparent flex flex-col items-center text-center">
+          <div
+            className={`rounded-[12px] border border-dashed p-8 flex flex-col items-center text-center transition-colors ${
+              isDragging ? 'border-[#1D0DF3] bg-[#1D0DF3]/5' : 'border-[#DCDCDC] bg-transparent'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <div className="mb-3 mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-[#EFEFEF] bg-[#FCFCFC] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)]">
               <Box className="h-5 w-5 text-[#292929]" />
             </div>
             <div className="mb-1 text-lg font-semibold text-[#292929]">Upload 3D Models</div>
             <div className="text-sm text-[#6b7280]">
-              Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .zip
+              Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf,
+              .ply, .dae, .fbx, .gltf, .glb
               <br />
               Max: 500 MB per file
             </div>
             <div className="mt-3">
-              <Button className="h-11 min-w-[128px] rounded-[12px] px-4 gap-2 border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] shadow-[inset_0_0_0_2px_rgba(126,126,126,0.25)] text-sm">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.3mf,.amf,.ply,.dae,.fbx,.gltf,.glb"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="h-11 min-w-[128px] rounded-[12px] px-4 gap-2 border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] shadow-[inset_0_0_0_2px_rgba(126,126,126,0.25)] text-sm"
+              >
                 Browse Files
               </Button>
             </div>
