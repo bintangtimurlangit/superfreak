@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
+import SignUpModal from '@/components/modals/SignUpModal'
+import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
 import { useSession } from '@/hooks/useSession'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X } from 'lucide-react'
 
@@ -14,6 +16,8 @@ const Navbar = () => {
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('English')
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false)
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false)
   const languageDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -325,7 +329,22 @@ const Navbar = () => {
         </div>
       </div>
       <div className="dashed-divider" />
-      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        onSwitchToSignUp={() => setIsSignUpModalOpen(true)}
+        onSwitchToResetPassword={() => setIsResetPasswordModalOpen(true)}
+      />
+      <SignUpModal
+        isOpen={isSignUpModalOpen}
+        onClose={() => setIsSignUpModalOpen(false)}
+        onSwitchToSignIn={() => setIsSignInModalOpen(true)}
+      />
+      <ResetPasswordModal
+        isOpen={isResetPasswordModalOpen}
+        onClose={() => setIsResetPasswordModalOpen(false)}
+        onSwitchToSignIn={() => setIsSignInModalOpen(true)}
+      />
     </header>
   )
 }

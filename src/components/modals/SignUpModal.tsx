@@ -6,31 +6,93 @@ import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { appAuthClient } from '@/lib/auth'
 
-interface SignInModalProps {
+interface SignUpModalProps {
   isOpen: boolean
   onClose: () => void
-  onSwitchToSignUp?: () => void
-  onSwitchToResetPassword?: () => void
+  onSwitchToSignIn?: () => void
 }
 
-export default function SignInModal({
-  isOpen,
-  onClose,
-  onSwitchToSignUp,
-  onSwitchToResetPassword,
-}: SignInModalProps) {
+export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignUpModalProps) {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignUp = async () => {
     try {
-      const { oauth } = appAuthClient.signin()
+      const { oauth } = appAuthClient.register()
       await oauth('google')
       // OAuth will redirect, so we don't need to do anything here
       // The page will refresh after successful OAuth callback
     } catch (error) {
-      console.error('Google sign-in error:', error)
+      console.error('Google sign-up error:', error)
+      setError('Failed to sign up with Google. Please try again.')
+    }
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    // Validation
+    if (!name.trim()) {
+      setError('Name is required')
+      setLoading(false)
+      return
+    }
+
+    if (!email.trim()) {
+      setError('Email is required')
+      setLoading(false)
+      return
+    }
+
+    if (!password) {
+      setError('Password is required')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
+      setLoading(false)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { password: passwordMethod } = appAuthClient.register()
+      const result = await passwordMethod({
+        email: email.trim(),
+        password: password,
+        userInfo: {
+          name: name.trim(),
+        },
+        allowAutoSignin: true,
+      })
+
+      if (result.isError) {
+        setError(result.message || 'Failed to create account. Please try again.')
+      } else {
+        // Success - close modal and refresh page
+        onClose()
+        window.location.reload()
+      }
+    } catch (error: any) {
+      console.error('Sign-up error:', error)
+      setError(error?.message || 'An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -55,9 +117,9 @@ export default function SignInModal({
       onKeyDown={handleKeyDown}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="signin-title"
+      aria-labelledby="signup-title"
     >
-      <div className="relative w-full max-w-[400px] rounded-[20px] border border-[#DCDCDC] p-[2px] bg-[#F8F8F8]">
+      <div className="relative w-full max-w-[400px] rounded-[20px] border border-[#DCDCDC] p-[2px] bg-[#F8F8F8] max-h-[90vh] overflow-y-auto">
         <div className="relative w-full bg-white rounded-[18px] shadow-xl">
           {/* Close Button */}
           <button
@@ -81,21 +143,51 @@ export default function SignInModal({
             <div className="border border-[#DCDCDC] rounded-[12px] p-5">
               {/* Title */}
               <h2
-                id="signin-title"
+                id="signup-title"
                 className="text-lg font-semibold text-[#292929] mb-1.5 text-left"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
-                Sign In
+                Sign Up
               </h2>
               <p
                 className="text-xs text-[#6b7280] mb-5 text-left"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
-                Enter your email and password to login to your account.
+                Create your account to get started.
               </p>
 
+              {/* Error Message */}
+              {error && (
+                <div className="mb-3 p-2.5 rounded-[12px] bg-red-50 border border-red-200">
+                  <p className="text-xs text-red-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    {error}
+                  </p>
+                </div>
+              )}
+
               {/* Form */}
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-4" onSubmit={handleSignUp}>
+                {/* Name Field */}
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-xs font-medium text-[#292929] mb-1.5"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full px-3 py-2 rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] text-sm placeholder:text-[#9CA3AF] placeholder:text-s focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    required
+                  />
+                </div>
+
                 {/* Email Field */}
                 <div>
                   <label
@@ -113,31 +205,19 @@ export default function SignInModal({
                     placeholder="Enter your email"
                     className="w-full px-3 py-2 rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] text-sm placeholder:text-[#9CA3AF] placeholder:text-s focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    required
                   />
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label
-                      htmlFor="password"
-                      className="block text-xs font-medium text-[#292929]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    >
-                      Password
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose()
-                        onSwitchToResetPassword?.()
-                      }}
-                      className="text-xs text-[#6b7280] hover:text-[#292929] underline underline-offset-2 transition-colors"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    >
-                      Forgot Password?
-                    </button>
-                  </div>
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-medium text-[#292929] mb-1.5"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Password
+                  </label>
                   <div className="relative">
                     <input
                       id="password"
@@ -147,6 +227,8 @@ export default function SignInModal({
                       placeholder="Enter your password"
                       className="w-full px-3 py-2 pr-10 rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] text-sm placeholder:text-[#9CA3AF] placeholder:text-s focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      required
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -157,15 +239,50 @@ export default function SignInModal({
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  <p className="text-[10px] text-[#6b7280] mt-0.5" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Must be at least 8 characters
+                  </p>
                 </div>
 
-                {/* Sign In Button */}
+                {/* Confirm Password Field */}
+                <div>
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-xs font-medium text-[#292929] mb-1.5"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      className="w-full px-3 py-2 pr-10 rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] text-sm placeholder:text-[#9CA3AF] placeholder:text-s focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
+                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#292929] transition-colors"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sign Up Button */}
                 <Button
                   type="submit"
-                  className="w-full h-10 rounded-[10px] bg-blue-700 text-white hover:bg-blue-800 font-medium text-sm"
+                  disabled={loading}
+                  className="w-full h-10 rounded-[10px] bg-blue-700 text-white hover:bg-blue-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
-                  Sign In
+                  {loading ? 'Creating Account...' : 'Sign Up'}
                 </Button>
 
                 {/* Google Button */}
@@ -174,7 +291,7 @@ export default function SignInModal({
                   variant="secondary"
                   className="w-full h-10 rounded-[10px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-sm flex items-center justify-center gap-2.5 -mt-1"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
-                  onClick={handleGoogleSignIn}
+                  onClick={handleGoogleSignUp}
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path
@@ -197,13 +314,13 @@ export default function SignInModal({
                   Continue With Google
                 </Button>
 
-                {/* Sign Up Section */}
+                {/* Sign In Section */}
                 <div className="text-center pt-3">
                   <p
                     className="text-xs text-[#6b7280] mb-3"
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
-                    Don&apos;t have an account?
+                    Already have an account?
                   </p>
                   <Button
                     type="button"
@@ -212,10 +329,10 @@ export default function SignInModal({
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
                     onClick={() => {
                       onClose()
-                      onSwitchToSignUp?.()
+                      onSwitchToSignIn?.()
                     }}
                   >
-                    Sign Up
+                    Sign In
                   </Button>
                 </div>
               </form>

@@ -54,11 +54,11 @@ export const useSession = () => {
     ...session,
     user: session.data?.user || null,
     // Helper to get display name
-    displayName: session.data?.user?.firstName 
-      ? `${session.data.user.firstName}${session.data.user.lastName ? ' ' + session.data.user.lastName : ''}`
+    displayName: session.data?.user?.name 
+      ? session.data.user.name
       : session.data?.user?.email?.split('@')[0] || 'User',
     // Helper to get initials
-    initials: session.data?.user?.firstName?.[0]?.toUpperCase() 
+    initials: session.data?.user?.name?.[0]?.toUpperCase() 
       || session.data?.user?.email?.[0]?.toUpperCase() 
       || 'U',
   }

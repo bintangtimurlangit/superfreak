@@ -198,8 +198,8 @@ export interface Account {
  */
 export interface AppUser {
   id: string;
-  firstName?: string | null;
-  lastName?: string | null;
+  name?: string | null;
+  phoneNumber?: string | null;
   /**
    * Your profile picture (private - only visible to you and admins)
    */
@@ -483,8 +483,8 @@ export interface AccountsSelect<T extends boolean = true> {
  * via the `definition` "app-users_select".
  */
 export interface AppUsersSelect<T extends boolean = true> {
-  firstName?: T;
-  lastName?: T;
+  name?: T;
+  phoneNumber?: T;
   profilePicture?: T;
   hashedPassword?: T;
   hashSalt?: T;

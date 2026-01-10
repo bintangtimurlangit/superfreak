@@ -10,14 +10,14 @@ export const AppUsers = withUsersCollection({
   },
   fields: [
     {
-      name: 'firstName',
+      name: 'name',
       type: 'text',
-      label: 'First Name',
+      label: 'Name',
     },
     {
-      name: 'lastName',
+      name: 'phoneNumber',
       type: 'text',
-      label: 'Last Name',
+      label: 'Phone Number',
     },
     {
       name: 'profilePicture',
@@ -51,8 +51,8 @@ export const AppUsers = withUsersCollection({
     afterDelete: [deleteLinkedAccounts(AppUsersAccounts.slug)],
     afterChange: [
       async ({ doc, operation, req }) => {
-        // After OAuth user creation, try to populate firstName/lastName from OAuth profile
-        if (operation === 'create' && doc?.email && !doc.firstName && !doc.lastName) {
+        // After OAuth user creation, try to populate name from OAuth profile
+        if (operation === 'create' && doc?.email && !doc.name) {
           // Get the OAuth account to extract name information
           const accounts = await req.payload.find({
             collection: 'app-user-accounts',
@@ -69,17 +69,16 @@ export const AppUsers = withUsersCollection({
             const profileData = (account as any).profile || (account as any).data || {}
             
             if (profileData.name || profileData.given_name || profileData.family_name) {
-              const nameParts = (profileData.name || '').split(' ')
-              const firstName = profileData.given_name || nameParts[0] || ''
-              const lastName = profileData.family_name || nameParts.slice(1).join(' ') || ''
+              // Use full name if available, otherwise combine given_name and family_name
+              const fullName = profileData.name || 
+                [profileData.given_name, profileData.family_name].filter(Boolean).join(' ')
 
-              if (firstName || lastName) {
+              if (fullName) {
                 await req.payload.update({
                   collection: 'app-users',
                   id: doc.id,
                   data: {
-                    firstName: firstName || undefined,
-                    lastName: lastName || undefined,
+                    name: fullName,
                   },
                   req,
                 })
