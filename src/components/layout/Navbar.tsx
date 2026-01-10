@@ -8,7 +8,8 @@ import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
 import { useSession } from '@/hooks/useSession'
-import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X } from 'lucide-react'
+import { appAuthClient } from '@/lib/auth'
+import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
 
 const Navbar = () => {
   const { user, isSuccess: isAuthenticated, loading, displayName, initials } = useSession()
@@ -18,33 +19,71 @@ const Navbar = () => {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false)
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false)
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const languageDropdownRef = useRef<HTMLDivElement>(null)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      
+      // Don't close if clicking on logout button or its children
+      if (target?.closest('[data-logout-button]')) {
+        return
+      }
+      
+      // Check if click is outside language dropdown
       if (
         languageDropdownRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node)
+        !languageDropdownRef.current.contains(target)
       ) {
         setIsLanguageDropdownOpen(false)
       }
+      
+      // Check if click is outside user dropdown
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(target)
+      ) {
+        setIsUserDropdownOpen(false)
+      }
     }
 
-    if (isLanguageDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+    // Only add listener when dropdowns are open
+    if (isLanguageDropdownOpen || isUserDropdownOpen) {
+      // Small delay to ensure button clicks fire first
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside, true)
+      }, 100)
+      
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('click', handleClickOutside, true)
+      }
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isLanguageDropdownOpen])
+  }, [isLanguageDropdownOpen, isUserDropdownOpen])
 
   const languages = ['English', 'Bahasa Indonesia']
 
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language)
     setIsLanguageDropdownOpen(false)
+  }
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    setIsUserDropdownOpen(false)
+    
+    try {
+      await appAuthClient.signout({ returnTo: '/' })
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Logout error:', error)
+      window.location.href = '/'
+    }
   }
 
   return (
@@ -146,25 +185,58 @@ const Navbar = () => {
             </Button>
 
             {isAuthenticated && user ? (
-              <Button
-                variant="secondary"
-                size="md"
-                className="hidden lg:flex h-11 py-1 pl-1 pr-2 text-left gap-2"
-                aria-label="Open account menu"
-              >
-                <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                  aria-hidden
+              <div className="relative hidden lg:block" ref={userDropdownRef}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  className="h-11 py-1 pl-1 pr-2 text-left gap-2"
+                  aria-label="Open account menu"
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
-                  <span className="text-sm font-bold text-white">{initials}</span>
-                </span>
-                <span className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-sm font-medium">{displayName}</span>
-                  <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                    {user.email}
+                  <span
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
+                    aria-hidden
+                  >
+                    <span className="text-sm font-bold text-white">{initials}</span>
                   </span>
-                </span>
-              </Button>
+                  <span className="hidden sm:flex flex-col leading-tight">
+                    <span className="text-sm font-medium">{displayName}</span>
+                    <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
+                      {user.email}
+                    </span>
+                  </span>
+                </Button>
+                {isUserDropdownOpen && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
+                    <Link
+                      href="/order"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <Package className="h-4 w-4 mr-2" aria-hidden />
+                      My Order
+                    </Link>
+                    <Link
+                      href="/profile"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    >
+                      <User className="h-4 w-4 mr-2" aria-hidden />
+                      Profile
+                    </Link>
+                    <div
+                      data-logout-button="true"
+                      onClick={handleLogout}
+                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" aria-hidden />
+                      Log Out
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <Button
                 variant="secondary"
@@ -293,24 +365,67 @@ const Navbar = () => {
               </Button>
 
               {isAuthenticated && user ? (
-                <Button
-                  variant="secondary"
-                  className="w-full justify-center h-11 py-1 px-2 gap-2"
-                  aria-label="Open account menu"
-                >
-                  <span
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                    aria-hidden
+                <div className="relative w-full" ref={userDropdownRef}>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-center h-11 py-1 px-2 gap-2"
+                    aria-label="Open account menu"
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                   >
-                    <span className="text-sm font-bold text-white">{initials}</span>
-                  </span>
-                  <span className="flex flex-col leading-tight">
-                    <span className="text-sm font-medium">{displayName}</span>
-                    <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                      {user.email}
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
+                      aria-hidden
+                    >
+                      <span className="text-sm font-bold text-white">{initials}</span>
                     </span>
-                  </span>
-                </Button>
+                    <span className="flex flex-col leading-tight">
+                      <span className="text-sm font-medium">{displayName}</span>
+                      <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
+                        {user.email}
+                      </span>
+                    </span>
+                  </Button>
+                  {isUserDropdownOpen && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-full bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
+                      <Link
+                        href="/order"
+                        className="flex items-center w-full text-center px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                        onClick={() => {
+                          setIsUserDropdownOpen(false)
+                          setIsMobileMenuOpen(false)
+                        }}
+                      >
+                        <Package className="h-4 w-4 mr-2" aria-hidden />
+                        My Order
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className="flex items-center w-full text-center px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                        onClick={() => {
+                          setIsUserDropdownOpen(false)
+                          setIsMobileMenuOpen(false)
+                        }}
+                      >
+                        <User className="h-4 w-4 mr-2" aria-hidden />
+                        Profile
+                      </Link>
+                      <div
+                        data-logout-button="true"
+                        onClick={(e) => {
+                          handleLogout(e)
+                          setIsUserDropdownOpen(false)
+                          setIsMobileMenuOpen(false)
+                        }}
+                        className="flex items-center w-full text-center px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" aria-hidden />
+                        Log Out
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <Button
                   variant="secondary"
