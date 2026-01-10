@@ -24,7 +24,8 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
 
   const handleGoogleSignUp = async () => {
     try {
-      const { oauth } = appAuthClient.register()
+      // Use signin() for OAuth - it handles both sign-in and sign-up automatically
+      const { oauth } = appAuthClient.signin()
       await oauth('google')
       // OAuth will redirect, so we don't need to do anything here
       // The page will refresh after successful OAuth callback
@@ -88,9 +89,10 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
         onClose()
         window.location.reload()
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Sign-up error:', error)
-      setError(error?.message || 'An unexpected error occurred. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
