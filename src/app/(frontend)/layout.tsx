@@ -5,6 +5,7 @@ import '@/styles/payloadStyles.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import SmoothScroll from '@/components/layout/SmoothScroll'
+import OrderRedirectHandler from '@/components/OrderRedirectHandler'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,6 +32,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className={`${geistSans.className} antialiased`}>
         <SmoothScroll />
+        <OrderRedirectHandler />
         <Navbar />
         <main>{children}</main>
         <Footer />

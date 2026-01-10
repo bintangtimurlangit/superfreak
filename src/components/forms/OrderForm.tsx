@@ -6,6 +6,8 @@ import UploadStep, { type UploadedFile, type ModelConfiguration } from './order/
 import SummaryStep from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
 import ConfigureModal from '@/components/modals/ConfigureModal'
+import SignInModal from '@/components/modals/SignInModal'
+import { useSession } from '@/hooks/useSession'
 
 const steps = [
   { id: 1, name: 'Upload Model' },
@@ -18,10 +20,34 @@ export default function OrderForm() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [configureModalOpen, setConfigureModalOpen] = useState(false)
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
+  const [pendingNextStep, setPendingNextStep] = useState(false)
+  const { isSuccess: isAuthenticated, loading: sessionLoading } = useSession()
 
-  // Check for files from Hero Section on mount
+  // Check for files from Hero Section or restored order state on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // First check for restored order state (after OAuth redirect)
+      const savedOrderState = sessionStorage.getItem('pendingOrderState')
+      if (savedOrderState) {
+        try {
+          const orderState = JSON.parse(savedOrderState)
+          if (orderState.files && Array.isArray(orderState.files)) {
+            setUploadedFiles(orderState.files)
+            if (orderState.currentStep) {
+              setCurrentStep(orderState.currentStep)
+            }
+          }
+          // Clear after restoring
+          sessionStorage.removeItem('pendingOrderState')
+          // Also clear pending next step flag
+          sessionStorage.removeItem('pendingOrderNextStep')
+        } catch (error) {
+          console.error('Error restoring order state:', error)
+        }
+      }
+
+      // Then check for files from Hero Section
       const heroFiles = sessionStorage.getItem('heroUploadedFiles')
       if (heroFiles) {
         try {
@@ -74,10 +100,79 @@ export default function OrderForm() {
   }
 
   const handleNext = () => {
+    // Check authentication when moving from step 1 (Upload) to step 2 (Summary)
+    if (currentStep === 1 && !isAuthenticated && !sessionLoading) {
+      // Save current order state to sessionStorage before opening sign-in modal
+      // This preserves files and configuration in case of OAuth redirect
+      const orderState = {
+        files: uploadedFiles,
+        currentStep: currentStep,
+      }
+      sessionStorage.setItem('pendingOrderState', JSON.stringify(orderState))
+      sessionStorage.setItem('pendingOrderNextStep', 'true')
+      setPendingNextStep(true)
+      setIsSignInModalOpen(true)
+      return
+    }
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1)
     }
   }
+
+  // Check for pending next step on mount (for OAuth redirects)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const pendingNext = sessionStorage.getItem('pendingOrderNextStep')
+      const savedOrderState = sessionStorage.getItem('pendingOrderState')
+      
+      if (pendingNext === 'true' && isAuthenticated && !sessionLoading) {
+        // Restore order state if it exists
+        if (savedOrderState) {
+          try {
+            const orderState = JSON.parse(savedOrderState)
+            if (orderState.files && Array.isArray(orderState.files)) {
+              setUploadedFiles(orderState.files)
+            }
+            if (orderState.currentStep) {
+              setCurrentStep(orderState.currentStep)
+            }
+          } catch (error) {
+            console.error('Error restoring order state:', error)
+          }
+        }
+        
+        sessionStorage.removeItem('pendingOrderNextStep')
+        sessionStorage.removeItem('pendingOrderState')
+        setPendingNextStep(false)
+        setIsSignInModalOpen(false)
+        
+        // Navigate to order page if we're on home page
+        if (window.location.pathname !== '/order') {
+          window.location.href = '/order'
+          return
+        }
+        
+        // Proceed to next step
+        if (currentStep < steps.length) {
+          setCurrentStep(currentStep + 1)
+        }
+      }
+    }
+  }, [isAuthenticated, sessionLoading, currentStep])
+
+  // Handle successful login - proceed to next step if pending
+  useEffect(() => {
+    if (isAuthenticated && pendingNextStep && !sessionLoading) {
+      sessionStorage.removeItem('pendingOrderNextStep')
+      sessionStorage.removeItem('pendingOrderState')
+      setPendingNextStep(false)
+      setIsSignInModalOpen(false)
+      if (currentStep < steps.length) {
+        setCurrentStep(currentStep + 1)
+      }
+    }
+  }, [isAuthenticated, pendingNextStep, sessionLoading, currentStep])
 
   const handleBack = () => {
     if (currentStep > 1) {
@@ -119,6 +214,17 @@ export default function OrderForm() {
         }}
         file={uploadedFiles.find((f) => f.id === selectedFileId) || null}
         onSave={handleSaveConfiguration}
+      />
+
+      {/* Sign In Modal */}
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => {
+          setIsSignInModalOpen(false)
+          setPendingNextStep(false)
+          sessionStorage.removeItem('pendingOrderNextStep')
+          sessionStorage.removeItem('pendingOrderState')
+        }}
       />
     </div>
   )
