@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { appAuthClient } from '@/lib/auth'
+import EmailConfirmationModal from './EmailConfirmationModal'
+import SignInModal from './SignInModal'
 
 interface SignUpModalProps {
   isOpen: boolean
@@ -21,16 +23,15 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
+  const [signupEmail, setSignupEmail] = useState('')
+  const [showSignInAfterVerification, setShowSignInAfterVerification] = useState(false)
 
   const handleGoogleSignUp = async () => {
     try {
-      // Use signin() for OAuth - it handles both sign-in and sign-up automatically
       const { oauth } = appAuthClient.signin()
       await oauth('google')
-      // OAuth will redirect, so we don't need to do anything here
-      // The page will refresh after successful OAuth callback
     } catch (error) {
-      console.error('Google sign-up error:', error)
       setError('Failed to sign up with Google. Please try again.')
     }
   }
@@ -79,26 +80,28 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
         userInfo: {
           name: name.trim(),
         },
-        allowAutoSignin: true,
+        allowAutoSignin: false,
       })
 
       if (result.isError) {
         setError(result.message || 'Failed to create account. Please try again.')
       } else {
-        // Success - close modal and refresh page
-        onClose()
-        window.location.reload()
+      setSignupEmail(email.trim())
+        setShowEmailConfirmation(true)
+        // Reset form
+        setName('')
+        setEmail('')
+        setPassword('')
+        setConfirmPassword('')
+        setError('')
       }
     } catch (error) {
-      console.error('Sign-up error:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
-
-  if (!isOpen) return null
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -111,6 +114,40 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
       onClose()
     }
   }
+
+  if (showEmailConfirmation) {
+    return (
+      <EmailConfirmationModal
+        isOpen={showEmailConfirmation}
+        onClose={() => {
+          setShowEmailConfirmation(false)
+          onClose()
+        }}
+        email={signupEmail}
+        onVerificationSuccess={(verifiedEmail) => {
+          setShowEmailConfirmation(false)
+          setShowSignInAfterVerification(true)
+          setSignupEmail(verifiedEmail)
+        }}
+      />
+    )
+  }
+
+  if (showSignInAfterVerification) {
+    return (
+      <SignInModal
+        isOpen={showSignInAfterVerification}
+        onClose={() => {
+          setShowSignInAfterVerification(false)
+          onClose()
+        }}
+        onSwitchToSignUp={onSwitchToSignIn}
+        initialEmail={signupEmail}
+      />
+    )
+  }
+
+  if (!isOpen) return null
 
   return (
     <div

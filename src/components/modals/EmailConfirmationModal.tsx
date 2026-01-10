@@ -9,18 +9,19 @@ interface EmailConfirmationModalProps {
   isOpen: boolean
   onClose: () => void
   email?: string
-  onConfirm?: (code: string) => void
+  onVerificationSuccess?: (email: string) => void
 }
 
 export default function EmailConfirmationModal({
   isOpen,
   onClose,
   email,
-  onConfirm,
+  onVerificationSuccess,
 }: EmailConfirmationModalProps) {
   const [code, setCode] = useState(['', '', '', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Focus first input when modal opens
@@ -90,19 +91,49 @@ export default function EmailConfirmationModal({
       return
     }
 
+    if (!email) {
+      setError('Email address is required')
+      return
+    }
+
     setError('')
     setLoading(true)
 
-    // TODO: Implement email confirmation logic
-    if (onConfirm) {
-      onConfirm(confirmationCode)
-    }
+    try {
+      const response = await fetch('/api/app-users/verify-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          code: confirmationCode,
+        }),
+      })
 
-    // For now, just simulate success
-    setTimeout(() => {
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Verification failed')
+      }
+
+      setError('')
       setLoading(false)
-      // You can add success handling here
-    }, 1000)
+      setSuccess(true)
+      
+      setTimeout(() => {
+        onClose()
+        if (onVerificationSuccess && email) {
+          onVerificationSuccess(email)
+        } else {
+          window.location.reload()
+        }
+      }, 1500)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to verify email. Please try again.'
+      setError(errorMessage)
+      setLoading(false)
+    }
   }
 
   if (!isOpen) return null
@@ -121,14 +152,14 @@ export default function EmailConfirmationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
       onClick={handleOverlayClick}
       onKeyDown={handleEscapeKey}
       role="dialog"
       aria-modal="true"
       aria-labelledby="email-confirmation-title"
     >
-      <div className="relative w-full max-w-[400px] rounded-[20px] border border-[#DCDCDC] p-[2px] bg-[#F8F8F8]">
+      <div className="relative w-full max-w-[400px] rounded-[20px] border border-[#DCDCDC] p-[2px] bg-[#F8F8F8] max-h-[90vh] overflow-y-auto">
         <div className="relative w-full bg-white rounded-[18px] shadow-xl">
           {/* Close Button */}
           <button
@@ -167,8 +198,17 @@ export default function EmailConfirmationModal({
                   : "We've sent a verification code to your email. Please enter it below."}
               </p>
 
+              {/* Success Message */}
+              {success && (
+                <div className="mb-3 p-2.5 rounded-[12px] bg-green-50 border border-green-200">
+                  <p className="text-xs text-green-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Email verified successfully! Please sign in to continue.
+                  </p>
+                </div>
+              )}
+
               {/* Error Message */}
-              {error && (
+              {error && !success && (
                 <div className="mb-3 p-2.5 rounded-[12px] bg-red-50 border border-red-200">
                   <p className="text-xs text-red-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                     {error}
@@ -187,7 +227,7 @@ export default function EmailConfirmationModal({
                   >
                     Enter verification code
                   </label>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
                     {code.map((char, index) => (
                       <input
                         key={index}
@@ -201,7 +241,7 @@ export default function EmailConfirmationModal({
                         onChange={(e) => handleInputChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
                         onPaste={index === 0 ? handlePaste : undefined}
-                        className="w-12 h-12 text-center text-lg font-semibold rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all uppercase"
+                        className="w-10 h-10 sm:w-12 sm:h-12 text-center text-base sm:text-lg font-semibold rounded-[10px] border border-[#DCDCDC] bg-[#F8F8F8] text-[#292929] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all uppercase"
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                         aria-label={`Code character ${index + 1}`}
                       />
@@ -224,11 +264,11 @@ export default function EmailConfirmationModal({
                 {/* Verify Button */}
                 <Button
                   type="submit"
-                  disabled={loading || code.join('').length !== 8}
+                  disabled={loading || success || code.join('').length !== 8}
                   className="w-full h-10 rounded-[10px] bg-blue-700 text-white hover:bg-blue-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
-                  {loading ? 'Verifying...' : 'Verify Email'}
+                  {loading ? 'Verifying...' : success ? 'Verified!' : 'Verify Email'}
                 </Button>
 
                 {/* Resend Code Section */}
@@ -241,13 +281,42 @@ export default function EmailConfirmationModal({
                   </p>
                   <button
                     type="button"
-                    className="text-xs text-blue-700 hover:text-blue-800 underline underline-offset-2 transition-colors"
+                    className="text-xs text-blue-700 hover:text-blue-800 underline underline-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    onClick={() => {
-                      // TODO: Implement resend code logic
-                      setCode(['', '', '', '', '', '', '', ''])
+                    disabled={loading || !email}
+                    onClick={async () => {
+                      if (!email) {
+                        setError('Email address is required')
+                        return
+                      }
+
                       setError('')
-                      inputRefs.current[0]?.focus()
+                      setLoading(true)
+
+                      try {
+                        const response = await fetch('/api/app-users/resend-verification', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ email }),
+                        })
+
+                        const data = await response.json()
+
+                        if (!response.ok) {
+                          throw new Error(data.message || 'Failed to resend code')
+                        }
+
+                        setCode(['', '', '', '', '', '', '', ''])
+                        setError('')
+                        inputRefs.current[0]?.focus()
+                      } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Failed to resend code. Please try again.'
+                        setError(errorMessage)
+                      } finally {
+                        setLoading(false)
+                      }
                     }}
                   >
                     Resend Code
