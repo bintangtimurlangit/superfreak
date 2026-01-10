@@ -72,6 +72,8 @@ export interface Config {
     'app-users': AppUser;
     'app-user-accounts': AppUserAccount;
     media: Media;
+    'user-files': UserFile;
+    'profile-pictures': ProfilePicture;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +86,8 @@ export interface Config {
     'app-users': AppUsersSelect<false> | AppUsersSelect<true>;
     'app-user-accounts': AppUserAccountsSelect<false> | AppUserAccountsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'user-files': UserFilesSelect<false> | UserFilesSelect<true>;
+    'profile-pictures': ProfilePicturesSelect<false> | ProfilePicturesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -196,6 +200,10 @@ export interface AppUser {
   id: string;
   firstName?: string | null;
   lastName?: string | null;
+  /**
+   * Your profile picture (private - only visible to you and admins)
+   */
+  profilePicture?: (string | null) | ProfilePicture;
   hashedPassword?: string | null;
   hashSalt?: string | null;
   hashIterations?: number | null;
@@ -206,6 +214,44 @@ export interface AppUser {
   email: string;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-pictures".
+ */
+export interface ProfilePicture {
+  id: string;
+  uploadedBy: string | AppUser;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -254,6 +300,29 @@ export interface AppUserAccount {
 export interface Media {
   id: string;
   alt: string;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-files".
+ */
+export interface UserFile {
+  id: string;
+  uploadedBy: string | AppUser;
+  fileType?: ('stl' | 'obj' | 'glb' | 'fbx' | 'other') | null;
+  description?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -309,6 +378,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'user-files';
+        value: string | UserFile;
+      } | null)
+    | ({
+        relationTo: 'profile-pictures';
+        value: string | ProfilePicture;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -408,6 +485,7 @@ export interface AccountsSelect<T extends boolean = true> {
 export interface AppUsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
+  profilePicture?: T;
   hashedPassword?: T;
   hashSalt?: T;
   hashIterations?: T;
@@ -450,6 +528,7 @@ export interface AppUserAccountsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -461,6 +540,70 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-files_select".
+ */
+export interface UserFilesSelect<T extends boolean = true> {
+  uploadedBy?: T;
+  fileType?: T;
+  description?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-pictures_select".
+ */
+export interface ProfilePicturesSelect<T extends boolean = true> {
+  uploadedBy?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

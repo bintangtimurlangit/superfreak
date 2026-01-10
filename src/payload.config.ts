@@ -1,5 +1,6 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { resendAdapter } from '@payloadcms/email-resend'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -13,6 +14,8 @@ import { AdminAccounts } from './collections/auth/admin/accounts'
 import { AppUsers } from './collections/auth/app/users'
 import { AppUsersAccounts } from './collections/auth/app/accounts'
 import { Media } from './collections/Media'
+import { UserFiles } from './collections/UserFiles'
+import { ProfilePictures } from './collections/ProfilePictures'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,7 +28,15 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [AdminUsers, AdminAccounts, AppUsers, AppUsersAccounts, Media],
+  collections: [
+    AdminUsers,
+    AdminAccounts,
+    AppUsers,
+    AppUsersAccounts,
+    Media,
+    UserFiles,
+    ProfilePictures,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -41,6 +52,32 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
+    // Cloudflare R2 storage adapter (using S3-compatible API)
+    s3Storage({
+      collections: {
+        // Public article images - stored in media/ folder
+        media: {
+          prefix: 'media', // Files will be stored in superfreak-media/media/
+        },
+        // Private user uploaded 3D files - stored in users/files/ folder
+        'user-files': {
+          prefix: 'users/files', // Files will be stored in superfreak-media/users/files/
+        },
+        // Private user profile pictures - stored in users/profile-pics/ folder
+        'profile-pictures': {
+          prefix: 'users/profile-pics', // Files will be stored in superfreak-media/users/profile-pics/
+        },
+      },
+      bucket: process.env.R2_BUCKET_NAME || '',
+      config: {
+        endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+        },
+        region: 'auto', // R2 uses 'auto' for region
+      },
+    }),
     // Admin auth plugin - for admin panel users
     authPlugin({
       name: 'admin',
