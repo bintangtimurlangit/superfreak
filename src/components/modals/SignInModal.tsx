@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
@@ -11,6 +11,7 @@ interface SignInModalProps {
   onClose: () => void
   onSwitchToSignUp?: () => void
   onSwitchToResetPassword?: () => void
+  initialEmail?: string
 }
 
 export default function SignInModal({
@@ -18,19 +19,64 @@ export default function SignInModal({
   onClose,
   onSwitchToSignUp,
   onSwitchToResetPassword,
+  initialEmail,
 }: SignInModalProps) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(initialEmail || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialEmail && isOpen) {
+      setEmail(initialEmail)
+    }
+  }, [initialEmail, isOpen])
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    if (!email.trim()) {
+      setError('Email is required')
+      setLoading(false)
+      return
+    }
+
+    if (!password) {
+      setError('Password is required')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { password: passwordMethod } = appAuthClient.signin()
+      const result = await passwordMethod({
+        email: email.trim(),
+        password: password,
+      })
+
+      if (result.isError) {
+        setError(result.message || 'Failed to sign in. Please check your credentials.')
+      } else {
+        onClose()
+        window.location.reload()
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleGoogleSignIn = async () => {
     try {
       const { oauth } = appAuthClient.signin()
       await oauth('google')
-      // OAuth will redirect, so we don't need to do anything here
-      // The page will refresh after successful OAuth callback
     } catch (error) {
-      console.error('Google sign-in error:', error)
+      setError('Failed to sign in with Google. Please try again.')
     }
   }
 
@@ -94,8 +140,17 @@ export default function SignInModal({
                 Enter your email and password to login to your account.
               </p>
 
+              {/* Error Message */}
+              {error && (
+                <div className="mb-3 p-2.5 rounded-[12px] bg-red-50 border border-red-200">
+                  <p className="text-xs text-red-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    {error}
+                  </p>
+                </div>
+              )}
+
               {/* Form */}
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-4" onSubmit={handleSignIn}>
                 {/* Email Field */}
                 <div>
                   <label
@@ -162,10 +217,11 @@ export default function SignInModal({
                 {/* Sign In Button */}
                 <Button
                   type="submit"
-                  className="w-full h-10 rounded-[10px] bg-blue-700 text-white hover:bg-blue-800 font-medium text-sm"
+                  disabled={loading}
+                  className="w-full h-10 rounded-[10px] bg-blue-700 text-white hover:bg-blue-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
-                  Sign In
+                  {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
 
                 {/* Google Button */}

@@ -115,7 +115,6 @@ export default buildConfig({
         }),
         PasswordProvider({
           emailTemplates: {
-            // Minimal no-op template - forgot password feature not implemented
             forgotPassword: async () => '',
           },
         }),
