@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import type { UploadedFile, ModelConfiguration } from './UploadStep'
+import type { UploadedFile, ModelConfiguration } from '@/components/forms/order/UploadStep'
 
 interface ConfigureModalProps {
   isOpen: boolean
@@ -63,15 +63,15 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
     if (field === 'wallCount') {
       const num = Number(value)
       if (Number.isNaN(num)) {
-        setFormData((prev) => ({ ...prev, wallCount: '' }))
+        setFormData((prev: ModelConfiguration) => ({ ...prev, wallCount: '' }))
         return
       }
       const clamped = Math.max(1, Math.min(10, Math.round(num)))
-      setFormData((prev) => ({ ...prev, wallCount: String(clamped) }))
+      setFormData((prev: ModelConfiguration) => ({ ...prev, wallCount: String(clamped) }))
       return
     }
 
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev: ModelConfiguration) => ({ ...prev, [field]: value }))
   }
 
   const totalSteps = 3

@@ -334,6 +334,7 @@ export interface UserFile {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -561,6 +562,7 @@ export interface UserFilesSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?: T | {};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

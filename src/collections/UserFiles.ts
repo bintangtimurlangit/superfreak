@@ -20,33 +20,30 @@ export const UserFiles: CollectionConfig = {
     // Users can create files for themselves
     create: ({ req: { user } }) => {
       if (!user) return false
-      // Only allow authenticated app users to create files
-      return user?.collection === 'app-users'
+      // Admin can create files
+      if (user?.collection === 'admin-users') return true
+      // App users can create files (collection may not be set by auth plugin)
+      if (user?.collection === 'app-users' || !user?.collection) return true
+      return false
     },
     // Users can update their own files
-    update: ({ req: { user }, id }) => {
+    update: ({ req: { user } }) => {
       if (!user) return false
       // Admin can update all files
       if (user?.collection === 'admin-users') return true
       // Regular users can only update their own files
       return {
-        and: [
-          { id: { equals: id } },
-          { uploadedBy: { equals: user.id } },
-        ],
+        uploadedBy: { equals: user.id },
       }
     },
     // Users can delete their own files
-    delete: ({ req: { user }, id }) => {
+    delete: ({ req: { user } }) => {
       if (!user) return false
       // Admin can delete all files
       if (user?.collection === 'admin-users') return true
       // Regular users can only delete their own files
       return {
-        and: [
-          { id: { equals: id } },
-          { uploadedBy: { equals: user.id } },
-        ],
+        uploadedBy: { equals: user.id },
       }
     },
   },
@@ -90,17 +87,19 @@ export const UserFiles: CollectionConfig = {
       'application/octet-stream', // Generic binary
     ],
     // Increase max file size for 3D files (50MB)
-    limits: {
-      fileSize: 52428800, // 50MB in bytes
-    },
+    filesRequiredOnCreate: false,
+    imageSizes: [],
   },
   timestamps: true,
   hooks: {
     beforeChange: [
       async ({ data, req, operation }) => {
         // Auto-assign uploadedBy to current user on create
-        if (operation === 'create' && req.user && req.user.collection === 'app-users') {
-          data.uploadedBy = req.user.id
+        if (operation === 'create' && req.user) {
+          // Set for non-admin users (app users may not have collection property set)
+          if (req.user.collection !== 'admin-users') {
+            data.uploadedBy = req.user.id
+          }
         }
         return data
       },

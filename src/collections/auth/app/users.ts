@@ -29,24 +29,6 @@ export const AppUsers = withUsersCollection({
       admin: {
         description: 'Your profile picture (private - only visible to you and admins)',
       },
-      access: {
-        // Users can read their own profile picture
-        read: ({ req: { user }, doc }) => {
-          if (!user) return false
-          // Admin can read all profile pictures
-          if (user?.collection === 'admin-users') return true
-          // Users can only read their own profile picture
-          return user?.id === doc?.id
-        },
-        // Users can update their own profile picture
-        update: ({ req: { user }, doc }) => {
-          if (!user) return false
-          // Admin can update all profile pictures
-          if (user?.collection === 'admin-users') return true
-          // Users can only update their own profile picture
-          return user?.id === doc?.id
-        },
-      },
     },
   ],
   timestamps: true,

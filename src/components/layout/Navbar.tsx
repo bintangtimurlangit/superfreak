@@ -13,6 +13,12 @@ import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, 
 
 const Navbar = () => {
   const { user, isSuccess: isAuthenticated, loading, displayName, initials } = useSession()
+  
+  const profilePictureUrl = user?.profilePicture
+    ? typeof user.profilePicture === 'object'
+      ? (user.profilePicture.url || user.profilePicture.thumbnailURL || user.profilePicture.sizes?.thumbnail?.url || null)
+      : null
+    : null
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('English')
@@ -193,12 +199,24 @@ const Navbar = () => {
                   aria-label="Open account menu"
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
-                  <span
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                    aria-hidden
-                  >
-                    <span className="text-sm font-bold text-white">{initials}</span>
-                  </span>
+                  {profilePictureUrl ? (
+                    <div className="relative inline-flex h-9 w-9 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
+                      <Image
+                        src={profilePictureUrl}
+                        alt={displayName}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
+                      aria-hidden
+                    >
+                      <span className="text-sm font-bold text-white">{initials}</span>
+                    </span>
+                  )}
                   <span className="hidden sm:flex flex-col leading-tight">
                     <span className="text-sm font-medium">{displayName}</span>
                     <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
@@ -372,12 +390,24 @@ const Navbar = () => {
                     aria-label="Open account menu"
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                   >
-                    <span
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                      aria-hidden
-                    >
-                      <span className="text-sm font-bold text-white">{initials}</span>
-                    </span>
+                    {profilePictureUrl ? (
+                      <div className="relative inline-flex h-9 w-9 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
+                        <Image
+                          src={profilePictureUrl}
+                          alt={displayName}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
+                        aria-hidden
+                      >
+                        <span className="text-sm font-bold text-white">{initials}</span>
+                      </span>
+                    )}
                     <span className="flex flex-col leading-tight">
                       <span className="text-sm font-medium">{displayName}</span>
                       <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
