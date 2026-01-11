@@ -20,42 +20,41 @@ export const useSession = () => {
     try {
       const { data, isSuccess, message } = await appAuthClient.getClientSession()
       
-      let sessionData: any = data
-      
-      if (isSuccess && data && typeof data === 'object' && data !== null) {
-        const dataWithUser = data as { user?: { id?: string } }
-        if (dataWithUser.user && typeof dataWithUser.user === 'object' && dataWithUser.user.id) {
-          try {
-            // Fetch user with populated profile picture (depth=1 is enough for one level)
-            const userResponse = await fetch(`/api/app-users/${dataWithUser.user.id}?depth=1`, {
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+      // If we have a user, fetch the full user data with populated relationships
+      if (isSuccess && (data as any)?.user?.id) {
+        try {
+          const response = await fetch(`/api/app-users/${(data as any).user.id}?depth=1`)
+          if (response.ok) {
+            const fullUser = await response.json()
+            setSession({
+              data: { ...(data as any), user: fullUser },
+              message,
+              isSuccess,
             })
-            
-            if (userResponse.ok) {
-              const userData = await userResponse.json()
-              if (userData) {
-                sessionData = {
-                  ...data,
-                  user: userData,
-                }
-              }
-            } else {
-              console.error('Failed to fetch user data:', userResponse.status, userResponse.statusText)
-            }
-          } catch (error) {
-            console.error('Failed to fetch user with profile picture:', error)
+          } else {
+            // If fetch fails, use basic session data
+            setSession({
+              data: data || {},
+              message,
+              isSuccess,
+            })
           }
+        } catch (fetchError) {
+          console.error('Failed to fetch full user data:', fetchError)
+          // Fall back to basic session data
+          setSession({
+            data: data || {},
+            message,
+            isSuccess,
+          })
         }
+      } else {
+        setSession({
+          data: data || {},
+          message,
+          isSuccess,
+        })
       }
-      
-      setSession({
-        data: sessionData,
-        message,
-        isSuccess,
-      })
     } catch (error) {
       console.error('Session fetch error:', error)
       setSession({
@@ -70,15 +69,7 @@ export const useSession = () => {
 
   useEffect(() => {
     fetchSession()
-    
-    const handleFocus = () => {
-      fetchSession()
-    }
-    window.addEventListener('focus', handleFocus)
-    
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-    }
+    // Removed window focus listener to prevent excessive session requests
   }, [fetchSession])
 
   return {

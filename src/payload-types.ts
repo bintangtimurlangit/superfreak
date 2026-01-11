@@ -221,7 +221,6 @@ export interface AppUser {
  */
 export interface ProfilePicture {
   id: string;
-  uploadedBy: string | AppUser;
   prefix?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -319,7 +318,6 @@ export interface Media {
  */
 export interface UserFile {
   id: string;
-  uploadedBy: string | AppUser;
   fileType?: ('stl' | 'obj' | 'glb' | 'fbx' | 'other') | null;
   description?: string | null;
   prefix?: string | null;
@@ -547,7 +545,6 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "user-files_select".
  */
 export interface UserFilesSelect<T extends boolean = true> {
-  uploadedBy?: T;
   fileType?: T;
   description?: T;
   prefix?: T;
@@ -569,7 +566,6 @@ export interface UserFilesSelect<T extends boolean = true> {
  * via the `definition` "profile-pictures_select".
  */
 export interface ProfilePicturesSelect<T extends boolean = true> {
-  uploadedBy?: T;
   prefix?: T;
   updatedAt?: T;
   createdAt?: T;

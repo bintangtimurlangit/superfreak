@@ -126,11 +126,8 @@ export default function EditProfileForm() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-      
-      alert('Profile picture deleted successfully!')
     } catch (error) {
       console.error('Error deleting profile picture:', error)
-      alert('Failed to delete profile picture. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -221,11 +218,8 @@ export default function EditProfileForm() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-
-      alert('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
-      alert(error instanceof Error ? error.message : 'Failed to update profile. Please try again.')
     } finally {
       setSaving(false)
     }
