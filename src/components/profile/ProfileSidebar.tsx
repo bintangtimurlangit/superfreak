@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from '@/hooks/useSession'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
@@ -9,6 +9,7 @@ import Image from 'next/image'
 
 export default function ProfileSidebar() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, displayName, initials, isSuccess: isAuthenticated } = useSession()
 
   const handleLogout = async () => {
@@ -89,7 +90,11 @@ export default function ProfileSidebar() {
 
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-white bg-[#1D0DF3] rounded-lg"
+            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
+              pathname === '/profile'
+                ? 'text-white bg-[#1D0DF3]'
+                : 'text-[#292929] hover:bg-[#F8F8F8]'
+            }`}
           >
             <User className="h-4 w-4" />
             <span>Edit Profile</span>
@@ -97,7 +102,11 @@ export default function ProfileSidebar() {
 
           <Link
             href="/profile/address"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-[#292929] hover:bg-[#F8F8F8] rounded-lg transition-colors"
+            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
+              pathname === '/profile/address'
+                ? 'text-white bg-[#1D0DF3]'
+                : 'text-[#292929] hover:bg-[#F8F8F8]'
+            }`}
           >
             <Home className="h-4 w-4" />
             <span>Address Information</span>

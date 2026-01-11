@@ -74,6 +74,7 @@ export interface Config {
     media: Media;
     'user-files': UserFile;
     'profile-pictures': ProfilePicture;
+    addresses: Address;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     'user-files': UserFilesSelect<false> | UserFilesSelect<true>;
     'profile-pictures': ProfilePicturesSelect<false> | ProfilePicturesSelect<true>;
+    addresses: AddressesSelect<false> | AddressesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -336,6 +338,29 @@ export interface UserFile {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses".
+ */
+export interface Address {
+  id: string;
+  user: string | AppUser;
+  recipientName: string;
+  phoneNumber: string;
+  addressLine1: string;
+  /**
+   * House number, RT, RW (optional)
+   */
+  addressLine2?: string | null;
+  provinceCode: string;
+  regencyCode: string;
+  districtCode: string;
+  villageCode: string;
+  postalCode: string;
+  isDefault?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -385,6 +410,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'profile-pictures';
         value: string | ProfilePicture;
+      } | null)
+    | ({
+        relationTo: 'addresses';
+        value: string | Address;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -602,6 +631,25 @@ export interface ProfilePicturesSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses_select".
+ */
+export interface AddressesSelect<T extends boolean = true> {
+  user?: T;
+  recipientName?: T;
+  phoneNumber?: T;
+  addressLine1?: T;
+  addressLine2?: T;
+  provinceCode?: T;
+  regencyCode?: T;
+  districtCode?: T;
+  villageCode?: T;
+  postalCode?: T;
+  isDefault?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -16,6 +16,7 @@ import { AppUsersAccounts } from './collections/auth/app/accounts'
 import { Media } from './collections/Media'
 import { UserFiles } from './collections/UserFiles'
 import { ProfilePictures } from './collections/ProfilePictures'
+import { Addresses } from './collections/Addresses'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,6 +37,7 @@ export default buildConfig({
     Media,
     UserFiles,
     ProfilePictures,
+    Addresses,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
