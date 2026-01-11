@@ -3,15 +3,43 @@ import type { CollectionConfig } from 'payload'
 export const Addresses: CollectionConfig = {
   slug: 'addresses',
   admin: {
-    defaultColumns: ['recipientName', 'provinceCode', 'regencyCode', 'isDefault', 'createdAt'],
+    defaultColumns: ['recipientName', 'user', 'provinceCode', 'regencyCode', 'isDefault', 'createdAt'],
     useAsTitle: 'recipientName',
-    hidden: true,
   },
   access: {
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
+    read: ({ req: { user } }) => {
+      if (!user) return false
+      if (user.collection === 'admin-users') return true
+      return {
+        user: { equals: user.id },
+      }
+    },
+    create: ({ req: { user } }) => Boolean(user),
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      if (user.collection === 'admin-users') return true
+      return {
+        user: { equals: user.id },
+      }
+    },
+    delete: async ({ req, id }) => {
+      const { user } = req
+      if (!user) return false
+      if (user.collection === 'admin-users') return true
+      
+      if (!id) return false
+      
+      const address = await req.payload.findByID({
+        collection: 'addresses',
+        id: id as string,
+        depth: 0,
+      })
+      
+      if (!address) return false
+      
+      const addressUserId = typeof address.user === 'string' ? address.user : (address.user as { id: string }).id
+      return addressUserId === user.id
+    },
   },
   fields: [
     {
@@ -96,9 +124,17 @@ export const Addresses: CollectionConfig = {
   timestamps: true,
   hooks: {
     beforeChange: [
-      async ({ data, operation, req, originalDoc }) => {
-        if (operation === 'create' && data?.user) {
-          const userId = typeof data.user === 'string' ? data.user : (data.user as any).id
+      async ({ data, operation, req }) => {
+        if (operation === 'create') {
+          const userId = req.user?.id || (data?.user ? (typeof data.user === 'string' ? data.user : (data.user as { id: string }).id) : null)
+          
+          if (!userId) {
+            throw new Error('User is required')
+          }
+
+          if (!data.user) {
+            data.user = userId
+          }
 
           const existingAddresses = await req.payload.find({
             collection: 'addresses',
@@ -106,6 +142,8 @@ export const Addresses: CollectionConfig = {
               user: { equals: userId },
             },
             limit: 0,
+            overrideAccess: false,
+            user: req.user,
           })
 
           if (existingAddresses.totalDocs >= 3) {
@@ -117,39 +155,39 @@ export const Addresses: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc, operation, req }) => {
-        if (operation === 'create' && doc?.isDefault && doc?.user) {
-          const userId = typeof doc.user === 'string' ? doc.user : (doc.user as any).id
+      async ({ doc, operation, req, context }) => {
+        if (context.skipDefaultUpdate) return doc
 
-          await req.payload.update({
+        if ((operation === 'create' || operation === 'update') && doc?.isDefault && doc?.user) {
+          const userId = typeof doc.user === 'string' ? doc.user : String((doc.user as { id: string }).id)
+
+          const otherDefaultAddresses = await req.payload.find({
             collection: 'addresses',
             where: {
-              user: { equals: userId },
-              id: { not_equals: doc.id },
-              isDefault: { equals: true },
+              and: [
+                { user: { equals: userId } },
+                { id: { not_equals: doc.id } },
+                { isDefault: { equals: true } },
+              ],
             },
-            data: {
-              isDefault: false,
-            },
-            req,
+            limit: 100,
+            overrideAccess: false,
+            user: req.user,
           })
-        }
 
-        if (operation === 'update' && doc?.isDefault && doc?.user) {
-          const userId = typeof doc.user === 'string' ? doc.user : (doc.user as any).id
-
-          await req.payload.update({
-            collection: 'addresses',
-            where: {
-              user: { equals: userId },
-              id: { not_equals: doc.id },
-              isDefault: { equals: true },
-            },
-            data: {
-              isDefault: false,
-            },
-            req,
-          })
+          for (const address of otherDefaultAddresses.docs) {
+            await req.payload.update({
+              collection: 'addresses',
+              id: address.id,
+              data: {
+                isDefault: false,
+              },
+              req,
+              overrideAccess: false,
+              user: req.user,
+              context: { skipDefaultUpdate: true },
+            })
+          }
         }
 
         return doc
