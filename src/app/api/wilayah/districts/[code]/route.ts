@@ -1,7 +1,5 @@
-export async function GET(
-  request: Request,
-  { params }: { params: { code: string } }
-) {
+export async function GET(request: Request, props: { params: Promise<{ code: string }> }) {
+  const params = await props.params;
   try {
     const response = await fetch(`https://wilayah.id/api/districts/${params.code}.json`, {
       headers: {

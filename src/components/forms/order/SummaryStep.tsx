@@ -108,7 +108,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
         const data = await response.json()
         if (data.docs && data.docs.length > 0) {
           const address = data.docs[0]
-          
+
           let regencyName = ''
           let districtName = ''
           let villageName = ''
@@ -122,17 +122,25 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
                 regencyName = regency?.name || ''
 
                 if (address.districtCode) {
-                  const districtResponse = await fetch(`/api/wilayah/districts/${address.regencyCode}`)
+                  const districtResponse = await fetch(
+                    `/api/wilayah/districts/${address.regencyCode}`,
+                  )
                   if (districtResponse.ok) {
                     const districts = await districtResponse.json()
-                    const district = districts.find((d: District) => d.code === address.districtCode)
+                    const district = districts.find(
+                      (d: District) => d.code === address.districtCode,
+                    )
                     districtName = district?.name || ''
 
                     if (address.villageCode) {
-                      const villageResponse = await fetch(`/api/wilayah/villages/${address.districtCode}`)
+                      const villageResponse = await fetch(
+                        `/api/wilayah/villages/${address.districtCode}`,
+                      )
                       if (villageResponse.ok) {
                         const villages = await villageResponse.json()
-                        const village = villages.find((v: Village) => v.code === address.villageCode)
+                        const village = villages.find(
+                          (v: Village) => v.code === address.villageCode,
+                        )
                         villageName = village?.name || ''
                       }
                     }
@@ -183,10 +191,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
         >
           Order Summary
         </h2>
-        <p
-          className="text-sm text-[#7C7C7C]"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
+        <p className="text-sm text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
           Review your order details before proceeding to payment.
         </p>
       </div>
@@ -195,10 +200,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
         {uploadedFiles
           .filter((file) => file.status === 'completed')
           .map((file) => (
-            <div
-              key={file.id}
-              className="border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]"
-            >
+            <div key={file.id} className="border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]">
               <div className="flex items-start justify-between">
                 <div>
                   <h3
@@ -251,7 +253,10 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
           </h3>
           {loading ? (
             <div className="border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]">
-              <p className="text-sm text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              <p
+                className="text-sm text-[#7C7C7C]"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              >
                 Loading address...
               </p>
             </div>
@@ -298,7 +303,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
                     className="text-sm text-orange-800 mb-2"
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
-                    Oops! You haven't set your address yet.
+                    Oops! You haven&apos;t set your address yet.
                   </p>
                   <button
                     type="button"
@@ -315,10 +320,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
         </div>
 
         <div className="flex justify-between items-center mb-2">
-          <span
-            className="text-sm text-[#7C7C7C]"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
+          <span className="text-sm text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
             Subtotal
           </span>
           <span
@@ -345,11 +347,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
       </div>
 
       <div className="flex justify-between pt-6 border-t border-[#EFEFEF]">
-        <Button
-          onClick={onBack}
-          variant="secondary"
-          className="h-11 px-6 rounded-[12px] text-sm"
-        >
+        <Button onClick={onBack} variant="secondary" className="h-11 px-6 rounded-[12px] text-sm">
           Back
         </Button>
         <Button
