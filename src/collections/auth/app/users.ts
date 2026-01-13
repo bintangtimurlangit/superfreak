@@ -13,14 +13,43 @@ export const AppUsers = withUsersCollection({
     useAsTitle: 'email',
   },
   access: {
-    // Allow anyone to read (for public profiles)
+    // Allow public read (for public profiles) - users can read any profile
+    // If you want to restrict this, change to: ({ req: { user } }) => Boolean(user)
     read: () => true,
     // Allow anyone to create (registration)
     create: () => true,
-    // Allow anyone to update (we can't check req.user with plugin's session)
-    update: () => true,
-    // Allow anyone to delete (we can't check req.user with plugin's session)
-    delete: () => true,
+    // Users can only update their own profile, admins can update all
+    // This protects against unauthorized updates
+    update: ({ req: { user }, id }) => {
+      // If no user, deny access (must be authenticated)
+      if (!user || !user.id) return false
+      
+      // Check if user is from admin collection (admin-users can update all)
+      const isAdmin = user?.collection === 'admin-users' || 
+                      (user as any)?._collection === 'admin-users'
+      
+      if (isAdmin) return true
+      
+      // For authenticated users (from 'app' auth plugin)
+      // They can only update their own profile
+      // Use query constraint to restrict to own profile based on user ID
+      return { id: { equals: user.id } }
+    },
+    // Users can only delete their own profile, admins can delete all
+    delete: ({ req: { user }, id }) => {
+      // If no user, deny access (must be authenticated)
+      if (!user || !user.id) return false
+      
+      // Check if user is from admin collection (admin-users can delete all)
+      const isAdmin = user?.collection === 'admin-users' || 
+                      (user as any)?._collection === 'admin-users'
+      
+      if (isAdmin) return true
+      
+      // For authenticated users (from 'app' auth plugin)
+      // They can only delete their own profile
+      return { id: { equals: user.id } }
+    },
   },
   fields: [
     {

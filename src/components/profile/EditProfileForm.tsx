@@ -7,6 +7,80 @@ import Button from '@/components/ui/Button'
 import Image from 'next/image'
 import { useSession } from '@/hooks/useSession'
 
+function EditProfileFormSkeleton() {
+  return (
+    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+      {/* Header Skeleton */}
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-gray-200 rounded-[12px] animate-pulse flex-shrink-0" />
+          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+
+      <div className="border-t border-[#EFEFEF] -mx-4 md:-mx-5 mb-6"></div>
+
+      <div className="space-y-8">
+        <section className="flex flex-col lg:flex-row gap-6">
+          {/* Personal Information Skeleton */}
+          <div className="flex-1">
+            <div className="mb-6">
+              <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-1" />
+              <div className="h-4 w-64 bg-gray-200 rounded animate-pulse" />
+            </div>
+
+            <div className="space-y-4">
+              {/* Name Field Skeleton */}
+              <div>
+                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+
+              {/* Email Field Skeleton */}
+              <div>
+                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-3 w-40 bg-gray-200 rounded animate-pulse mt-1" />
+              </div>
+
+              {/* Phone Number Field Skeleton */}
+              <div>
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Picture Skeleton */}
+          <div className="flex-1 lg:max-w-[400px]">
+            <div className="border border-[#EFEFEF] rounded-lg p-6 bg-[#F8F8F8] h-full">
+              <div className="mb-4">
+                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-1" />
+                <div className="h-4 w-56 bg-gray-200 rounded animate-pulse mb-4" />
+              </div>
+
+              <div className="space-y-4 flex flex-col items-center">
+                <div className="w-24 h-24 rounded-lg bg-gray-200 animate-pulse border-2 border-white" />
+                <div className="space-y-1 text-center">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mx-auto" />
+                  <div className="h-3 w-24 bg-gray-200 rounded animate-pulse mx-auto" />
+                </div>
+                <div className="w-full h-10 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Action Buttons Skeleton */}
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#EFEFEF]">
+          <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function EditProfileForm() {
   const router = useRouter()
   const { user: sessionUser, isSuccess: isAuthenticated, refreshSession, loading } = useSession()
@@ -18,7 +92,126 @@ export default function EditProfileForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [initialized, setInitialized] = useState(false)
   const [currentProfilePictureId, setCurrentProfilePictureId] = useState<string | null>(null)
+  const [compressing, setCompressing] = useState(false)
+  const [originalFileSize, setOriginalFileSize] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Compress image function
+  const compressImage = useCallback(async (file: File, maxSizeMB: number = 2): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Calculate max dimensions (max 1920px on longest side for profile pictures)
+          const maxDimension = 1920
+          if (width > height) {
+            if (width > maxDimension) {
+              height = (height / width) * maxDimension
+              width = maxDimension
+            }
+          } else {
+            if (height > maxDimension) {
+              width = (width / height) * maxDimension
+              height = maxDimension
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+          
+          // Draw image with high quality
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Try different quality levels to get under 2MB
+          const maxSizeBytes = maxSizeMB * 1024 * 1024
+          
+          // Binary search for optimal quality
+          let minQuality = 0.1
+          let maxQuality = 0.95
+          
+          const tryCompress = (q: number): Promise<Blob> => {
+            return new Promise<Blob>((resolveBlob) => {
+              canvas.toBlob(
+                (blob) => {
+                  resolveBlob(blob || new Blob())
+                },
+                'image/jpeg',
+                q
+              )
+            })
+          }
+          
+          const compress = async () => {
+            let attempts = 0
+            const maxAttempts = 10
+            let quality = 0.92
+            let compressedBlob: Blob | null = null
+            
+            while (attempts < maxAttempts) {
+              quality = (minQuality + maxQuality) / 2
+              compressedBlob = await tryCompress(quality)
+              
+              if (compressedBlob.size <= maxSizeBytes) {
+                // File is small enough, try higher quality
+                minQuality = quality
+                if (maxQuality - minQuality < 0.05) break // Close enough
+              } else {
+                // File is too large, reduce quality
+                maxQuality = quality
+              }
+              
+              attempts++
+            }
+            
+            // Final compression with found quality
+            compressedBlob = await tryCompress(quality)
+            
+            // If still too large, reduce dimensions and try again
+            if (compressedBlob.size > maxSizeBytes) {
+              // Reduce dimensions by 10% and try again
+              width = Math.floor(width * 0.9)
+              height = Math.floor(height * 0.9)
+              canvas.width = width
+              canvas.height = height
+              ctx.drawImage(img, 0, 0, width, height)
+              compressedBlob = await tryCompress(0.85)
+            }
+            
+            // Convert blob to file
+            const compressedFile = new File(
+              [compressedBlob],
+              file.name.replace(/\.[^/.]+$/, '.jpg'),
+              {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              }
+            )
+            
+            resolve(compressedFile)
+          }
+          
+          compress().catch(reject)
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+        if (e.target?.result) {
+          img.src = e.target.result as string
+        }
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
+  }, [])
 
   // Initialize form with user data
   useEffect(() => {
@@ -48,7 +241,7 @@ export default function EditProfileForm() {
     }
   }, [loading, sessionUser, initialized])
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
 
     if (!file) return
@@ -59,28 +252,55 @@ export default function EditProfileForm() {
       return
     }
 
-    const maxSize = 5 * 1024 * 1024
-    if (file.size > maxSize) {
-      alert('File size must be less than 5 MB')
-      e.target.value = ''
-      return
-    }
+    const maxSize = 2 * 1024 * 1024 // 2MB limit
+    setOriginalFileSize(file.size)
+    setCompressing(true)
 
-    const reader = new FileReader()
-    reader.onerror = () => {
-      alert('Failed to read the selected file. Please try again.')
-      e.target.value = ''
-    }
-    reader.onloadend = () => {
-      if (reader.result) {
-        setPreviewUrl(reader.result as string)
-        setSelectedFile(file)
-      } else {
-        alert('Failed to read the selected file. Please try again.')
+    try {
+      let fileToUse = file
+      
+      // Compress if file is larger than 2MB or if it's a large image
+      if (file.size > maxSize || file.size > 500 * 1024) { // Compress if > 2MB or > 500KB
+        fileToUse = await compressImage(file, 2)
       }
+
+      // Verify compressed file is under 2MB
+      if (fileToUse.size > maxSize) {
+        alert('Unable to compress image to under 2MB. Please select a smaller image.')
+        e.target.value = ''
+        setCompressing(false)
+        setOriginalFileSize(null)
+        return
+      }
+
+      // Create preview
+      const reader = new FileReader()
+      reader.onerror = () => {
+        alert('Failed to read the selected file. Please try again.')
+        e.target.value = ''
+        setCompressing(false)
+        setOriginalFileSize(null)
+      }
+      reader.onloadend = () => {
+        if (reader.result) {
+          setPreviewUrl(reader.result as string)
+          setSelectedFile(fileToUse)
+          setCompressing(false)
+        } else {
+          alert('Failed to read the selected file. Please try again.')
+          setCompressing(false)
+          setOriginalFileSize(null)
+        }
+      }
+      reader.readAsDataURL(fileToUse)
+    } catch (error) {
+      console.error('Error compressing image:', error)
+      alert('Failed to process image. Please try again.')
+      e.target.value = ''
+      setCompressing(false)
+      setOriginalFileSize(null)
     }
-    reader.readAsDataURL(file)
-  }, [])
+  }, [compressImage])
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''
@@ -229,6 +449,16 @@ export default function EditProfileForm() {
     router.back()
   }
 
+  // Show skeleton while loading
+  if (loading) {
+    return <EditProfileFormSkeleton />
+  }
+
+  // Don't show form if not authenticated
+  if (!isAuthenticated || !sessionUser) {
+    return null
+  }
+
   return (
     <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
       <div>
@@ -367,11 +597,26 @@ export default function EditProfileForm() {
                         {selectedFile?.name || 'Current Picture'}
                       </div>
                       {selectedFile?.size && (
-                        <div
-                          className="text-xs text-[#989898]"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
-                          {formatFileSize(selectedFile.size)}
+                        <div className="space-y-1">
+                          <div
+                            className="text-xs text-[#989898]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {formatFileSize(selectedFile.size)}
+                            {originalFileSize && originalFileSize > selectedFile.size && (
+                              <span className="text-green-600 ml-1">
+                                (compressed from {formatFileSize(originalFileSize)})
+                              </span>
+                            )}
+                          </div>
+                          {selectedFile.size > 2 * 1024 * 1024 && (
+                            <div
+                              className="text-xs text-red-600 font-medium"
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              ⚠️ File size exceeds 2MB limit
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -423,7 +668,7 @@ export default function EditProfileForm() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-4 flex flex-col items-center">
+                  <div className="space-y-4 flex flex-col items-center">
                   <div className="flex items-center justify-center w-24 h-24 rounded-lg bg-blue-700 border-2 border-white">
                     <User className="h-12 w-12 text-white" />
                   </div>
@@ -432,18 +677,28 @@ export default function EditProfileForm() {
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <p>Format: png or jpg</p>
-                    <p>Maximum file size 5 MB</p>
+                    <p className="font-medium text-[#292929]">Maximum file size: 2 MB</p>
+                    <p className="text-xs">Images will be automatically compressed</p>
                   </div>
                   <Button
                     type="button"
                     variant="secondary"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={saving}
+                    disabled={saving || compressing}
                     className="w-full !bg-[#1D0DF3] !text-white hover:!bg-[#1a0cd9] text-sm font-medium disabled:!opacity-50 disabled:!cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
                     style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Picture
+                    {compressing ? (
+                      <>
+                        <span className="mr-2 inline-block h-4 w-4 animate-spin border-2 border-white border-r-transparent rounded-full" />
+                        Compressing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Picture
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

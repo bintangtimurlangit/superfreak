@@ -11,6 +11,26 @@ import { useSession } from '@/hooks/useSession'
 import { appAuthClient } from '@/lib/auth'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
 
+function UserProfileSkeleton() {
+  return (
+    <div className="relative hidden lg:block">
+      <div className="h-11 py-1 pl-1 pr-2 flex items-center gap-2 rounded-xl border border-[#EFEFEF] bg-white dark:bg-black">
+        <div className="h-9 w-9 rounded-lg bg-gray-200 animate-pulse flex-shrink-0" />
+        <div className="hidden sm:flex flex-col gap-1">
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobileUserProfileSkeleton() {
+  return (
+    <div className="w-full h-11 bg-gray-200 rounded-lg animate-pulse" />
+  )
+}
+
 const Navbar = () => {
   const { user, isSuccess: isAuthenticated, loading, displayName, initials } = useSession()
   
@@ -190,7 +210,11 @@ const Navbar = () => {
               My Cart
             </Button>
 
-            {isAuthenticated && user ? (
+            {loading ? (
+              <>
+                <UserProfileSkeleton />
+              </>
+            ) : isAuthenticated && user ? (
               <div className="relative hidden lg:block" ref={userDropdownRef}>
                 <Button
                   variant="secondary"
@@ -270,7 +294,9 @@ const Navbar = () => {
 
           {/* Mobile Actions - Icons Only */}
           <div className="flex md:hidden items-center gap-2">
-            {!isAuthenticated && (
+            {loading ? (
+              <div className="h-10 w-10 bg-gray-200 rounded-[12px] animate-pulse" />
+            ) : !isAuthenticated && (
               <Button
                 variant="secondary"
                 size="icon"
@@ -382,7 +408,9 @@ const Navbar = () => {
                 My Cart
               </Button>
 
-              {isAuthenticated && user ? (
+              {loading ? (
+                <MobileUserProfileSkeleton />
+              ) : isAuthenticated && user ? (
                 <div className="relative w-full" ref={userDropdownRef}>
                   <Button
                     variant="secondary"
