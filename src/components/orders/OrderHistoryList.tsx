@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, Filter, Package } from 'lucide-react'
+import { Calendar, Filter, Package, Search } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
@@ -55,7 +55,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([]) // Changed to array for multiple selection
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null)
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null)
 
@@ -131,8 +131,27 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   }
 
   const filterOrdersByStatus = (order: Order): boolean => {
-    if (statusFilter === 'all') return true
-    return order.status === statusFilter
+    // If no statuses selected, show all orders
+    if (statusFilter.length === 0) return true
+    // Check if order status is in the selected statuses
+    return statusFilter.includes(order.status)
+  }
+
+  const handleStatusToggle = (status: OrderStatus) => {
+    setStatusFilter((prev) => {
+      if (prev.includes(status)) {
+        // Remove status if already selected
+        return prev.filter((s) => s !== status)
+      } else {
+        // Add status to selection
+        return [...prev, status]
+      }
+    })
+  }
+
+  const handleAllStatus = () => {
+    // Clear all selections to show all orders
+    setStatusFilter([])
   }
 
   const filteredOrders = orders.filter(
@@ -162,63 +181,63 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Filters */}
-      <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
-        {/* Date Filter */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="h-4 w-4 text-[#989898]" />
-            <h3
-              className="text-sm font-semibold text-[#292929]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
-              Date Range
-            </h3>
+      {/* Header + Filters Combined */}
+      <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-[#1D0DF3] rounded-[12px] flex items-center justify-center flex-shrink-0">
+            <Package className="h-6 w-6 text-white" />
           </div>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'all', label: 'All Time' },
-              { value: '7days', label: 'Last 7 Days' },
-              { value: '30days', label: 'Last 30 Days' },
-              { value: '90days', label: 'Last 90 Days' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  setDateFilter(option.value as DateFilter)
-                  if (option.value !== 'custom') {
-                    setCustomStartDate(null)
-                    setCustomEndDate(null)
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  dateFilter === option.value
-                    ? 'bg-[#1D0DF3] text-white'
-                    : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF]'
-                }`}
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
-                {option.label}
-              </button>
-            ))}
-            <DateRangePicker onRangeSelect={handleCustomDateRange} />
-          </div>
+          <h1
+            className="text-[24px] font-semibold text-[#292929]"
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
+          >
+            Order History
+          </h1>
         </div>
 
-        {/* Status Filter */}
+        {/* Divider */}
+        <div className="border-t border-[#EFEFEF] -mx-4 md:-mx-5 mb-6"></div>
+
+        {/* Filters */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-[#989898]" />
-            <h3
-              className="text-sm font-semibold text-[#292929]"
+          {/* Top Row: Search and Date Picker */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search orders..."
+                className="w-full pl-10 pr-4 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#989898]" />
+            </div>
+
+            {/* Date Picker */}
+            <DateRangePicker onRangeSelect={handleCustomDateRange} className="w-full" />
+          </div>
+
+          {/* Status Filter Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="text-sm font-semibold text-[#292929] mr-2"
               style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
-              Order Status
-            </h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
+              Status
+            </span>
+            <button
+              onClick={handleAllStatus}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                statusFilter.length === 0
+                  ? 'bg-[#1D0DF3] text-white'
+                  : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF] border border-[#DCDCDC]'
+              }`}
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              All
+            </button>
             {[
-              { value: 'all', label: 'All' },
               { value: 'unpaid', label: 'Unpaid' },
               { value: 'checking', label: 'Checking' },
               { value: 'discuss', label: 'Discuss' },
@@ -230,17 +249,31 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
             ].map((option) => (
               <button
                 key={option.value}
-                onClick={() => setStatusFilter(option.value as OrderStatus | 'all')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  statusFilter === option.value
+                onClick={() => handleStatusToggle(option.value as OrderStatus)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  statusFilter.includes(option.value as OrderStatus)
                     ? 'bg-[#1D0DF3] text-white'
-                    : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF]'
+                    : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF] border border-[#DCDCDC]'
                 }`}
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 {option.label}
               </button>
             ))}
+            {(statusFilter.length > 0 || customStartDate || customEndDate) && (
+              <button
+                onClick={() => {
+                  setStatusFilter([])
+                  setDateFilter('all')
+                  setCustomStartDate(null)
+                  setCustomEndDate(null)
+                }}
+                className="px-4 py-2 text-sm font-medium text-[#1D0DF3] hover:text-[#1a0cd9] transition-colors"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -252,7 +285,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
         </p>
       </div>
 
-      {/* Orders Grid */}
+      {/* Orders List */}
       {filteredOrders.length === 0 ? (
         <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-12 text-center">
           <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
@@ -269,7 +302,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
           {filteredOrders.map((order) => (
             <OrderCard key={order.id} order={order} />
           ))}

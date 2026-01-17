@@ -10,11 +10,34 @@ interface DateRangePickerProps {
 
 export default function DateRangePicker({ onRangeSelect, className = '' }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [startDate, setStartDate] = useState<Date | null>(null)
-  const [endDate, setEndDate] = useState<Date | null>(null)
+  // Temporary selection (shown in calendar while open)
+  const [tempStartDate, setTempStartDate] = useState<Date | null>(null)
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null)
+  // Applied selection (actually used for filtering)
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | null>(null)
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [hoverDate, setHoverDate] = useState<Date | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Auto-select today's date when calendar opens
+  useEffect(() => {
+    if (isOpen && !tempStartDate && !tempEndDate) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Reset time to midnight
+      setTempStartDate(today)
+      setCurrentMonth(today)
+    }
+  }, [isOpen, tempStartDate, tempEndDate])
+
+  // Reset temporary selection when closing without applying
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset temp dates to match applied dates when closing
+      setTempStartDate(appliedStartDate)
+      setTempEndDate(appliedEndDate)
+    }
+  }, [isOpen, appliedStartDate, appliedEndDate])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -47,41 +70,63 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
 
   const handleDateClick = (day: number) => {
     const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+    clickedDate.setHours(0, 0, 0, 0) // Reset time to midnight
 
-    if (!startDate || (startDate && endDate)) {
-      // Start new selection
-      setStartDate(clickedDate)
-      setEndDate(null)
-    } else if (startDate && !endDate) {
-      // Complete selection
-      if (clickedDate < startDate) {
-        setEndDate(startDate)
-        setStartDate(clickedDate)
+    if (!tempStartDate) {
+      // This shouldn't happen since we auto-select today, but handle it anyway
+      setTempStartDate(clickedDate)
+      setTempEndDate(null)
+    } else if (tempStartDate && !tempEndDate) {
+      // First click after auto-selection: set end date
+      if (clickedDate < tempStartDate) {
+        // If clicked date is before start date, swap them
+        setTempEndDate(tempStartDate)
+        setTempStartDate(clickedDate)
+      } else if (clickedDate.getTime() === tempStartDate.getTime()) {
+        // If clicking the same date as start, set end to same date
+        setTempEndDate(clickedDate)
       } else {
-        setEndDate(clickedDate)
+        // Normal case: set as end date
+        setTempEndDate(clickedDate)
       }
+    } else if (tempStartDate && tempEndDate) {
+      // Both dates already selected: start new selection
+      setTempStartDate(clickedDate)
+      setTempEndDate(null)
     }
   }
 
   const handleApply = () => {
-    onRangeSelect(startDate, endDate)
+    setAppliedStartDate(tempStartDate)
+    setAppliedEndDate(tempEndDate)
+    onRangeSelect(tempStartDate, tempEndDate)
     setIsOpen(false)
   }
 
   const handleClear = () => {
-    setStartDate(null)
-    setEndDate(null)
+    setTempStartDate(null)
+    setTempEndDate(null)
+    setAppliedStartDate(null)
+    setAppliedEndDate(null)
     onRangeSelect(null, null)
   }
 
   const isDateInRange = (day: number) => {
-    if (!startDate) return false
+    if (!tempStartDate) return false
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     
-    if (endDate) {
-      return date >= startDate && date <= endDate
-    } else if (hoverDate && hoverDate > startDate) {
-      return date >= startDate && date <= hoverDate
+    if (tempEndDate) {
+      // If end date is set, show the actual range
+      return date >= tempStartDate && date <= tempEndDate
+    } else if (hoverDate) {
+      // Show preview range based on hover position
+      if (hoverDate > tempStartDate) {
+        // Hovering after start date
+        return date >= tempStartDate && date <= hoverDate
+      } else if (hoverDate < tempStartDate) {
+        // Hovering before start date
+        return date >= hoverDate && date <= tempStartDate
+      }
     }
     
     return false
@@ -90,8 +135,8 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
   const isDateSelected = (day: number) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     return (
-      (startDate && date.toDateString() === startDate.toDateString()) ||
-      (endDate && date.toDateString() === endDate.toDateString())
+      (tempStartDate && date.toDateString() === tempStartDate.toDateString()) ||
+      (tempEndDate && date.toDateString() === tempEndDate.toDateString())
     )
   }
 
@@ -104,9 +149,9 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
   }
 
   const formatDateRange = () => {
-    if (!startDate) return 'Select date range'
-    if (!endDate) return `${startDate.toLocaleDateString()}`
-    return `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+    if (!appliedStartDate) return 'Select date range'
+    if (!appliedEndDate) return `${appliedStartDate.toLocaleDateString()}`
+    return `${appliedStartDate.toLocaleDateString()} - ${appliedEndDate.toLocaleDateString()}`
   }
 
   const renderCalendar = () => {
@@ -153,18 +198,18 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-          startDate || endDate
-            ? 'bg-[#1D0DF3] text-white'
-            : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF]'
+        className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+          appliedStartDate || appliedEndDate
+            ? 'bg-[#1D0DF3] text-white border-[#1D0DF3]'
+            : 'bg-[#F8F8F8] text-[#292929] border-[#DCDCDC] hover:bg-[#EFEFEF]'
         }`}
         style={{ fontFamily: 'var(--font-geist-sans)' }}
       >
-        <Calendar className="h-4 w-4" />
-        <span>{formatDateRange()}</span>
-        {(startDate || endDate) && (
+        <Calendar className="h-4 w-4 flex-shrink-0" />
+        <span className="flex-1 text-left truncate">{formatDateRange()}</span>
+        {(appliedStartDate || appliedEndDate) && (
           <X
-            className="h-3.5 w-3.5 ml-1"
+            className="h-3.5 w-3.5 flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation()
               handleClear()
@@ -228,7 +273,7 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
             <button
               type="button"
               onClick={handleApply}
-              disabled={!startDate || !endDate}
+              disabled={!tempStartDate || !tempEndDate}
               className="px-4 py-2 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: 'var(--font-geist-sans)' }}
             >

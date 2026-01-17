@@ -12,6 +12,10 @@ samp {
   font-family: var(--font-geist-mono), monospace;
 }
 
+.min-h-screen-navbar {
+  min-height: calc(100vh - 80px); /* Adjust 80px to match your navbar height */
+}
+
 .dashed-divider {
     position: absolute;
     left: 0;

@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import SmoothScroll from '@/components/layout/SmoothScroll'
 import OrderRedirectHandler from '@/components/OrderRedirectHandler'
 import { SessionProvider } from '@/contexts/SessionContext'
+import QueryProvider from '@/components/providers/QueryProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,13 +33,15 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className={`${geistSans.className} antialiased`}>
-        <SessionProvider>
-          <SmoothScroll />
-          <OrderRedirectHandler />
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-        </SessionProvider>
+        <QueryProvider>
+          <SessionProvider>
+            <SmoothScroll />
+            <OrderRedirectHandler />
+            <Navbar />
+            <main>{children}</main>
+            <Footer />
+          </SessionProvider>
+        </QueryProvider>
       </body>
     </html>
   )
