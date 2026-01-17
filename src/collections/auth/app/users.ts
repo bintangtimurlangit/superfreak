@@ -13,40 +13,49 @@ import {
 
 export const AppUsers: CollectionConfig = {
   slug: 'app-users',
-  auth: true, // Native Payload auth
+  auth: true,
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['email', 'name', 'createdAt'],
   },
   access: {
-    // Allow public read (for public profiles)
     read: () => true,
-    // Allow anyone to create (registration)
     create: () => true,
-    // Users can only update their own profile, admins can update all
     update: ({ req: { user }, id }) => {
-      if (!user || !user.id) return false
+      console.log('[AppUsers Access Control - Update]', {
+        hasUser: !!user,
+        userId: user?.id,
+        userEmail: user?.email,
+        userCollection: user?.collection,
+        targetId: id,
+        idsMatch: user?.id === id,
+      })
+      
+      if (!user || !user.id) {
+        console.log('[AppUsers Access Control] No user in request, denying access')
+        return false
+      }
 
-      // Admin users can update all
       const isAdmin =
         user?.collection === 'admin-users' || (user as any)?._collection === 'admin-users'
 
-      if (isAdmin) return true
+      if (isAdmin) {
+        console.log('[AppUsers Access Control] User is admin, allowing access')
+        return true
+      }
 
-      // App users can only update their own profile
-      return { id: { equals: user.id } }
+      const canUpdate = { id: { equals: user.id } }
+      console.log('[AppUsers Access Control] Returning access rule:', canUpdate)
+      return canUpdate
     },
-    // Users can only delete their own profile, admins can delete all
     delete: ({ req: { user }, id }) => {
       if (!user || !user.id) return false
 
-      // Admin users can delete all
       const isAdmin =
         user?.collection === 'admin-users' || (user as any)?._collection === 'admin-users'
 
       if (isAdmin) return true
 
-      // App users can only delete their own profile
       return { id: { equals: user.id } }
     },
   },
@@ -69,7 +78,23 @@ export const AppUsers: CollectionConfig = {
         description: 'Your profile picture (private - only visible to you and admins)',
       },
     },
-    // Email verification fields
+    {
+      name: 'googleId',
+      type: 'text',
+      admin: {
+        hidden: true,
+      },
+      unique: true,
+    },
+    {
+      name: 'authProvider',
+      type: 'select',
+      options: ['email', 'google'],
+      defaultValue: 'email',
+      admin: {
+        hidden: true,
+      },
+    },
     {
       name: 'verificationCode',
       type: 'text',
@@ -103,7 +128,13 @@ export const AppUsers: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, operation }) => {
-        if (operation === 'create' && data?.email && data?.password && !data?.verificationCode) {
+        if (
+          operation === 'create' &&
+          data?.email &&
+          data?.password &&
+          !data?.verificationCode &&
+          data?.authProvider !== 'google'
+        ) {
           const verificationCode = generateVerificationCode()
           const verificationHash = hashVerificationCode(verificationCode)
           const expirationTime = Date.now() + 24 * 60 * 60 * 1000
@@ -122,7 +153,8 @@ export const AppUsers: CollectionConfig = {
           operation === 'create' &&
           doc?.verificationCode &&
           doc?.email &&
-          doc?.verificationKind === 'email'
+          doc?.verificationKind === 'email' &&
+          doc?.authProvider !== 'google'
         ) {
           try {
             const serverURL =
@@ -319,6 +351,70 @@ export const AppUsers: CollectionConfig = {
           success: true,
           message: 'Verification code sent successfully',
         })
+      },
+    },
+    {
+      path: '/debug-auth',
+      method: 'get',
+      handler: async (req) => {
+        try {
+          const cookies = req.headers.get('cookie') || ''
+          const cookieArray = cookies.split(';').map(c => c.trim())
+          
+          const authCookie = cookieArray.find(c => c.startsWith('payload-token-app-users='))
+          const token = authCookie ? decodeURIComponent(authCookie.split('=').slice(1).join('=')) : null
+
+          let decodedToken = null
+          let userFromToken = null
+          let tokenError = null
+          
+          if (token) {
+            try {
+              const jwt = await import('jsonwebtoken')
+              const secret = process.env.PAYLOAD_SECRET
+              if (secret) {
+                decodedToken = jwt.verify(token, secret) as { id: string; email: string; collection: string }
+                if (decodedToken?.id) {
+                  try {
+                    userFromToken = await req.payload.findByID({
+                      collection: 'app-users',
+                      id: decodedToken.id,
+                      depth: 0,
+                    })
+                  } catch (error) {
+                    tokenError = error instanceof Error ? error.message : String(error)
+                    console.error('Error fetching user from token:', error)
+                  }
+                }
+              }
+            } catch (error) {
+              tokenError = error instanceof Error ? error.message : String(error)
+              console.error('Error decoding token:', error)
+            }
+          }
+
+          return Response.json({
+            hasUser: !!req.user,
+            userId: req.user?.id || null,
+            userEmail: req.user?.email || null,
+            userCollection: req.user?.collection || null,
+            hasAuthCookie: !!authCookie,
+            tokenPreview: token ? token.substring(0, 30) + '...' : null,
+            decodedToken,
+            userFromToken: userFromToken ? {
+              id: userFromToken.id,
+              email: userFromToken.email,
+              name: userFromToken.name,
+            } : null,
+            tokenError,
+            allCookies: cookieArray,
+          })
+        } catch (error) {
+          return Response.json({
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          }, { status: 500 })
+        }
       },
     },
   ] as Endpoint[],

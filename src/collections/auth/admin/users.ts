@@ -5,7 +5,7 @@ const SUPER_ADMIN_EMAIL = 'superfreakstudio@gmail.com'
 
 export const AdminUsers: CollectionConfig = {
   slug: 'admin-users',
-  auth: true, // Native Payload auth
+  auth: true,
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['email', 'createdAt'],
@@ -24,7 +24,6 @@ export const AdminUsers: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, operation, req, originalDoc }) => {
-        // Prevent changing super admin email
         if (data?.email === SUPER_ADMIN_EMAIL) {
           if (operation === 'update' && req?.user && originalDoc?.id) {
             const existingUser = await req.payload.findByID({

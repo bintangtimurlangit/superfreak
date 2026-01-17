@@ -27,10 +27,9 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
   const [signupEmail, setSignupEmail] = useState('')
   const [showSignInAfterVerification, setShowSignInAfterVerification] = useState(false)
 
-  // Google OAuth temporarily disabled
-  // const handleGoogleSignUp = async () => {
-  //   setError('Google sign-up is temporarily unavailable. Please use email and password.')
-  // }
+  const handleGoogleSignUp = () => {
+    appAuth.googleSignIn()
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -308,8 +307,8 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                   {loading ? 'Creating Account...' : 'Sign Up'}
                 </Button>
 
-                {/* Google Button - Temporarily disabled */}
-                {/* <Button
+                {/* Google Button */}
+                <Button
                   type="button"
                   variant="secondary"
                   className="w-full h-10 rounded-[10px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-sm flex items-center justify-center gap-2.5 -mt-1"
@@ -335,7 +334,7 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                     />
                   </svg>
                   Continue With Google
-                </Button> */}
+                </Button>
 
                 {/* Sign In Section */}
                 <div className="text-center pt-3">

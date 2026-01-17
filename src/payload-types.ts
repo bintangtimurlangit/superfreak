@@ -191,6 +191,8 @@ export interface AppUser {
    * Your profile picture (private - only visible to you and admins)
    */
   profilePicture?: (string | null) | ProfilePicture;
+  googleId?: string | null;
+  authProvider?: ('email' | 'google') | null;
   verificationCode?: string | null;
   verificationHash?: string | null;
   verificationTokenExpire?: number | null;
@@ -564,6 +566,8 @@ export interface AppUsersSelect<T extends boolean = true> {
   name?: T;
   phoneNumber?: T;
   profilePicture?: T;
+  googleId?: T;
+  authProvider?: T;
   verificationCode?: T;
   verificationHash?: T;
   verificationTokenExpire?: T;

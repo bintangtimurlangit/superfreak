@@ -6,6 +6,7 @@ import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Image from 'next/image'
 import { useSession } from '@/hooks/useSession'
+import { payloadFetch } from '@/lib/payloadFetch'
 
 function EditProfileFormSkeleton() {
   return (
@@ -325,12 +326,8 @@ export default function EditProfileForm() {
     setSaving(true)
     try {
       // Remove profile picture from user
-      const response = await fetch(`/api/app-users/${sessionUser?.id}`, {
+      const response = await payloadFetch(`/api/users/${sessionUser?.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({ profilePicture: null }),
       })
 
@@ -369,9 +366,8 @@ export default function EditProfileForm() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const uploadResponse = await fetch('/api/profile-pictures', {
+        const uploadResponse = await payloadFetch('/api/profile-pictures', {
           method: 'POST',
-          credentials: 'include',
           body: formData,
         })
 
@@ -417,12 +413,8 @@ export default function EditProfileForm() {
         updateData.profilePicture = profilePictureId
       }
 
-      const response = await fetch(`/api/app-users/${sessionUser.id}`, {
+      const response = await payloadFetch(`/api/users/${sessionUser.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify(updateData),
       })
 

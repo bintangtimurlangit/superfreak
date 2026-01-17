@@ -63,10 +63,9 @@ export default function SignInModal({
     }
   }
 
-  // Google OAuth temporarily disabled
-  // const handleGoogleSignIn = async () => {
-  //   setError('Google sign-in is temporarily unavailable. Please use email and password.')
-  // }
+  const handleGoogleSignIn = () => {
+    appAuth.googleSignIn()
+  }
 
   if (!isOpen) return null
 
@@ -212,8 +211,8 @@ export default function SignInModal({
                   {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
 
-                {/* Google Button - Temporarily disabled */}
-                {/* <Button
+                {/* Google Button */}
+                <Button
                   type="button"
                   variant="secondary"
                   className="w-full h-10 rounded-[10px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-sm flex items-center justify-center gap-2.5 -mt-1"
@@ -239,7 +238,7 @@ export default function SignInModal({
                     />
                   </svg>
                   Continue With Google
-                </Button> */}
+                </Button>
 
                 {/* Sign Up Section */}
                 <div className="text-center pt-3">

@@ -1,9 +1,8 @@
-// Native Payload auth endpoints
 export const AUTH_ENDPOINTS = {
   app: {
     login: '/api/app-users/login',
-    logout: '/api/app-users/logout',
-    me: '/api/app-users/me',
+    logout: '/api/logout', // Custom endpoint that properly clears cookies
+    me: '/api/me', // Custom endpoint that properly handles JWT auth
     refresh: '/api/app-users/refresh-token',
   },
   admin: {
@@ -14,8 +13,11 @@ export const AUTH_ENDPOINTS = {
   },
 }
 
-// Helper functions for app-user auth
 export const appAuth = {
+  googleSignIn() {
+    window.location.href = '/api/auth/google'
+  },
+
   async login(email: string, password: string) {
     const response = await fetch(AUTH_ENDPOINTS.app.login, {
       method: 'POST',
@@ -58,13 +60,21 @@ export const appAuth = {
         'Content-Type': 'application/json',
       },
     })
+    console.log('[Auth] getMe raw response:', response)
 
     if (!response.ok) {
+      console.log('[Auth] getMe failed:', response.status, response.statusText)
       return null
     }
 
     const data = await response.json()
-    return data.user || null
+    console.log('[Auth] getMe response:', {
+      hasUser: !!data.user,
+      hasData: !!data,
+      userId: data.user?.id || data?.id,
+      email: data.user?.email || data?.email,
+    })
+    return data.user || data || null
   },
 
   async register(email: string, password: string, name?: string) {
@@ -86,7 +96,6 @@ export const appAuth = {
   },
 }
 
-// Helper functions for admin auth
 export const adminAuth = {
   async login(email: string, password: string) {
     const response = await fetch(AUTH_ENDPOINTS.admin.login, {
