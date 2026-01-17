@@ -25,6 +25,18 @@ export interface UploadedFile {
   progress?: number
   status: 'pending' | 'uploading' | 'completed' | 'error'
   configuration?: ModelConfiguration
+  file?: File // Store the actual File object for API upload
+  statistics?: {
+    print_time_minutes: number
+    print_time_formatted: string
+    filament_length_mm: number
+    filament_volume_cm3: number
+    filament_weight_g: number
+    filament_type: string
+    layer_height: number
+    infill_density: number
+    wall_count: number
+  }
 }
 
 interface UploadStepProps {
@@ -41,6 +53,7 @@ export default function UploadStep({
   onConfigure,
 }: UploadStepProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const maxFiles = 5
   const maxFileSize = 500 * 1024 * 1024 // 500 MB
@@ -88,8 +101,9 @@ export default function UploadStep({
         id: Math.random().toString(36).substring(7),
         name: file.name,
         size: file.size,
-        status: 'uploading' as const,
+        status: 'pending' as const,
         progress: 0,
+        file: file, // Store the File object for API upload
         configuration: {
           quantity: 1,
           enabled: true,
@@ -98,29 +112,117 @@ export default function UploadStep({
       }))
 
     setUploadedFiles((prev) => [...prev, ...newFiles])
-
-    // Simulate upload progress
-    newFiles.forEach((file) => {
-      simulateUpload(file.id)
-    })
   }
 
-  const simulateUpload = (fileId: string) => {
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += 10
+  const uploadToBackend = async (fileId: string, file: File, config: ModelConfiguration) => {
+    const apiUrl = process.env.NEXT_PUBLIC_SUPERSLICE_API_URL || 'http://localhost:8000'
+    console.log(`[SuperSlice] uploadToBackend called for ${file.name}`)
+    console.log(`[SuperSlice] API URL: ${apiUrl}`)
+
+    // Only process STL and 3MF files for now (backend limitation)
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+    console.log(`[SuperSlice] File extension: ${extension}`)
+
+    if (!['.stl', '.3mf'].includes(extension)) {
+      // For other file types, mark as completed without API call
+      console.log(`[SuperSlice] File ${file.name} is not STL/3MF, skipping API call`)
       setUploadedFiles((prev) =>
-        prev.map((file) =>
-          file.id === fileId
-            ? { ...file, progress, status: progress >= 100 ? 'completed' : 'uploading' }
-            : file,
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'completed' as const, progress: 100 } : f,
+        ),
+      )
+      return
+    }
+
+    try {
+      // Update progress to indicate processing
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, progress: 10, status: 'uploading' as const } : f,
         ),
       )
 
-      if (progress >= 100) {
-        clearInterval(interval)
+      // Map configuration to API parameters
+      const layerHeight = parseFloat(config.layerHeight || '0.2')
+      const infillDensity = parseInt(config.infill?.replace('%', '') || '15', 10)
+      const wallCount = parseInt(config.wallCount || '2', 10)
+      const filamentType = config.material?.toUpperCase() || 'PLA'
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('layer_height', layerHeight.toString())
+      formData.append('infill_density', infillDensity.toString())
+      formData.append('wall_count', wallCount.toString())
+      formData.append('filament_type', filamentType)
+
+      console.log(`[SuperSlice] Sending request to ${apiUrl}/slice`)
+      console.log(`[SuperSlice] Parameters:`, {
+        layer_height: layerHeight,
+        infill_density: infillDensity,
+        wall_count: wallCount,
+        filament_type: filamentType,
+        file_size: file.size,
+        file_name: file.name,
+      })
+
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, progress: 30, status: 'uploading' as const } : f,
+        ),
+      )
+
+      // Call the backend API
+      const response = await fetch(`${apiUrl}/slice`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      console.log(`[SuperSlice] Response status: ${response.status}`)
+
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, progress: 70, status: 'uploading' as const } : f,
+        ),
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
       }
-    }, 200)
+
+      const statistics = await response.json()
+
+      // Log statistics to console
+      console.log(`[SuperSlice] Statistics for ${file.name}:`, statistics)
+
+      // Update file with statistics and mark as completed
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? {
+                ...f,
+                status: 'completed' as const,
+                progress: 100,
+                statistics: statistics,
+              }
+            : f,
+        ),
+      )
+    } catch (error) {
+      console.error(`[SuperSlice] Error processing ${file.name}:`, error)
+      setUploadedFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? {
+                ...f,
+                status: 'error' as const,
+                progress: 0,
+              }
+            : f,
+        ),
+      )
+    }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,7 +279,108 @@ export default function UploadStep({
   }
 
   const allModelsConfigured = (): boolean => {
-    return uploadedFiles.filter((f) => f.status === 'completed').every((f) => isModelConfigured(f))
+    return uploadedFiles
+      .filter((f) => f.status === 'completed' || f.status === 'pending')
+      .every((f) => isModelConfigured(f))
+  }
+
+  const processAllFiles = async () => {
+    console.log('[SuperSlice] processAllFiles called')
+    console.log('[SuperSlice] uploadedFiles:', uploadedFiles)
+    console.log('[SuperSlice] allModelsConfigured:', allModelsConfigured())
+
+    if (!allModelsConfigured()) {
+      console.log('[SuperSlice] Not all models configured, returning')
+      return
+    }
+
+    setIsProcessing(true)
+
+    // Get all files that need processing (pending or need re-processing if config changed)
+    const filesToProcess = uploadedFiles.filter(
+      (f) => f.status === 'pending' || (f.status === 'completed' && f.file && !f.statistics),
+    )
+
+    console.log('[SuperSlice] filesToProcess:', filesToProcess)
+    console.log(
+      '[SuperSlice] filesToProcess details:',
+      filesToProcess.map((f) => ({
+        id: f.id,
+        name: f.name,
+        status: f.status,
+        hasFile: !!f.file,
+        hasStatistics: !!f.statistics,
+      })),
+    )
+
+    if (filesToProcess.length === 0) {
+      // Check if there are files that should be processed but don't have File objects
+      const filesWithoutFileObject = uploadedFiles.filter(
+        (f) => (f.status === 'pending' || f.status === 'completed') && !f.file && !f.statistics,
+      )
+
+      if (filesWithoutFileObject.length > 0) {
+        console.warn(
+          '[SuperSlice] Files need processing but are missing File objects (likely restored from sessionStorage):',
+          filesWithoutFileObject.map((f) => f.name),
+        )
+        alert('Some files need to be re-uploaded. Please remove and re-add them to process them.')
+        setIsProcessing(false)
+        return
+      }
+
+      // All files already processed, proceed to next step
+      console.log('[SuperSlice] No files to process, proceeding to next step')
+      setIsProcessing(false)
+      onNext()
+      return
+    }
+
+    // Process all files in parallel
+    const processPromises = filesToProcess.map(async (uploadedFile) => {
+      if (!uploadedFile.file) {
+        console.warn(
+          `[SuperSlice] File ${uploadedFile.name} (${uploadedFile.id}) has no File object, skipping`,
+        )
+        return { success: true, fileId: uploadedFile.id }
+      }
+
+      console.log(`[SuperSlice] Processing file: ${uploadedFile.name} (${uploadedFile.id})`)
+      try {
+        await uploadToBackend(
+          uploadedFile.id,
+          uploadedFile.file,
+          uploadedFile.configuration || {
+            quantity: 1,
+            enabled: true,
+            wallCount: '2',
+          },
+        )
+        console.log(`[SuperSlice] Successfully processed: ${uploadedFile.name}`)
+        return { success: true, fileId: uploadedFile.id }
+      } catch (error) {
+        console.error(`[SuperSlice] Error processing ${uploadedFile.name}:`, error)
+        return { success: false, fileId: uploadedFile.id, error }
+      }
+    })
+
+    try {
+      const results = await Promise.all(processPromises)
+      const allSucceeded = results.every((r) => r.success)
+
+      if (allSucceeded) {
+        // Small delay to ensure state updates have propagated
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        onNext()
+      } else {
+        console.error('[SuperSlice] Some files failed to process')
+      }
+    } catch (error) {
+      console.error('[SuperSlice] Error processing files:', error)
+      // Don't proceed if there are errors
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const updateQuantity = (fileId: string, delta: number) => {
@@ -339,9 +542,13 @@ export default function UploadStep({
           </div>
           <div className="space-y-3">
             {uploadedFiles.map((file) => {
-              const isConfigured = file.status === 'completed' ? isModelConfigured(file) : false
+              const isConfigured =
+                file.status === 'completed' || file.status === 'pending'
+                  ? isModelConfigured(file)
+                  : false
               const hasError = file.status === 'error'
-              const needsConfiguration = file.status === 'completed' && !isConfigured
+              const needsConfiguration =
+                (file.status === 'completed' || file.status === 'pending') && !isConfigured
               return (
                 <div
                   key={file.id}
@@ -359,7 +566,7 @@ export default function UploadStep({
                       {file.status === 'uploading' && (
                         <div className="h-6 w-6 border-2 border-[#1D0DF3] border-t-transparent rounded-full animate-spin"></div>
                       )}
-                      {file.status === 'completed' && (
+                      {(file.status === 'completed' || file.status === 'pending') && (
                         <div className="w-full h-full bg-[#F8F8F8] rounded-[8px] flex items-center justify-center">
                           <Box className="h-8 w-8 text-[#DCDCDC]" />
                         </div>
@@ -375,32 +582,34 @@ export default function UploadStep({
                         >
                           {file.name}
                         </span>
-                        {file.status === 'completed' && !isConfigured && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-medium">
-                            <AlertCircle className="h-3 w-3" />
-                            Not Configured
-                          </span>
-                        )}
-                        {file.status === 'completed' && isConfigured && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-                            <svg
-                              className="h-3 w-3"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              aria-hidden="true"
-                            >
-                              <path
-                                d="M12.6667 4.66669L6.00004 11.3334L3.33337 8.66669"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            Configured
-                          </span>
-                        )}
+                        {(file.status === 'completed' || file.status === 'pending') &&
+                          !isConfigured && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-xs font-medium">
+                              <AlertCircle className="h-3 w-3" />
+                              Not Configured
+                            </span>
+                          )}
+                        {(file.status === 'completed' || file.status === 'pending') &&
+                          isConfigured && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                              <svg
+                                className="h-3 w-3"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M12.6667 4.66669L6.00004 11.3334L3.33337 8.66669"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                              Configured
+                            </span>
+                          )}
                         {file.status === 'error' && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-xs font-medium">
                             <AlertCircle className="h-3 w-3" />
@@ -414,15 +623,16 @@ export default function UploadStep({
                       >
                         {file.dimensions || '12 x 8 x 20 cm'} - ({formatFileSize(file.size)})
                       </div>
-                      {file.status === 'completed' && !isConfigured && (
-                        <div
-                          className="mt-2 text-xs text-orange-600"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
-                          Please configure material, color, line height, and infill before
-                          proceeding.
-                        </div>
-                      )}
+                      {(file.status === 'completed' || file.status === 'pending') &&
+                        !isConfigured && (
+                          <div
+                            className="mt-2 text-xs text-orange-600"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            Please configure material, color, line height, and infill before
+                            proceeding.
+                          </div>
+                        )}
                       {file.status === 'error' && (
                         <div
                           className="mt-2 text-xs text-red-600"
@@ -431,18 +641,19 @@ export default function UploadStep({
                           Upload failed. Please remove this file and try uploading again.
                         </div>
                       )}
-                      {file.status === 'completed' && isConfigured && (
-                        <div
-                          className="mt-2 text-xs text-[#656565] space-y-0.5"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
-                          <div>Material: {file.configuration?.material || '-'}</div>
-                          <div>Color: {file.configuration?.color || '-'}</div>
-                          <div>Line Height: {file.configuration?.layerHeight || '-'}</div>
-                          <div>Infill: {file.configuration?.infill || '-'}</div>
-                          <div>Walls: {file.configuration?.wallCount || '2'}</div>
-                        </div>
-                      )}
+                      {(file.status === 'completed' || file.status === 'pending') &&
+                        isConfigured && (
+                          <div
+                            className="mt-2 text-xs text-[#656565] space-y-0.5"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            <div>Material: {file.configuration?.material || '-'}</div>
+                            <div>Color: {file.configuration?.color || '-'}</div>
+                            <div>Line Height: {file.configuration?.layerHeight || '-'}</div>
+                            <div>Infill: {file.configuration?.infill || '-'}</div>
+                            <div>Walls: {file.configuration?.wallCount || '2'}</div>
+                          </div>
+                        )}
                       {file.status === 'uploading' && file.progress !== undefined && (
                         <div className="mt-2 space-y-1">
                           <div
@@ -462,7 +673,7 @@ export default function UploadStep({
                     </div>
 
                     {/* Right: Controls */}
-                    {file.status === 'completed' && (
+                    {(file.status === 'completed' || file.status === 'pending') && (
                       <div className="flex items-center gap-3 flex-shrink-0">
                         {/* Configure Button */}
                         <Button
@@ -525,18 +736,31 @@ export default function UploadStep({
       )}
 
       {/* Navigation for Step 1 */}
-      {uploadedFiles.length > 0 && uploadedFiles.every((f) => f.status === 'completed') && (
-        <div className="flex justify-end mt-6">
-          <Button
-            onClick={onNext}
-            disabled={!allModelsConfigured()}
-            className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-          >
-            Proceed to Order Summary
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {uploadedFiles.length > 0 &&
+        uploadedFiles.every((f) => f.status === 'completed' || f.status === 'pending') && (
+          <div className="flex justify-end mt-6">
+            <Button
+              onClick={() => {
+                console.log('[SuperSlice] Button clicked - processAllFiles')
+                processAllFiles()
+              }}
+              disabled={!allModelsConfigured() || isProcessing}
+              className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing Models...
+                </>
+              ) : (
+                <>
+                  Proceed to Order Summary
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        )}
     </div>
   )
 }

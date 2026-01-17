@@ -75,6 +75,9 @@ export interface Config {
     'user-files': UserFile;
     'profile-pictures': ProfilePicture;
     addresses: Address;
+    'filament-types': FilamentType;
+    'printing-pricing': PrintingPricing;
+    'printing-options': PrintingOption;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +93,9 @@ export interface Config {
     'user-files': UserFilesSelect<false> | UserFilesSelect<true>;
     'profile-pictures': ProfilePicturesSelect<false> | ProfilePicturesSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
+    'filament-types': FilamentTypesSelect<false> | FilamentTypesSelect<true>;
+    'printing-pricing': PrintingPricingSelect<false> | PrintingPricingSelect<true>;
+    'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -361,6 +367,115 @@ export interface Address {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filament-types".
+ */
+export interface FilamentType {
+  id: string;
+  /**
+   * e.g., PLA, PETG, TPU, ASA, ABS
+   */
+  name: string;
+  colors?:
+    | {
+        name: string;
+        /**
+         * Optional: Hex code for color display (e.g., #FF0000)
+         */
+        hexCode?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Uncheck to hide this filament type from users
+   */
+  isActive?: boolean | null;
+  /**
+   * Optional description of this filament type
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "printing-pricing".
+ */
+export interface PrintingPricing {
+  id: string;
+  /**
+   * Select the filament type
+   */
+  filamentType: string | FilamentType;
+  /**
+   * Add layer heights and their corresponding prices per gram
+   */
+  pricingTable: {
+    /**
+     * e.g., 0.08, 0.12, 0.16, 0.20, 0.24, 0.28
+     */
+    layerHeight: number;
+    /**
+     * Price in Indonesian Rupiah per gram
+     */
+    pricePerGram: number;
+    id?: string | null;
+  }[];
+  /**
+   * Uncheck to hide this pricing option from users
+   */
+  isActive?: boolean | null;
+  title?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "printing-options".
+ */
+export interface PrintingOption {
+  id: string;
+  /**
+   * e.g., "Infill Percentage" or "Wall Count Limit"
+   */
+  name: string;
+  /**
+   * The type of printing option
+   */
+  type: 'infill' | 'layerHeight' | 'wallCount';
+  values?:
+    | {
+        /**
+         * e.g., "20%" or "0.12mm"
+         */
+        label: string;
+        /**
+         * The actual value (e.g., "20" for 20%, "0.12" for layer height)
+         */
+        value: string;
+        /**
+         * Uncheck to hide this option from users
+         */
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * For numeric options like wall count, set the maximum allowed value
+   */
+  maxValue?: number | null;
+  /**
+   * Uncheck to hide this option set from users
+   */
+  isActive?: boolean | null;
+  /**
+   * Optional description of this option
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -414,6 +529,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'addresses';
         value: string | Address;
+      } | null)
+    | ({
+        relationTo: 'filament-types';
+        value: string | FilamentType;
+      } | null)
+    | ({
+        relationTo: 'printing-pricing';
+        value: string | PrintingPricing;
+      } | null)
+    | ({
+        relationTo: 'printing-options';
+        value: string | PrintingOption;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -648,6 +775,63 @@ export interface AddressesSelect<T extends boolean = true> {
   villageCode?: T;
   postalCode?: T;
   isDefault?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filament-types_select".
+ */
+export interface FilamentTypesSelect<T extends boolean = true> {
+  name?: T;
+  colors?:
+    | T
+    | {
+        name?: T;
+        hexCode?: T;
+        id?: T;
+      };
+  isActive?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "printing-pricing_select".
+ */
+export interface PrintingPricingSelect<T extends boolean = true> {
+  filamentType?: T;
+  pricingTable?:
+    | T
+    | {
+        layerHeight?: T;
+        pricePerGram?: T;
+        id?: T;
+      };
+  isActive?: T;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "printing-options_select".
+ */
+export interface PrintingOptionsSelect<T extends boolean = true> {
+  name?: T;
+  type?: T;
+  values?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        isActive?: T;
+        id?: T;
+      };
+  maxValue?: T;
+  isActive?: T;
+  description?: T;
   updatedAt?: T;
   createdAt?: T;
 }

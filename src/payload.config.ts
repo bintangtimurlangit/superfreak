@@ -17,6 +17,9 @@ import { Media } from './collections/Media'
 import { UserFiles } from './collections/UserFiles'
 import { ProfilePictures } from './collections/ProfilePictures'
 import { Addresses } from './collections/Addresses'
+import { FilamentTypes } from './collections/FilamentTypes'
+import { PrintingPricing } from './collections/PrintingPricing'
+import { PrintingOptions } from './collections/PrintingOptions'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,6 +41,9 @@ export default buildConfig({
     UserFiles,
     ProfilePictures,
     Addresses,
+    FilamentTypes,
+    PrintingPricing,
+    PrintingOptions,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
