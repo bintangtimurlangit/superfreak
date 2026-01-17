@@ -435,13 +435,9 @@ export interface PrintingPricing {
 export interface PrintingOption {
   id: string;
   /**
-   * e.g., "Infill Percentage" or "Wall Count Limit"
-   */
-  name: string;
-  /**
    * The type of printing option
    */
-  type: 'infill' | 'layerHeight' | 'wallCount';
+  type: 'infill' | 'wallCount';
   values?:
     | {
         /**
@@ -819,7 +815,6 @@ export interface PrintingPricingSelect<T extends boolean = true> {
  * via the `definition` "printing-options_select".
  */
 export interface PrintingOptionsSelect<T extends boolean = true> {
-  name?: T;
   type?: T;
   values?:
     | T

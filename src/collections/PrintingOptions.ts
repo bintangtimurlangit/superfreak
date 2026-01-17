@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 export const PrintingOptions: CollectionConfig = {
   slug: 'printing-options',
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'isActive', 'createdAt'],
+    useAsTitle: 'type',
+    defaultColumns: ['type', 'isActive', 'createdAt'],
   },
   access: {
     read: () => true, // Public read access
@@ -23,27 +23,15 @@ export const PrintingOptions: CollectionConfig = {
   },
   fields: [
     {
-      name: 'name',
-      type: 'text',
-      label: 'Option Name',
-      required: true,
-      admin: {
-        description: 'e.g., "Infill Percentage" or "Wall Count Limit"',
-      },
-    },
-    {
       name: 'type',
       type: 'select',
       label: 'Option Type',
       required: true,
+      unique: true,
       options: [
         {
           label: 'Infill Percentage',
           value: 'infill',
-        },
-        {
-          label: 'Layer Height',
-          value: 'layerHeight',
         },
         {
           label: 'Wall Count Limit',

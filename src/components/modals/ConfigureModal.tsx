@@ -12,10 +12,37 @@ interface ConfigureModalProps {
   onSave: (fileId: string, configuration: ModelConfiguration) => void
 }
 
-const lineHeightOptions = ['0.12', '0.16', '0.20', '0.24']
-const infillOptions = ['20%', '40%', '60%', '80%', '95%']
-const materialOptions = ['PLA', 'PETG', 'ABS', 'Resin', 'Other']
-const colorOptions = ['Black', 'White', 'Grey', 'Transparent', 'Custom']
+interface FilamentType {
+  id: string
+  name: string
+  colors: Array<{
+    name: string
+    hexCode?: string
+  }>
+  isActive: boolean
+}
+
+interface PrintingPricing {
+  id: string
+  filamentType: string | FilamentType
+  pricingTable: Array<{
+    layerHeight: number
+    pricePerGram: number
+  }>
+  isActive: boolean
+}
+
+interface PrintingOption {
+  id: string
+  type: 'infill' | 'wallCount'
+  values: Array<{
+    label: string
+    value: string
+    isActive: boolean
+  }>
+  maxValue?: number
+  isActive: boolean
+}
 
 export default function ConfigureModal({ isOpen, onClose, file, onSave }: ConfigureModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
@@ -27,6 +54,105 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
     wallCount: '2',
     specialRequest: '',
   })
+
+  // Data from collections
+  const [filamentTypes, setFilamentTypes] = useState<FilamentType[]>([])
+  const [selectedFilamentColors, setSelectedFilamentColors] = useState<
+    Array<{ name: string; hexCode?: string }>
+  >([])
+  const [layerHeightOptions, setLayerHeightOptions] = useState<string[]>([])
+  const [infillOptions, setInfillOptions] = useState<string[]>([])
+  const [maxWallCount, setMaxWallCount] = useState(20)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch data from collections
+  useEffect(() => {
+    if (!isOpen) return
+
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Fetch filament types
+        const filamentResponse = await fetch(
+          '/api/filament-types?where[isActive][equals]=true&limit=100',
+        )
+        if (filamentResponse.ok) {
+          const filamentData = await filamentResponse.json()
+          setFilamentTypes(filamentData.docs || [])
+        }
+
+        // Fetch printing options
+        const optionsResponse = await fetch(
+          '/api/printing-options?where[isActive][equals]=true&limit=100',
+        )
+        if (optionsResponse.ok) {
+          const optionsData = await optionsResponse.json()
+          const options = optionsData.docs || []
+
+          // Extract infill options
+          const infillOption = options.find((opt: PrintingOption) => opt.type === 'infill')
+          if (infillOption) {
+            const activeInfill = infillOption.values
+              .filter((v: { isActive: boolean }) => v.isActive)
+              .map((v: { label: string }) => v.label)
+            setInfillOptions(activeInfill)
+          }
+
+          // Extract wall count max value
+          const wallCountOption = options.find((opt: PrintingOption) => opt.type === 'wallCount')
+          if (wallCountOption && wallCountOption.maxValue) {
+            setMaxWallCount(wallCountOption.maxValue)
+          }
+        }
+
+        // Fetch printing pricing to get available layer heights
+        const pricingResponse = await fetch(
+          '/api/printing-pricing?where[isActive][equals]=true&limit=100&depth=1',
+        )
+        if (pricingResponse.ok) {
+          const pricingData = await pricingResponse.json()
+          const allLayerHeights = new Set<string>()
+
+          pricingData.docs?.forEach((pricing: PrintingPricing) => {
+            pricing.pricingTable?.forEach((row: { layerHeight: number }) => {
+              allLayerHeights.add(row.layerHeight.toString())
+            })
+          })
+
+          // Sort layer heights numerically
+          const sortedHeights = Array.from(allLayerHeights).sort(
+            (a, b) => parseFloat(a) - parseFloat(b),
+          )
+          setLayerHeightOptions(sortedHeights)
+        }
+      } catch (error) {
+        console.error('Error fetching configuration data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [isOpen])
+
+  // Update available colors when material is selected
+  useEffect(() => {
+    if (formData.material) {
+      const selectedFilament = filamentTypes.find((ft) => ft.name === formData.material)
+      if (selectedFilament) {
+        setSelectedFilamentColors(selectedFilament.colors || [])
+        // Reset color if current selection is not available for this filament
+        if (formData.color && !selectedFilament.colors?.some((c) => c.name === formData.color)) {
+          setFormData((prev) => ({ ...prev, color: '' }))
+        }
+      } else {
+        setSelectedFilamentColors([])
+      }
+    } else {
+      setSelectedFilamentColors([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.material, filamentTypes])
 
   useEffect(() => {
     if (file?.configuration) {
@@ -66,13 +192,19 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
         setFormData((prev: ModelConfiguration) => ({ ...prev, wallCount: '' }))
         return
       }
-      const clamped = Math.max(1, Math.min(10, Math.round(num)))
+      const clamped = Math.max(1, Math.min(maxWallCount, Math.round(num)))
       setFormData((prev: ModelConfiguration) => ({ ...prev, wallCount: String(clamped) }))
       return
     }
 
     setFormData((prev: ModelConfiguration) => ({ ...prev, [field]: value }))
   }
+
+  // Get material options from filament types
+  const materialOptions = filamentTypes.map((ft) => ft.name)
+
+  // Get color options from selected filament
+  const colorOptions = selectedFilamentColors.map((c) => c.name)
 
   const totalSteps = 3
   const step1Valid = !!(formData.material && formData.color)
@@ -157,23 +289,31 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                       >
                         Material <span className="text-red-500">*</span>
                       </label>
-                      <div className="flex flex-wrap gap-3">
-                        {materialOptions.map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleChange('material', option)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.material === option
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
+                      {loading ? (
+                        <div className="text-sm text-[#7C7C7C]">Loading materials...</div>
+                      ) : materialOptions.length > 0 ? (
+                        <div className="flex flex-wrap gap-3">
+                          {materialOptions.map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => handleChange('material', option)}
+                              className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                                formData.material === option
+                                  ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                  : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                              }`}
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-[#7C7C7C]">
+                          No materials available. Please add filament types in admin panel.
+                        </div>
+                      )}
                     </div>
 
                     {/* Color */}
@@ -184,23 +324,44 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                       >
                         Color <span className="text-red-500">*</span>
                       </label>
-                      <div className="flex flex-wrap gap-3">
-                        {colorOptions.map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleChange('color', option)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.color === option
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
+                      {formData.material ? (
+                        colorOptions.length > 0 ? (
+                          <div className="flex flex-wrap gap-3">
+                            {colorOptions.map((option) => {
+                              const colorData = selectedFilamentColors.find(
+                                (c) => c.name === option,
+                              )
+                              return (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  onClick={() => handleChange('color', option)}
+                                  className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors flex items-center gap-2 ${
+                                    formData.color === option
+                                      ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                      : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                                  }`}
+                                  style={{ fontFamily: 'var(--font-geist-sans)' }}
+                                >
+                                  {colorData?.hexCode && (
+                                    <span
+                                      className="w-4 h-4 rounded-full border border-[#EFEFEF]"
+                                      style={{ backgroundColor: colorData.hexCode }}
+                                    />
+                                  )}
+                                  {option}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-[#7C7C7C]">
+                            No colors available for this material. Please add colors in admin panel.
+                          </div>
+                        )
+                      ) : (
+                        <div className="text-sm text-[#7C7C7C]">Please select a material first</div>
+                      )}
                     </div>
                   </>
                 )}
@@ -215,23 +376,33 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                       >
                         Line Height <span className="text-red-500">*</span>
                       </label>
-                      <div className="grid grid-cols-4 gap-3">
-                        {lineHeightOptions.map((height) => (
-                          <button
-                            key={height}
-                            type="button"
-                            onClick={() => handleChange('layerHeight', height)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.layerHeight === height
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {height}
-                          </button>
-                        ))}
-                      </div>
+                      {loading ? (
+                        <div className="text-sm text-[#7C7C7C]">Loading options...</div>
+                      ) : layerHeightOptions.length > 0 ? (
+                        <div
+                          className={`grid gap-3 ${layerHeightOptions.length <= 4 ? `grid-cols-${layerHeightOptions.length}` : 'grid-cols-4'}`}
+                        >
+                          {layerHeightOptions.map((height) => (
+                            <button
+                              key={height}
+                              type="button"
+                              onClick={() => handleChange('layerHeight', height)}
+                              className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                                formData.layerHeight === height
+                                  ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                  : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                              }`}
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {height}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-[#7C7C7C]">
+                          No layer heights available. Please configure pricing in admin panel.
+                        </div>
+                      )}
                     </div>
 
                     {/* Infill */}
@@ -242,23 +413,33 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                       >
                         Infill <span className="text-red-500">*</span>
                       </label>
-                      <div className="grid grid-cols-5 gap-3">
-                        {infillOptions.map((infill) => (
-                          <button
-                            key={infill}
-                            type="button"
-                            onClick={() => handleChange('infill', infill)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.infill === infill
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {infill}
-                          </button>
-                        ))}
-                      </div>
+                      {loading ? (
+                        <div className="text-sm text-[#7C7C7C]">Loading options...</div>
+                      ) : infillOptions.length > 0 ? (
+                        <div
+                          className={`grid gap-3 ${infillOptions.length <= 5 ? `grid-cols-${infillOptions.length}` : 'grid-cols-5'}`}
+                        >
+                          {infillOptions.map((infill) => (
+                            <button
+                              key={infill}
+                              type="button"
+                              onClick={() => handleChange('infill', infill)}
+                              className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                                formData.infill === infill
+                                  ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                  : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                              }`}
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {infill}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-[#7C7C7C]">
+                          No infill options available. Please configure in admin panel.
+                        </div>
+                      )}
                     </div>
 
                     {/* Wall Count */}
@@ -267,12 +448,12 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                         className="block text-sm font-medium text-[#292929] mb-2"
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
-                        Wall Count
+                        Wall Count (max: {maxWallCount})
                       </label>
                       <input
                         type="number"
                         min={1}
-                        max={10}
+                        max={maxWallCount}
                         step={1}
                         value={formData.wallCount || ''}
                         onChange={(e) => handleChange('wallCount', e.target.value)}
