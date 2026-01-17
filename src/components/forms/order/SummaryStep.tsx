@@ -45,6 +45,24 @@ interface Address {
   villageName?: string
 }
 
+interface PrintingPricing {
+  id: string
+  filamentType: string | { id: string; name: string }
+  pricingTable: Array<{
+    layerHeight: number
+    pricePerGram: number
+  }>
+  isActive: boolean
+}
+
+interface FilePrice {
+  fileId: string
+  weight: number
+  pricePerGram: number
+  quantity: number
+  totalPrice: number
+}
+
 interface SummaryStepProps {
   uploadedFiles: UploadedFile[]
   onBack: () => void
@@ -57,6 +75,10 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [loading, setLoading] = useState(true)
   const [provinces, setProvinces] = useState<Province[]>([])
+  const [pricingData, setPricingData] = useState<PrintingPricing[]>([])
+  const [filePrices, setFilePrices] = useState<FilePrice[]>([])
+  const [totalWeight, setTotalWeight] = useState(0)
+  const [totalPrice, setTotalPrice] = useState(0)
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -72,6 +94,96 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
     }
     fetchProvinces()
   }, [])
+
+  // Fetch pricing data
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch(
+          '/api/printing-pricing?where[isActive][equals]=true&limit=100&depth=1',
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setPricingData(data.docs || [])
+        }
+      } catch (error) {
+        console.error('Error fetching pricing data:', error)
+      }
+    }
+    fetchPricing()
+  }, [])
+
+  // Calculate prices for each file
+  useEffect(() => {
+    const completedFiles = uploadedFiles.filter((file) => file.status === 'completed')
+    const prices: FilePrice[] = []
+    let totalWeightGrams = 0
+    let totalPriceRp = 0
+
+    completedFiles.forEach((file) => {
+      if (!file.statistics || !file.configuration) return
+
+      const material = file.configuration.material
+      const layerHeight = parseFloat(file.configuration.layerHeight || '0')
+      const quantity = file.configuration.quantity || 1
+      const weightPerUnit = file.statistics.filament_weight_g || 0
+      const totalWeightForFile = weightPerUnit * quantity
+
+      // Find pricing for this filament type and layer height
+      const pricing = pricingData.find((p) => {
+        if (typeof p.filamentType === 'string') {
+          // If it's just an ID, we can't match by name - skip for now
+          // In a real scenario, you'd need to fetch the filament type details
+          return false
+        }
+        const filamentName = (p.filamentType as { name: string }).name
+        return filamentName === material
+      })
+
+      if (pricing) {
+        // Find the price for this layer height
+        const priceRow = pricing.pricingTable.find(
+          (row) => Math.abs(row.layerHeight - layerHeight) < 0.001,
+        )
+
+        if (priceRow) {
+          const pricePerGram = priceRow.pricePerGram
+          const fileTotalPrice = totalWeightForFile * pricePerGram
+
+          prices.push({
+            fileId: file.id,
+            weight: totalWeightForFile,
+            pricePerGram,
+            quantity,
+            totalPrice: fileTotalPrice,
+          })
+
+          totalWeightGrams += totalWeightForFile
+          totalPriceRp += fileTotalPrice
+        }
+      }
+    })
+
+    setFilePrices(prices)
+    setTotalWeight(totalWeightGrams)
+    setTotalPrice(totalPriceRp)
+  }, [uploadedFiles, pricingData])
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatWeight = (grams: number) => {
+    if (grams >= 1000) {
+      return `${(grams / 1000).toFixed(2)} kg`
+    }
+    return `${grams.toFixed(2)} g`
+  }
 
   const formatAddress = useCallback((address: Address) => {
     const parts = [
@@ -228,15 +340,64 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
                     >
                       Quantity: {file.configuration?.quantity || 1} pcs
                     </p>
+                    {file.statistics && (
+                      <>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Weight: {formatWeight(file.statistics.filament_weight_g || 0)} per unit
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Layer Height: {file.configuration?.layerHeight || '-'} mm
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Infill: {file.configuration?.infill || '-'}
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Wall Count: {file.configuration?.wallCount || '2'}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p
-                    className="text-base font-semibold text-[#292929]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
-                  >
-                    Rp 0
-                  </p>
+                  {(() => {
+                    const filePrice = filePrices.find((fp) => fp.fileId === file.id)
+                    return filePrice ? (
+                      <>
+                        <p
+                          className="text-base font-semibold text-[#292929]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {formatCurrency(filePrice.totalPrice)}
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C] mt-1"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {formatWeight(filePrice.weight)} @{' '}
+                          {formatCurrency(filePrice.pricePerGram)}/g
+                        </p>
+                      </>
+                    ) : (
+                      <p
+                        className="text-sm text-[#7C7C7C]"
+                        style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      >
+                        Calculating...
+                      </p>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -321,13 +482,24 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
 
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            Total Weight
+          </span>
+          <span
+            className="text-sm font-medium text-[#292929]"
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
+          >
+            {formatWeight(totalWeight)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
             Subtotal
           </span>
           <span
             className="text-sm font-medium text-[#292929]"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            Rp 0
+            {formatCurrency(totalPrice)}
           </span>
         </div>
         <div className="flex justify-between items-center">
@@ -341,7 +513,7 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
             className="text-base font-semibold text-[#292929]"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            Rp 0
+            {formatCurrency(totalPrice)}
           </span>
         </div>
       </div>

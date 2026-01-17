@@ -142,11 +142,33 @@ export default function UploadStep({
         ),
       )
 
-      // Map configuration to API parameters
-      const layerHeight = parseFloat(config.layerHeight || '0.2')
-      const infillDensity = parseInt(config.infill?.replace('%', '') || '15', 10)
-      const wallCount = parseInt(config.wallCount || '2', 10)
-      const filamentType = config.material?.toUpperCase() || 'PLA'
+      // Validate required configuration parameters
+      if (!config.layerHeight) {
+        throw new Error('Layer height is required. Please configure the model first.')
+      }
+      if (!config.infill) {
+        throw new Error('Infill density is required. Please configure the model first.')
+      }
+      if (!config.wallCount) {
+        throw new Error('Wall count is required. Please configure the model first.')
+      }
+
+      // Map configuration to API parameters (no defaults - all required)
+      const layerHeight = parseFloat(config.layerHeight)
+      const infillDensity = parseInt(config.infill.replace('%', ''), 10)
+      const wallCount = parseInt(config.wallCount, 10)
+      const filamentType = config.material?.toUpperCase() || 'PLA' // Default to PLA if not configured
+
+      // Validate parsed values
+      if (Number.isNaN(layerHeight) || layerHeight <= 0) {
+        throw new Error(`Invalid layer height: ${config.layerHeight}`)
+      }
+      if (Number.isNaN(infillDensity) || infillDensity < 0 || infillDensity > 100) {
+        throw new Error(`Invalid infill density: ${config.infill}`)
+      }
+      if (Number.isNaN(wallCount) || wallCount < 1 || wallCount > 20) {
+        throw new Error(`Invalid wall count: ${config.wallCount}. Must be between 1 and 20`)
+      }
 
       // Prepare form data
       const formData = new FormData()
@@ -296,7 +318,9 @@ export default function UploadStep({
 
     setIsProcessing(true)
 
-    // Get all files that need processing (pending or need re-processing if config changed)
+    // Get all files that need processing:
+    // - Pending files
+    // - Completed files without statistics (need initial processing or re-processing after config change)
     const filesToProcess = uploadedFiles.filter(
       (f) => f.status === 'pending' || (f.status === 'completed' && f.file && !f.statistics),
     )

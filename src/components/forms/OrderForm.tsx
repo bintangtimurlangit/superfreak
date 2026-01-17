@@ -83,17 +83,27 @@ export default function OrderForm() {
 
   const handleSaveConfiguration = (fileId: string, configuration: ModelConfiguration) => {
     setUploadedFiles((prev) =>
-      prev.map((file) =>
-        file.id === fileId
-          ? {
-              ...file,
-              configuration: {
-                ...file.configuration,
-                ...configuration,
-              },
-            }
-          : file,
-      ),
+      prev.map((file) => {
+        if (file.id === fileId) {
+          // Check if critical configuration changed (material, layerHeight, infill, wallCount)
+          const configChanged =
+            file.configuration?.material !== configuration.material ||
+            file.configuration?.layerHeight !== configuration.layerHeight ||
+            file.configuration?.infill !== configuration.infill ||
+            file.configuration?.wallCount !== configuration.wallCount
+
+          return {
+            ...file,
+            configuration: {
+              ...file.configuration,
+              ...configuration,
+            },
+            // Clear statistics if configuration changed, so file will be re-processed
+            statistics: configChanged ? undefined : file.statistics,
+          }
+        }
+        return file
+      }),
     )
     setConfigureModalOpen(false)
     setSelectedFileId(null)
