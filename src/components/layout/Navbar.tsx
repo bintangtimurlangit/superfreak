@@ -8,7 +8,7 @@ import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
 import { useSession } from '@/hooks/useSession'
-import { appAuthClient } from '@/lib/auth'
+import { appAuth } from '@/lib/auth'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
 
 function UserProfileSkeleton() {
@@ -104,7 +104,7 @@ const Navbar = () => {
     setIsUserDropdownOpen(false)
     
     try {
-      await appAuthClient.signout({ returnTo: '/' })
+      await appAuth.logout()
       window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)

@@ -64,13 +64,12 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     'admin-users': AdminUserAuthOperations;
+    'app-users': AppUserAuthOperations;
   };
   blocks: {};
   collections: {
     'admin-users': AdminUser;
-    accounts: Account;
     'app-users': AppUser;
-    'app-user-accounts': AppUserAccount;
     media: Media;
     'user-files': UserFile;
     'profile-pictures': ProfilePicture;
@@ -86,9 +85,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     'admin-users': AdminUsersSelect<false> | AdminUsersSelect<true>;
-    accounts: AccountsSelect<false> | AccountsSelect<true>;
     'app-users': AppUsersSelect<false> | AppUsersSelect<true>;
-    'app-user-accounts': AppUserAccountsSelect<false> | AppUserAccountsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'user-files': UserFilesSelect<false> | UserFilesSelect<true>;
     'profile-pictures': ProfilePicturesSelect<false> | ProfilePicturesSelect<true>;
@@ -108,15 +105,37 @@ export interface Config {
   globals: {};
   globalsSelect: {};
   locale: null;
-  user: AdminUser & {
-    collection: 'admin-users';
-  };
+  user:
+    | (AdminUser & {
+        collection: 'admin-users';
+      })
+    | (AppUser & {
+        collection: 'app-users';
+      });
   jobs: {
     tasks: unknown;
     workflows: unknown;
   };
 }
 export interface AdminUserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface AppUserAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -162,46 +181,6 @@ export interface AdminUser {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "accounts".
- */
-export interface Account {
-  id: string;
-  name?: string | null;
-  picture?: string | null;
-  user: string | AdminUser;
-  issuerName: string;
-  scope?: string | null;
-  sub: string;
-  access_token?: string | null;
-  passkey?: {
-    credentialId: string;
-    publicKey:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    counter: number;
-    transports:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    deviceType: string;
-    backedUp: boolean;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "app-users".
  */
 export interface AppUser {
@@ -212,16 +191,27 @@ export interface AppUser {
    * Your profile picture (private - only visible to you and admins)
    */
   profilePicture?: (string | null) | ProfilePicture;
-  hashedPassword?: string | null;
-  hashSalt?: string | null;
-  hashIterations?: number | null;
   verificationCode?: string | null;
   verificationHash?: string | null;
   verificationTokenExpire?: number | null;
   verificationKind?: string | null;
-  email: string;
   updatedAt: string;
   createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -259,46 +249,6 @@ export interface ProfilePicture {
       filename?: string | null;
     };
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "app-user-accounts".
- */
-export interface AppUserAccount {
-  id: string;
-  name?: string | null;
-  picture?: string | null;
-  user: string | AppUser;
-  issuerName: string;
-  scope?: string | null;
-  sub: string;
-  access_token?: string | null;
-  passkey?: {
-    credentialId: string;
-    publicKey:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    counter: number;
-    transports:
-      | {
-          [k: string]: unknown;
-        }
-      | unknown[]
-      | string
-      | number
-      | boolean
-      | null;
-    deviceType: string;
-    backedUp: boolean;
-  };
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -499,16 +449,8 @@ export interface PayloadLockedDocument {
         value: string | AdminUser;
       } | null)
     | ({
-        relationTo: 'accounts';
-        value: string | Account;
-      } | null)
-    | ({
         relationTo: 'app-users';
         value: string | AppUser;
-      } | null)
-    | ({
-        relationTo: 'app-user-accounts';
-        value: string | AppUserAccount;
       } | null)
     | ({
         relationTo: 'media';
@@ -539,10 +481,15 @@ export interface PayloadLockedDocument {
         value: string | PrintingOption;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'admin-users';
-    value: string | AdminUser;
-  };
+  user:
+    | {
+        relationTo: 'admin-users';
+        value: string | AdminUser;
+      }
+    | {
+        relationTo: 'app-users';
+        value: string | AppUser;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -552,10 +499,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: string;
-  user: {
-    relationTo: 'admin-users';
-    value: string | AdminUser;
-  };
+  user:
+    | {
+        relationTo: 'admin-users';
+        value: string | AdminUser;
+      }
+    | {
+        relationTo: 'app-users';
+        value: string | AppUser;
+      };
   key?: string | null;
   value?:
     | {
@@ -606,72 +558,32 @@ export interface AdminUsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "accounts_select".
- */
-export interface AccountsSelect<T extends boolean = true> {
-  name?: T;
-  picture?: T;
-  user?: T;
-  issuerName?: T;
-  scope?: T;
-  sub?: T;
-  access_token?: T;
-  passkey?:
-    | T
-    | {
-        credentialId?: T;
-        publicKey?: T;
-        counter?: T;
-        transports?: T;
-        deviceType?: T;
-        backedUp?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "app-users_select".
  */
 export interface AppUsersSelect<T extends boolean = true> {
   name?: T;
   phoneNumber?: T;
   profilePicture?: T;
-  hashedPassword?: T;
-  hashSalt?: T;
-  hashIterations?: T;
   verificationCode?: T;
   verificationHash?: T;
   verificationTokenExpire?: T;
   verificationKind?: T;
-  email?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "app-user-accounts_select".
- */
-export interface AppUserAccountsSelect<T extends boolean = true> {
-  name?: T;
-  picture?: T;
-  user?: T;
-  issuerName?: T;
-  scope?: T;
-  sub?: T;
-  access_token?: T;
-  passkey?:
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
     | T
     | {
-        credentialId?: T;
-        publicKey?: T;
-        counter?: T;
-        transports?: T;
-        deviceType?: T;
-        backedUp?: T;
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

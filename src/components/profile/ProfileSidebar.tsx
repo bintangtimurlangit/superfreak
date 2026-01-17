@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from '@/hooks/useSession'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
-import { appAuthClient } from '@/lib/auth'
+import { appAuth } from '@/lib/auth'
 import Image from 'next/image'
 
 function ProfileSidebarSkeleton() {
@@ -62,7 +62,7 @@ export default function ProfileSidebar() {
 
   const handleLogout = async () => {
     try {
-      await appAuthClient.signout({ returnTo: '/' })
+      await appAuth.logout()
       window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)

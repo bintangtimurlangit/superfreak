@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
-import { appAuthClient } from '@/lib/auth'
+import { appAuth } from '@/lib/auth'
 
 interface SessionData {
   data: any
@@ -34,13 +34,13 @@ const STORAGE_DURATION = 5 * 60 * 1000 // 5 minutes for localStorage cache
 // Helper functions for localStorage
 const getStoredSession = (): SessionData | null => {
   if (typeof window === 'undefined') return null
-  
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     const timestamp = localStorage.getItem(STORAGE_TIMESTAMP_KEY)
-    
+
     if (!stored || !timestamp) return null
-    
+
     const age = Date.now() - parseInt(timestamp, 10)
     if (age > STORAGE_DURATION) {
       // Expired, remove it
@@ -48,7 +48,7 @@ const getStoredSession = (): SessionData | null => {
       localStorage.removeItem(STORAGE_TIMESTAMP_KEY)
       return null
     }
-    
+
     return JSON.parse(stored) as SessionData
   } catch (error) {
     console.error('Failed to read session from localStorage:', error)
@@ -58,7 +58,7 @@ const getStoredSession = (): SessionData | null => {
 
 const setStoredSession = (session: SessionData): void => {
   if (typeof window === 'undefined') return
-  
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     localStorage.setItem(STORAGE_TIMESTAMP_KEY, Date.now().toString())
@@ -69,7 +69,7 @@ const setStoredSession = (session: SessionData): void => {
 
 const clearStoredSession = (): void => {
   if (typeof window === 'undefined') return
-  
+
   try {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(STORAGE_TIMESTAMP_KEY)
@@ -92,7 +92,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const fetchSession = useCallback(async (force = false): Promise<void> => {
     // Check in-memory cache first (unless forced refresh)
     const now = Date.now()
-    if (!force && sessionCache && (now - cacheTimestamp) < CACHE_DURATION) {
+    if (!force && sessionCache && now - cacheTimestamp < CACHE_DURATION) {
       if (mountedRef.current) {
         setSession(sessionCache)
         setLoading(false)
@@ -120,7 +120,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (ongoingRequest) {
       await ongoingRequest
       // After waiting, check cache again
-      if (sessionCache && (now - cacheTimestamp) < CACHE_DURATION) {
+      if (sessionCache && now - cacheTimestamp < CACHE_DURATION) {
         if (mountedRef.current) {
           setSession(sessionCache)
           setLoading(false)
@@ -136,20 +136,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setLoading(true)
         }
 
-        const { data, isSuccess, message } = await appAuthClient.getClientSession()
+        // Use native Payload auth endpoint
+        const user = await appAuth.getMe()
 
-        // If we have a user, fetch the full user data with populated relationships
-        if (isSuccess && (data as any)?.user?.id) {
+        if (user) {
+          // If we have a user, fetch the full user data with populated relationships
           try {
-            const response = await fetch(`/api/app-users/${(data as any).user.id}?depth=1`)
+            const response = await fetch(`/api/app-users/${user.id}?depth=1`, {
+              credentials: 'include',
+            })
             if (response.ok) {
               const fullUser = await response.json()
               const newSession: SessionData = {
-                data: { ...(data as any), user: fullUser },
-                message,
-                isSuccess,
+                data: { user: fullUser },
+                message: 'Session retrieved successfully',
+                isSuccess: true,
               }
-              
+
               // Update caches
               sessionCache = newSession
               cacheTimestamp = Date.now()
@@ -161,11 +164,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             } else {
               // If fetch fails, use basic session data
               const newSession: SessionData = {
-                data: data || {},
-                message,
-                isSuccess,
+                data: { user },
+                message: 'Session retrieved successfully',
+                isSuccess: true,
               }
-              
+
               sessionCache = newSession
               cacheTimestamp = Date.now()
               setStoredSession(newSession)
@@ -178,11 +181,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             console.error('Failed to fetch full user data:', fetchError)
             // Fall back to basic session data
             const newSession: SessionData = {
-              data: data || {},
-              message,
-              isSuccess,
+              data: { user },
+              message: 'Session retrieved successfully',
+              isSuccess: true,
             }
-            
+
             sessionCache = newSession
             cacheTimestamp = Date.now()
             setStoredSession(newSession)
@@ -193,11 +196,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           const newSession: SessionData = {
-            data: data || {},
-            message,
-            isSuccess,
+            data: {},
+            message: 'No active session',
+            isSuccess: false,
           }
-          
+
           sessionCache = newSession
           cacheTimestamp = Date.now()
           setStoredSession(newSession)
@@ -213,10 +216,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           message: 'Failed to fetch session',
           isSuccess: false,
         }
-        
+
         // Clear stored session on error (might be invalid)
         clearStoredSession()
-        
+
         // Don't cache errors
         if (mountedRef.current) {
           setSession(errorSession)
@@ -234,40 +237,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true
-    
+
     // Only initialize once (prevents double initialization)
     if (initializedRef.current) return
     initializedRef.current = true
-    
-    // Check if we're returning from OAuth callback
-    // OAuth redirects often include query params or we can check URL
-    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-    const isOAuthCallback = typeof window !== 'undefined' && (
-      window.location.search.includes('code=') ||
-      window.location.search.includes('oauth') ||
-      urlParams?.has('code') ||
-      urlParams?.has('state')
-    )
-    
-    // If OAuth callback, clear cache and force refresh
-    if (isOAuthCallback) {
-      clearStoredSession()
-      sessionCache = null
-      cacheTimestamp = 0
-      // Clean up URL params after detecting OAuth callback
-      if (typeof window !== 'undefined') {
-        const cleanUrl = window.location.pathname
-        window.history.replaceState({}, '', cleanUrl)
-      }
-      fetchSession(true) // Force refresh
-      return
-    }
-    
+
     // Check if we have valid cached data (in-memory or localStorage)
     const now = Date.now()
-    const hasValidInMemoryCache = sessionCache && (now - cacheTimestamp) < CACHE_DURATION
+    const hasValidInMemoryCache = sessionCache && now - cacheTimestamp < CACHE_DURATION
     const stored = getStoredSession()
-    
+
     // If we have cached data, use it immediately (after hydration)
     if (stored && !hasValidInMemoryCache) {
       // We have localStorage cache but not in-memory, sync it
@@ -288,7 +267,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }
       return
     }
-    
+
     // Only fetch if we don't have valid cached data
     fetchSession()
 
@@ -302,18 +281,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return fetchSession(true) // Force refresh
   }, [fetchSession])
 
-  // Listen for window focus (e.g., after OAuth redirect)
-  // This helps refresh session when user returns from OAuth popup/redirect
+  // Listen for window focus (e.g., after login redirect)
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const handleFocus = () => {
       // When window regains focus, check if we need to refresh session
-      // This is especially useful after OAuth redirects
       const now = Date.now()
       const cacheAge = now - cacheTimestamp
-      
-      // If cache is older than 5 seconds, refresh (might be stale after OAuth)
+
+      // If cache is older than 5 seconds, refresh (might be stale after login)
       if (cacheAge > 5000) {
         fetchSession(true)
       }
@@ -340,9 +317,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const displayName = session.data?.user?.name
     ? session.data.user.name
     : session.data?.user?.email?.split('@')[0] || 'User'
-  const initials = session.data?.user?.name?.[0]?.toUpperCase()
-    || session.data?.user?.email?.[0]?.toUpperCase()
-    || 'U'
+  const initials =
+    session.data?.user?.name?.[0]?.toUpperCase() ||
+    session.data?.user?.email?.[0]?.toUpperCase() ||
+    'U'
 
   return (
     <SessionContext.Provider
@@ -368,4 +346,3 @@ export function useSession() {
   }
   return context
 }
-

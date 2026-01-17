@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { appAuthClient } from '@/lib/auth'
+import { appAuth } from '@/lib/auth'
 import EmailConfirmationModal from './EmailConfirmationModal'
 import SignInModal from './SignInModal'
 
@@ -27,14 +27,10 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
   const [signupEmail, setSignupEmail] = useState('')
   const [showSignInAfterVerification, setShowSignInAfterVerification] = useState(false)
 
-  const handleGoogleSignUp = async () => {
-    try {
-      const { oauth } = appAuthClient.signin()
-      await oauth('google')
-    } catch (error) {
-      setError('Failed to sign up with Google. Please try again.')
-    }
-  }
+  // Google OAuth temporarily disabled
+  // const handleGoogleSignUp = async () => {
+  //   setError('Google sign-up is temporarily unavailable. Please use email and password.')
+  // }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,30 +69,18 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
     }
 
     try {
-      const { password: passwordMethod } = appAuthClient.register()
-      const result = await passwordMethod({
-        email: email.trim(),
-        password: password,
-        userInfo: {
-          name: name.trim(),
-        },
-        allowAutoSignin: false,
-      })
-
-      if (result.isError) {
-        setError(result.message || 'Failed to create account. Please try again.')
-      } else {
+      await appAuth.register(email.trim(), password, name.trim())
       setSignupEmail(email.trim())
-        setShowEmailConfirmation(true)
-        // Reset form
-        setName('')
-        setEmail('')
-        setPassword('')
-        setConfirmPassword('')
-        setError('')
-      }
+      setShowEmailConfirmation(true)
+      // Reset form
+      setName('')
+      setEmail('')
+      setPassword('')
+      setConfirmPassword('')
+      setError('')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -324,8 +308,8 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                   {loading ? 'Creating Account...' : 'Sign Up'}
                 </Button>
 
-                {/* Google Button */}
-                <Button
+                {/* Google Button - Temporarily disabled */}
+                {/* <Button
                   type="button"
                   variant="secondary"
                   className="w-full h-10 rounded-[10px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-sm flex items-center justify-center gap-2.5 -mt-1"
@@ -351,7 +335,7 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
                     />
                   </svg>
                   Continue With Google
-                </Button>
+                </Button> */}
 
                 {/* Sign In Section */}
                 <div className="text-center pt-3">

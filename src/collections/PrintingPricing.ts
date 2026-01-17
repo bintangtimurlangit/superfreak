@@ -39,13 +39,6 @@ export const PrintingPricing: CollectionConfig = {
       minRows: 1,
       admin: {
         description: 'Add layer heights and their corresponding prices per gram',
-        components: {
-          RowLabel: ({ data, index }) => {
-            return data?.layerHeight
-              ? `${data.layerHeight}mm - Rp ${data.pricePerGram?.toLocaleString('id-ID') || 0}`
-              : `Row ${String(index).padStart(2, '0')}`
-          },
-        },
       },
       fields: [
         {
@@ -170,11 +163,15 @@ export const PrintingPricing: CollectionConfig = {
           if (data.pricingTable && Array.isArray(data.pricingTable)) {
             const layerHeights = data.pricingTable
               .map((row: any) => row.layerHeight)
-              .filter((height: number | null | undefined) => height !== null && height !== undefined)
+              .filter(
+                (height: number | null | undefined) => height !== null && height !== undefined,
+              )
 
             const uniqueLayerHeights = new Set(layerHeights)
             if (layerHeights.length !== uniqueLayerHeights.size) {
-              throw new Error('Duplicate layer heights found in the pricing table. Each layer height must be unique.')
+              throw new Error(
+                'Duplicate layer heights found in the pricing table. Each layer height must be unique.',
+              )
             }
           }
         }

@@ -1,53 +1,52 @@
-import { deleteLinkedAccounts } from 'payload-auth-plugin/collection/hooks'
-import { AppUsersAccounts } from './accounts'
-import { withUsersCollection } from 'payload-auth-plugin/collection'
-import type { Endpoint } from 'payload'
+import type { Endpoint, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
-import { generateVerificationCode, hashVerificationCode, verifyCode, isVerificationExpired } from '@/hooks/emailVerification'
-import { getVerificationEmailHTML, getVerificationEmailText } from '@/templates/emails/verificationEmail'
+import {
+  generateVerificationCode,
+  hashVerificationCode,
+  verifyCode,
+  isVerificationExpired,
+} from '@/hooks/emailVerification'
+import {
+  getVerificationEmailHTML,
+  getVerificationEmailText,
+} from '@/templates/emails/verificationEmail'
 
-export const AppUsers = withUsersCollection({
+export const AppUsers: CollectionConfig = {
   slug: 'app-users',
+  auth: true, // Native Payload auth
   admin: {
-    defaultColumns: ['email', 'createdAt'],
     useAsTitle: 'email',
+    defaultColumns: ['email', 'name', 'createdAt'],
   },
   access: {
-    // Allow public read (for public profiles) - users can read any profile
-    // If you want to restrict this, change to: ({ req: { user } }) => Boolean(user)
+    // Allow public read (for public profiles)
     read: () => true,
     // Allow anyone to create (registration)
     create: () => true,
     // Users can only update their own profile, admins can update all
-    // This protects against unauthorized updates
     update: ({ req: { user }, id }) => {
-      // If no user, deny access (must be authenticated)
       if (!user || !user.id) return false
-      
-      // Check if user is from admin collection (admin-users can update all)
-      const isAdmin = user?.collection === 'admin-users' || 
-                      (user as any)?._collection === 'admin-users'
-      
+
+      // Admin users can update all
+      const isAdmin =
+        user?.collection === 'admin-users' || (user as any)?._collection === 'admin-users'
+
       if (isAdmin) return true
-      
-      // For authenticated users (from 'app' auth plugin)
-      // They can only update their own profile
-      // Use query constraint to restrict to own profile based on user ID
+
+      // App users can only update their own profile
       return { id: { equals: user.id } }
     },
     // Users can only delete their own profile, admins can delete all
     delete: ({ req: { user }, id }) => {
-      // If no user, deny access (must be authenticated)
       if (!user || !user.id) return false
-      
-      // Check if user is from admin collection (admin-users can delete all)
-      const isAdmin = user?.collection === 'admin-users' || 
-                      (user as any)?._collection === 'admin-users'
-      
+
+      // Admin users can delete all
+      const isAdmin =
+        user?.collection === 'admin-users' || (user as any)?._collection === 'admin-users'
+
       if (isAdmin) return true
-      
-      // For authenticated users (from 'app' auth plugin)
-      // They can only delete their own profile
+
+      // App users can only delete their own profile
       return { id: { equals: user.id } }
     },
   },
@@ -65,15 +64,43 @@ export const AppUsers = withUsersCollection({
     {
       name: 'profilePicture',
       type: 'upload',
-      relationTo: 'profile-pictures', // Point to ProfilePictures collection
+      relationTo: 'profile-pictures',
       admin: {
         description: 'Your profile picture (private - only visible to you and admins)',
+      },
+    },
+    // Email verification fields
+    {
+      name: 'verificationCode',
+      type: 'text',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'verificationHash',
+      type: 'text',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'verificationTokenExpire',
+      type: 'number',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'verificationKind',
+      type: 'text',
+      admin: {
+        hidden: true,
       },
     },
   ],
   timestamps: true,
   hooks: {
-    afterDelete: [deleteLinkedAccounts(AppUsersAccounts.slug)],
     beforeChange: [
       async ({ data, operation }) => {
         if (operation === 'create' && data?.email && data?.password && !data?.verificationCode) {
@@ -91,14 +118,22 @@ export const AppUsers = withUsersCollection({
     ],
     afterChange: [
       async ({ doc, operation, req }) => {
-        if (operation === 'create' && doc?.verificationCode && doc?.email && doc?.verificationKind === 'email') {
+        if (
+          operation === 'create' &&
+          doc?.verificationCode &&
+          doc?.email &&
+          doc?.verificationKind === 'email'
+        ) {
           try {
-            const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || process.env.SERVER_URL || 'http://localhost:3000'
+            const serverURL =
+              process.env.NEXT_PUBLIC_SERVER_URL ||
+              process.env.SERVER_URL ||
+              'http://localhost:3000'
             const verificationCode = doc.verificationCode
             const verificationLink = `${serverURL}/api/app-users/verify-email?token=${doc.verificationCode}&email=${encodeURIComponent(doc.email)}`
             const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@superfreakstudio.com'
             const apiKey = process.env.RESEND_API_KEY
-            
+
             if (!apiKey) {
               req.payload.logger.error('RESEND_API_KEY is not set in environment variables')
               throw new Error('Email service is not configured. Please contact support.')
@@ -113,7 +148,9 @@ export const AppUsers = withUsersCollection({
             })
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
-            req.payload.logger.error(`Failed to send verification email to ${doc.email}: ${errorMessage}`)
+            req.payload.logger.error(
+              `Failed to send verification email to ${doc.email}: ${errorMessage}`,
+            )
           }
         }
 
@@ -154,10 +191,10 @@ export const AppUsers = withUsersCollection({
 
         // Check if user is already verified
         if (!user.verificationHash && !user.verificationCode) {
-          return Response.json({ 
-            success: true, 
+          return Response.json({
+            success: true,
             message: 'Email is already verified',
-            verified: true 
+            verified: true,
           })
         }
 
@@ -192,10 +229,10 @@ export const AppUsers = withUsersCollection({
           depth: 0,
         })
 
-        return Response.json({ 
-          success: true, 
+        return Response.json({
+          success: true,
           message: 'Email verified successfully',
-          verified: true 
+          verified: true,
         })
       },
     },
@@ -231,10 +268,10 @@ export const AppUsers = withUsersCollection({
 
         // Check if user is already verified
         if (!user.verificationHash && !user.verificationCode) {
-          return Response.json({ 
-            success: true, 
+          return Response.json({
+            success: true,
             message: 'Email is already verified',
-            verified: true 
+            verified: true,
           })
         }
 
@@ -257,7 +294,7 @@ export const AppUsers = withUsersCollection({
         try {
           const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@superfreakstudio.com'
           const apiKey = process.env.RESEND_API_KEY
-          
+
           if (!apiKey) {
             throw new APIError('Email service is not configured. Please contact support.', 500)
           }
@@ -272,14 +309,17 @@ export const AppUsers = withUsersCollection({
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error)
           req.payload.logger.error(`Failed to send verification email to ${email}: ${errorMessage}`)
-          throw new APIError(`Failed to send verification email: ${errorMessage}. Please check your Resend configuration.`, 500)
+          throw new APIError(
+            `Failed to send verification email: ${errorMessage}. Please check your Resend configuration.`,
+            500,
+          )
         }
 
-        return Response.json({ 
-          success: true, 
-          message: 'Verification code sent successfully' 
+        return Response.json({
+          success: true,
+          message: 'Verification code sent successfully',
         })
       },
     },
   ] as Endpoint[],
-})
+}

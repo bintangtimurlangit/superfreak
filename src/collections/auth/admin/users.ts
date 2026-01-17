@@ -1,17 +1,15 @@
 import { authenticated } from '@/access/authenticated'
 import type { CollectionConfig } from 'payload'
-import { deleteLinkedAccounts } from 'payload-auth-plugin/collection/hooks'
-import { AdminAccounts } from './accounts'
 
 const SUPER_ADMIN_EMAIL = 'superfreakstudio@gmail.com'
 
 export const AdminUsers: CollectionConfig = {
   slug: 'admin-users',
+  auth: true, // Native Payload auth
   admin: {
-    defaultColumns: ['email', 'createdAt'],
     useAsTitle: 'email',
+    defaultColumns: ['email', 'createdAt'],
   },
-  auth: true, // This enables Payload's native initial admin creation
   fields: [
     {
       name: 'firstName',
@@ -24,12 +22,10 @@ export const AdminUsers: CollectionConfig = {
   ],
   timestamps: true,
   hooks: {
-    afterDelete: [deleteLinkedAccounts(AdminAccounts.slug)],
     beforeChange: [
       async ({ data, operation, req, originalDoc }) => {
-        // Prevent OAuth account linking for super admin email
+        // Prevent changing super admin email
         if (data?.email === SUPER_ADMIN_EMAIL) {
-          // If this is an update and user is trying to change email, prevent it
           if (operation === 'update' && req?.user && originalDoc?.id) {
             const existingUser = await req.payload.findByID({
               collection: 'admin-users',
@@ -37,8 +33,11 @@ export const AdminUsers: CollectionConfig = {
               depth: 0,
             })
 
-            // Prevent changing super admin email
-            if (existingUser?.email === SUPER_ADMIN_EMAIL && data.email && data.email !== SUPER_ADMIN_EMAIL) {
+            if (
+              existingUser?.email === SUPER_ADMIN_EMAIL &&
+              data.email &&
+              data.email !== SUPER_ADMIN_EMAIL
+            ) {
               throw new Error('Super admin email cannot be changed')
             }
           }

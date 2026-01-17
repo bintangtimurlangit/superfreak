@@ -6,13 +6,9 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
-import { authPlugin } from 'payload-auth-plugin'
-import { GoogleAuthProvider, PasswordProvider } from 'payload-auth-plugin/providers'
 
 import { AdminUsers } from './collections/auth/admin/users'
-import { AdminAccounts } from './collections/auth/admin/accounts'
 import { AppUsers } from './collections/auth/app/users'
-import { AppUsersAccounts } from './collections/auth/app/accounts'
 import { Media } from './collections/Media'
 import { UserFiles } from './collections/UserFiles'
 import { ProfilePictures } from './collections/ProfilePictures'
@@ -34,9 +30,7 @@ export default buildConfig({
   },
   collections: [
     AdminUsers,
-    AdminAccounts,
     AppUsers,
-    AppUsersAccounts,
     Media,
     UserFiles,
     ProfilePictures,
@@ -85,48 +79,6 @@ export default buildConfig({
         },
         region: 'auto', // R2 uses 'auto' for region
       },
-    }),
-    // Admin auth plugin - for admin panel users
-    authPlugin({
-      name: 'admin',
-      useAdmin: true,
-      allowOAuthAutoSignUp: true,
-      usersCollectionSlug: AdminUsers.slug,
-      accountsCollectionSlug: AdminAccounts.slug,
-      successRedirectPath: '/admin/collections',
-      errorRedirectPath: '/admin/auth/signin',
-      providers: [
-        GoogleAuthProvider({
-          client_id: process.env.GOOGLE_CLIENT_ID as string,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET as string,
-        }),
-        PasswordProvider({
-          emailTemplates: {
-            // Minimal no-op template - forgot password feature not implemented
-            forgotPassword: async () => '',
-          },
-        }),
-      ],
-    }),
-    // App auth plugin - for frontend users
-    authPlugin({
-      name: 'app',
-      allowOAuthAutoSignUp: true,
-      usersCollectionSlug: AppUsers.slug,
-      accountsCollectionSlug: AppUsersAccounts.slug,
-      successRedirectPath: '/',
-      errorRedirectPath: '/auth/signin',
-      providers: [
-        GoogleAuthProvider({
-          client_id: process.env.GOOGLE_CLIENT_ID as string,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET as string,
-        }),
-        PasswordProvider({
-          emailTemplates: {
-            forgotPassword: async () => '',
-          },
-        }),
-      ],
     }),
   ],
 })

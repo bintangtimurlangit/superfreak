@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { appAuthClient } from '@/lib/auth'
+import { appAuth } from '@/lib/auth'
 
 interface SignInModalProps {
   isOpen: boolean
@@ -51,34 +51,22 @@ export default function SignInModal({
     }
 
     try {
-      const { password: passwordMethod } = appAuthClient.signin()
-      const result = await passwordMethod({
-        email: email.trim(),
-        password: password,
-      })
-
-      if (result.isError) {
-        setError(result.message || 'Failed to sign in. Please check your credentials.')
-      } else {
-        onClose()
-        window.location.reload()
-      }
+      await appAuth.login(email.trim(), password)
+      onClose()
+      window.location.reload()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { oauth } = appAuthClient.signin()
-      await oauth('google')
-    } catch (error) {
-      setError('Failed to sign in with Google. Please try again.')
-    }
-  }
+  // Google OAuth temporarily disabled
+  // const handleGoogleSignIn = async () => {
+  //   setError('Google sign-in is temporarily unavailable. Please use email and password.')
+  // }
 
   if (!isOpen) return null
 
@@ -224,8 +212,8 @@ export default function SignInModal({
                   {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
 
-                {/* Google Button */}
-                <Button
+                {/* Google Button - Temporarily disabled */}
+                {/* <Button
                   type="button"
                   variant="secondary"
                   className="w-full h-10 rounded-[10px] border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F8F8F8] font-medium text-sm flex items-center justify-center gap-2.5 -mt-1"
@@ -251,7 +239,7 @@ export default function SignInModal({
                     />
                   </svg>
                   Continue With Google
-                </Button>
+                </Button> */}
 
                 {/* Sign Up Section */}
                 <div className="text-center pt-3">
