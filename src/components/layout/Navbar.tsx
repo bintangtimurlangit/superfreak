@@ -251,7 +251,7 @@ const Navbar = () => {
                 {isUserDropdownOpen && (
                   <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
                     <Link
-                      href="/order"
+                      href="/my-order"
                       className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
                       onClick={() => setIsUserDropdownOpen(false)}
                     >

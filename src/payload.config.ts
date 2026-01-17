@@ -16,6 +16,7 @@ import { Addresses } from './collections/Addresses'
 import { FilamentTypes } from './collections/FilamentTypes'
 import { PrintingPricing } from './collections/PrintingPricing'
 import { PrintingOptions } from './collections/PrintingOptions'
+import { Orders } from './collections/Orders'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -44,6 +45,7 @@ export default buildConfig({
     FilamentTypes,
     PrintingPricing,
     PrintingOptions,
+    Orders,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

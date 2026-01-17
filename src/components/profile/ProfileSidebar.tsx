@@ -134,12 +134,15 @@ export default function ProfileSidebar() {
           </div>
           
           <Link
-            href="/order"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-[#292929] hover:bg-[#F8F8F8] rounded-lg transition-colors"
+            href="/my-order"
+            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
+              pathname === '/my-order'
+                ? 'text-white bg-[#1D0DF3]'
+                : 'text-[#292929] hover:bg-[#F8F8F8]'
+            }`}
           >
             <Package className="h-4 w-4" />
             <span>My Orders</span>
-            <span className="ml-auto text-xs text-[#989898]">10</span>
           </Link>
 
           <Link

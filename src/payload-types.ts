@@ -77,6 +77,7 @@ export interface Config {
     'filament-types': FilamentType;
     'printing-pricing': PrintingPricing;
     'printing-options': PrintingOption;
+    orders: Order;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -93,6 +94,7 @@ export interface Config {
     'filament-types': FilamentTypesSelect<false> | FilamentTypesSelect<true>;
     'printing-pricing': PrintingPricingSelect<false> | PrintingPricingSelect<true>;
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -424,6 +426,74 @@ export interface PrintingOption {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: string;
+  orderNumber: string;
+  user: string | AppUser;
+  status: 'unpaid' | 'checking' | 'discuss' | 'printing' | 'shipping' | 'delivery' | 'delivered' | 'done';
+  items: {
+    file: string | UserFile;
+    fileName: string;
+    quantity: number;
+    configuration: {
+      material: string;
+      layerHeight: string;
+      infill: string;
+      wallCount: string;
+    };
+    statistics?: {
+      /**
+       * Print time in minutes
+       */
+      printTime?: number | null;
+      /**
+       * Filament weight in grams
+       */
+      filamentWeight?: number | null;
+    };
+    price: number;
+    id?: string | null;
+  }[];
+  totalAmount: number;
+  paymentInfo?: {
+    paymentMethod?: ('bank_transfer' | 'credit_card' | 'e_wallet') | null;
+    paymentStatus?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
+    transactionId?: string | null;
+    paidAt?: string | null;
+  };
+  shippingAddress?: (string | null) | Address;
+  trackingNumber?: string | null;
+  /**
+   * Internal notes for admin use, especially for discuss status
+   */
+  adminNotes?: string | null;
+  /**
+   * Notes from customer about the order
+   */
+  customerNotes?: string | null;
+  statusHistory?:
+    | {
+        status: string;
+        changedAt: string;
+        changedBy?:
+          | ({
+              relationTo: 'admin-users';
+              value: string | AdminUser;
+            } | null)
+          | ({
+              relationTo: 'app-users';
+              value: string | AppUser;
+            } | null);
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -481,6 +551,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'printing-options';
         value: string | PrintingOption;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: string | Order;
       } | null);
   globalSlug?: string | null;
   user:
@@ -743,6 +817,61 @@ export interface PrintingOptionsSelect<T extends boolean = true> {
   maxValue?: T;
   isActive?: T;
   description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  orderNumber?: T;
+  user?: T;
+  status?: T;
+  items?:
+    | T
+    | {
+        file?: T;
+        fileName?: T;
+        quantity?: T;
+        configuration?:
+          | T
+          | {
+              material?: T;
+              layerHeight?: T;
+              infill?: T;
+              wallCount?: T;
+            };
+        statistics?:
+          | T
+          | {
+              printTime?: T;
+              filamentWeight?: T;
+            };
+        price?: T;
+        id?: T;
+      };
+  totalAmount?: T;
+  paymentInfo?:
+    | T
+    | {
+        paymentMethod?: T;
+        paymentStatus?: T;
+        transactionId?: T;
+        paidAt?: T;
+      };
+  shippingAddress?: T;
+  trackingNumber?: T;
+  adminNotes?: T;
+  customerNotes?: T;
+  statusHistory?:
+    | T
+    | {
+        status?: T;
+        changedAt?: T;
+        changedBy?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

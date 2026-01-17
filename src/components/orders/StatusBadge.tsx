@@ -1,0 +1,102 @@
+'use client'
+
+import React from 'react'
+import {
+  CreditCard,
+  Search,
+  MessageSquare,
+  Printer,
+  Truck,
+  Package,
+  CheckCircle,
+  Check,
+} from 'lucide-react'
+
+export type OrderStatus =
+  | 'unpaid'
+  | 'checking'
+  | 'discuss'
+  | 'printing'
+  | 'shipping'
+  | 'delivery'
+  | 'delivered'
+  | 'done'
+
+interface StatusBadgeProps {
+  status: OrderStatus
+  className?: string
+}
+
+const statusConfig: Record<
+  OrderStatus,
+  {
+    label: string
+    bgColor: string
+    textColor: string
+    icon: React.ComponentType<{ className?: string }>
+  }
+> = {
+  unpaid: {
+    label: 'Unpaid',
+    bgColor: 'bg-red-50',
+    textColor: 'text-red-700',
+    icon: CreditCard,
+  },
+  checking: {
+    label: 'Checking',
+    bgColor: 'bg-blue-50',
+    textColor: 'text-blue-700',
+    icon: Search,
+  },
+  discuss: {
+    label: 'Discuss',
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-700',
+    icon: MessageSquare,
+  },
+  printing: {
+    label: 'Printing',
+    bgColor: 'bg-indigo-50',
+    textColor: 'text-indigo-700',
+    icon: Printer,
+  },
+  shipping: {
+    label: 'Shipping',
+    bgColor: 'bg-cyan-50',
+    textColor: 'text-cyan-700',
+    icon: Truck,
+  },
+  delivery: {
+    label: 'In Delivery',
+    bgColor: 'bg-teal-50',
+    textColor: 'text-teal-700',
+    icon: Package,
+  },
+  delivered: {
+    label: 'Delivered',
+    bgColor: 'bg-green-50',
+    textColor: 'text-green-700',
+    icon: CheckCircle,
+  },
+  done: {
+    label: 'Done',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    icon: Check,
+  },
+}
+
+export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
+  const config = statusConfig[status]
+  const Icon = config.icon
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${config.bgColor} ${config.textColor} ${className}`}
+      style={{ fontFamily: 'var(--font-geist-sans)' }}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {config.label}
+    </span>
+  )
+}
