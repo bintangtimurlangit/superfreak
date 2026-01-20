@@ -251,11 +251,7 @@ const Navbar = () => {
               My Cart
             </Button>
 
-            {!user ? (
-              <>
-                <UserProfileSkeleton />
-              </>
-            ) : isAuthenticated && user ? (
+            {isAuthenticated && user ? (
               <div className="relative hidden lg:block" ref={userDropdownRef}>
                 <Button
                   variant="secondary"
