@@ -17,7 +17,7 @@ export const addressSchema = z.object({
     .min(1, 'Postal code is required')
     .length(5, 'Postal code must be exactly 5 digits')
     .regex(/^\d{5}$/, 'Postal code must contain only numbers'),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean().optional(),
 })
 
 export type AddressFormData = z.infer<typeof addressSchema>
