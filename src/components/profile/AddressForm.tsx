@@ -3,16 +3,16 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Home, Plus, Trash2, MapPin, Edit2, Check, X, AlertTriangle } from 'lucide-react'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { useSession } from '@/lib/auth/client'
 import { SavedAddress } from '@/lib/types'
 import { addressSchema, type AddressFormData } from '@/lib/validations/address'
-import { useProvinces, useRegencies, useDistricts, useVillages } from '@/features/location/hooks/useLocation'
+import { useProvinces, useRegencies, useDistricts, useVillages } from '@/hooks/location/useLocation'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { payloadFetch } from '@/lib/payloadFetch'
 
 export default function AddressForm() {
-  const { user, loading: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const user = sessionData?.user || null
   const queryClient = useQueryClient()
   const [showAddForm, setShowAddForm] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -26,7 +26,9 @@ export default function AddressForm() {
     queryFn: async () => {
       if (!user?.id) return []
       
-      const response = await payloadFetch(`/api/user-addresses`)
+      const response = await fetch(`/api/user-addresses`, {
+        credentials: 'include',
+      })
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to fetch addresses' }))
@@ -93,9 +95,13 @@ export default function AddressForm() {
   // Create address mutation
   const createAddressMutation = useMutation({
     mutationFn: async (data: AddressFormData) => {
-      const response = await payloadFetch('/api/user-addresses', {
+      const response = await fetch('/api/user-addresses', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ ...data, user: user?.id }),
+        credentials: 'include',
       })
       
       if (!response.ok) {
@@ -121,8 +127,9 @@ export default function AddressForm() {
   // Delete address mutation
   const deleteAddressMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await payloadFetch(`/api/user-addresses/${id}`, {
+      const response = await fetch(`/api/user-addresses/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
       
       if (!response.ok) {

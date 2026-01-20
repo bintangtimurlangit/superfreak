@@ -11,12 +11,12 @@ import { AdminUsers } from './collections/Users/AdminUsers'
 import { AppUsers } from './collections/Users/AppUsers'
 import { Media } from './collections/Media/Media'
 import { UserFiles } from './collections/Media/UserFiles'
-import { ProfilePictures } from './collections/Media/ProfilePictures'
 import { Addresses } from './collections/Addresses/Addresses'
 import { FilamentTypes } from './collections/Printing/FilamentTypes'
 import { PrintingPricing } from './collections/Printing/PrintingPricing'
 import { PrintingOptions } from './collections/Printing/PrintingOptions'
 import { Orders } from './collections/Orders/Orders'
+import { plugins } from './payload/plugins'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -40,7 +40,7 @@ export default buildConfig({
     AppUsers,
     Media,
     UserFiles,
-    ProfilePictures,
+    // ProfilePictures removed - using better-auth's built-in image field instead
     Addresses,
     FilamentTypes,
     PrintingPricing,
@@ -62,6 +62,9 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
+    // Better Auth plugin (must be first to handle authentication)
+    ...plugins,
+    // Note: betterAuth property should be available on payload instance after plugin loads
     // Cloudflare R2 storage adapter (using S3-compatible API)
     s3Storage({
       collections: {
@@ -73,10 +76,7 @@ export default buildConfig({
         'user-files': {
           prefix: 'users/files', // Files will be stored in superfreak-media/users/files/
         },
-        // Private user profile pictures - stored in users/profile-pics/ folder
-        'profile-pictures': {
-          prefix: 'users/profile-pics', // Files will be stored in superfreak-media/users/profile-pics/
-        },
+        // Profile pictures are now stored as base64 strings in the user document via better-auth's image field
       },
       bucket: process.env.R2_BUCKET_NAME || '',
       config: {

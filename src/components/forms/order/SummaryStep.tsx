@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChevronRight, MapPin, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { useSession } from '@/lib/auth/client'
 import type { UploadedFile } from './UploadStep'
 
 interface Province {
@@ -71,7 +71,8 @@ interface SummaryStepProps {
 
 export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummaryStepProps) {
   const router = useRouter()
-  const { user, loading: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const user = sessionData?.user || null
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [loading, setLoading] = useState(true)
   const [provinces, setProvinces] = useState<Province[]>([])

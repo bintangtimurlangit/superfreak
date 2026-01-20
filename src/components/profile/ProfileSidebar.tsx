@@ -1,53 +1,32 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { useEffect } from 'react'
+import { signOut } from '@/lib/auth/client'
+import { useBetterAuth } from '@/lib/auth/context'
+import { use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
-import { appAuth } from '@/features/auth/utils/auth'
 import Image from 'next/image'
 
 function ProfileSidebarSkeleton() {
   return (
     <aside className="w-full lg:w-64 flex-shrink-0">
       <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
-        {/* Back Button Skeleton */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
-        </div>
-
-        {/* User Info Skeleton */}
-        <div className="mb-6 pb-6 border-b border-[#EFEFEF]">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-lg bg-gray-200 animate-pulse flex-shrink-0" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-20 mb-6" />
+          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-[#EFEFEF]">
+            <div className="w-12 h-12 bg-gray-200 rounded-lg" />
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-40" />
             </div>
           </div>
-        </div>
-
-        {/* Navigation Skeleton */}
-        <nav className="space-y-1">
-          <div className="h-3 w-20 bg-gray-200 rounded animate-pulse mb-3" />
-          
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg"
-            >
-              <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 flex-1 bg-gray-200 rounded animate-pulse" />
-            </div>
-          ))}
-        </nav>
-
-        {/* Logout Skeleton */}
-        <div className="mt-6 pt-6 border-t border-[#EFEFEF]">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
-            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-24" />
+            <div className="h-10 bg-gray-200 rounded" />
+            <div className="h-10 bg-gray-200 rounded" />
+            <div className="h-10 bg-gray-200 rounded" />
           </div>
         </div>
       </div>
@@ -58,33 +37,66 @@ function ProfileSidebarSkeleton() {
 export default function ProfileSidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, displayName, initials, isSuccess: isAuthenticated, loading } = useSession()
+  const { currentUserPromise } = useBetterAuth()
+  const user = use(currentUserPromise)
+  const isAuthenticated = !!user
 
-  const handleLogout = async () => {
-    try {
-      await appAuth.logout()
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Logout error:', error)
-      window.location.href = '/'
+  // Type guard to check if user is AppUser (has image field)
+  const appUser = user?.collection === 'app-users' ? user : null
+
+  // Listen for session updates (must be before any early returns)
+  useEffect(() => {
+    const handleSessionUpdate = () => {
+      console.log('[ProfileSidebar] Session update event received, refreshing...')
+      // Force router refresh to update server components (which will refetch currentUserPromise)
+      router.refresh()
     }
-  }
+    
+    window.addEventListener('session-updated', handleSessionUpdate)
+    return () => window.removeEventListener('session-updated', handleSessionUpdate)
+  }, [router])
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[ProfileSidebar] User updated:', {
+      hasUser: !!user,
+      userCollection: user?.collection,
+      hasImage: !!appUser?.image,
+      imageUrl: appUser?.image?.substring(0, 50),
+    })
+  }, [user, appUser])
 
-  // Show skeleton while loading
-  if (loading) {
-    return <ProfileSidebarSkeleton />
-  }
+  // Get user data from Payload auth (includes all fields like image)
+  const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const initials = (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') || (user?.email ? String(user.email)[0]?.toUpperCase() : '') || 'U'
 
   // Don't show sidebar if not authenticated
   if (!isAuthenticated || !user) {
     return null
   }
 
-  const profilePictureUrl = user.profilePicture
-    ? typeof user.profilePicture === 'object'
-      ? (user.profilePicture.url || user.profilePicture.thumbnailURL || user.profilePicture.sizes?.thumbnail?.url || null)
-      : null
-    : null
+  // Use image field from Payload user (not from better-auth session)
+  const profilePictureUrl = appUser?.image || null
+
+  const handleLogout = async () => {
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push('/')
+            router.refresh()
+          },
+          onError: (error: any) => {
+            console.error('Logout error:', error)
+            router.push('/')
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+      router.push('/')
+    }
+  }
 
   return (
     <aside className="w-full lg:w-64 flex-shrink-0">
@@ -108,73 +120,80 @@ export default function ProfileSidebar() {
                   alt={displayName}
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             ) : (
               <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-white">{initials}</span>
+                <span className="text-white font-semibold text-lg">{initials}</span>
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-[#292929] truncate">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-[#292929] truncate" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                 {displayName}
-              </div>
-              <div className="text-xs text-[#989898] truncate">
-                {user.email}
-              </div>
+              </h3>
+              <p className="text-sm text-[#989898] truncate" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                {user?.email}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="space-y-1">
-          <div className="text-xs font-semibold text-[#989898] uppercase tracking-wider mb-3">
-            My Profile
+        <nav className="space-y-2">
+          <div className="text-xs font-medium text-[#989898] uppercase tracking-wider mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            MY PROFILE
           </div>
-          
+
           <Link
             href="/my-order"
-            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
               pathname === '/my-order'
-                ? 'text-white bg-[#1D0DF3]'
+                ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            <Package className="h-4 w-4" />
-            <span>My Orders</span>
+            <Package className="h-5 w-5" />
+            <span className="text-sm font-medium">My Orders</span>
           </Link>
 
           <Link
             href="/profile"
-            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
               pathname === '/profile'
-                ? 'text-white bg-[#1D0DF3]'
+                ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            <User className="h-4 w-4" />
-            <span>Edit Profile</span>
+            <User className="h-5 w-5" />
+            <span className="text-sm font-medium">Edit Profile</span>
           </Link>
 
           <Link
-            href="/profile/address"
-            className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${
-              pathname === '/profile/address'
-                ? 'text-white bg-[#1D0DF3]'
+            href="/profile/addresses"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              pathname === '/profile/addresses'
+                ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            <Home className="h-4 w-4" />
-            <span>Address Information</span>
+            <Home className="h-5 w-5" />
+            <span className="text-sm font-medium">Address Information</span>
           </Link>
 
           <Link
-            href="/profile/password"
-            className="flex items-center gap-3 px-3 py-2 text-sm text-[#292929] hover:bg-[#F8F8F8] rounded-lg transition-colors"
+            href="/profile/change-password"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              pathname === '/profile/change-password'
+                ? 'bg-[#1D0DF3] text-white'
+                : 'text-[#292929] hover:bg-[#F8F8F8]'
+            }`}
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            <Lock className="h-4 w-4" />
-            <span>Change Password</span>
+            <Lock className="h-5 w-5" />
+            <span className="text-sm font-medium">Change Password</span>
           </Link>
         </nav>
 
@@ -182,10 +201,11 @@ export default function ProfileSidebar() {
         <div className="mt-6 pt-6 border-t border-[#EFEFEF]">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full"
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            <LogOut className="h-4 w-4" />
-            <span>Log Out</span>
+            <LogOut className="h-5 w-5" />
+            <span className="text-sm font-medium">Log Out</span>
           </button>
         </div>
       </div>

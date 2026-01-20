@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { useSession } from '@/lib/auth/client'
 import { usePathname } from 'next/navigation'
 
 /**
  * Handles redirect to /order page after OAuth login when there's pending order state
  */
 export default function OrderRedirectHandler() {
-  const { isSuccess: isAuthenticated, loading: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const isAuthenticated = !!sessionData?.user
   const pathname = usePathname()
 
   useEffect(() => {

@@ -100,7 +100,7 @@ export const PrintingPricing: CollectionConfig = {
       hooks: {
         beforeValidate: [
           async ({ data, req }) => {
-            if (data.filamentType) {
+            if (data?.filamentType) {
               const filamentId =
                 typeof data.filamentType === 'string'
                   ? data.filamentType
@@ -125,13 +125,13 @@ export const PrintingPricing: CollectionConfig = {
   timestamps: true,
   hooks: {
     beforeChange: [
-      async ({ data, operation, req, id }) => {
+      async ({ data, operation, req, id: docId }) => {
         // Ensure unique filament type per document
         if (operation === 'create' || operation === 'update') {
           const filamentId =
-            typeof data.filamentType === 'string'
+            typeof data?.filamentType === 'string'
               ? data.filamentType
-              : (data.filamentType as { id: string }).id
+              : (data?.filamentType as { id: string })?.id
 
           if (!filamentId) {
             return data
@@ -142,8 +142,8 @@ export const PrintingPricing: CollectionConfig = {
           }
 
           // If updating, exclude current document
-          if (operation === 'update' && id) {
-            whereClause.id = { not_equals: id }
+          if (operation === 'update' && docId) {
+            whereClause.id = { not_equals: docId }
           }
 
           const existing = await req.payload.find({

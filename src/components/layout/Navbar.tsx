@@ -7,8 +7,10 @@ import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
-import { useSession } from '@/features/auth/hooks/useSession'
-import { appAuth } from '@/features/auth/utils/auth'
+import { signOut } from '@/lib/auth/client'
+import { useBetterAuth } from '@/lib/auth/context'
+import { use } from 'react'
+import { useRouter } from 'next/navigation'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
 
 function UserProfileSkeleton() {
@@ -32,13 +34,42 @@ function MobileUserProfileSkeleton() {
 }
 
 const Navbar = () => {
-  const { user, isSuccess: isAuthenticated, loading, displayName, initials } = useSession()
+  const router = useRouter()
+  const { currentUserPromise } = useBetterAuth()
+  const user = use(currentUserPromise)
+  const isAuthenticated = !!user
   
-  const profilePictureUrl = user?.profilePicture
-    ? typeof user.profilePicture === 'object'
-      ? ((user.profilePicture as any).url || (user.profilePicture as any).thumbnailURL || (user.profilePicture as any).sizes?.thumbnail?.url || null)
-      : null
-    : null
+  // Type guard to check if user is AppUser (has image field)
+  const appUser = user?.collection === 'app-users' ? user : null
+  
+  // Get user data from Payload auth (includes all fields like image)
+  const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const initials = (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') || (user?.email ? String(user.email)[0]?.toUpperCase() : '') || 'U'
+  
+  // Use image field from Payload user (not from better-auth session)
+  const profilePictureUrl = appUser?.image || null
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[Navbar] User updated:', {
+      hasUser: !!user,
+      userCollection: user?.collection,
+      hasImage: !!appUser?.image,
+      imageUrl: appUser?.image?.substring(0, 50),
+    })
+  }, [user, appUser])
+  
+  // Listen for session updates and refresh router
+  useEffect(() => {
+    const handleSessionUpdate = () => {
+      console.log('[Navbar] Session update event received, refreshing...')
+      // Force router refresh to update server components (which will refetch currentUserPromise)
+      router.refresh()
+    }
+    window.addEventListener('session-updated', handleSessionUpdate)
+    return () => window.removeEventListener('session-updated', handleSessionUpdate)
+  }, [router])
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('English')
@@ -104,11 +135,21 @@ const Navbar = () => {
     setIsUserDropdownOpen(false)
     
     try {
-      await appAuth.logout()
-      window.location.href = '/'
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push('/')
+            router.refresh()
+          },
+          onError: (error: any) => {
+            console.error('Logout error:', error)
+            router.push('/')
+          }
+        }
+      })
     } catch (error) {
       console.error('Logout error:', error)
-      window.location.href = '/'
+      router.push('/')
     }
   }
 
@@ -210,7 +251,7 @@ const Navbar = () => {
               My Cart
             </Button>
 
-            {loading ? (
+            {!user ? (
               <>
                 <UserProfileSkeleton />
               </>
@@ -244,7 +285,7 @@ const Navbar = () => {
                   <span className="hidden sm:flex flex-col leading-tight">
                     <span className="text-sm font-medium">{String(displayName)}</span>
                     <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                      {user.email as string}
+                      {user?.email || ''}
                     </span>
                   </span>
                 </Button>
@@ -294,7 +335,7 @@ const Navbar = () => {
 
           {/* Mobile Actions - Icons Only */}
           <div className="flex md:hidden items-center gap-2">
-            {loading ? (
+            {!user ? (
               <div className="h-10 w-10 bg-gray-200 rounded-[12px] animate-pulse" />
             ) : !isAuthenticated && (
               <Button
@@ -408,7 +449,7 @@ const Navbar = () => {
                 My Cart
               </Button>
 
-              {loading ? (
+              {!user ? (
                 <MobileUserProfileSkeleton />
               ) : isAuthenticated && user ? (
                 <div className="relative w-full" ref={userDropdownRef}>
@@ -439,7 +480,7 @@ const Navbar = () => {
                     <span className="flex flex-col leading-tight">
                       <span className="text-sm font-medium">{String(displayName)}</span>
                       <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                        {user.email as string}
+                        {user?.email || ''}
                       </span>
                     </span>
                   </Button>

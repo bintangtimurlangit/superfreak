@@ -1,51 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { headers } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
+    const requestHeaders = await headers()
     
-    // Get user from session cookie
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookies = cookieHeader.split(';').map(c => c.trim())
-    const tokenCookie = cookies.find(c => c.startsWith('payload-token-app-users='))
-    
-    if (!tokenCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const token = tokenCookie.split('=')[1]
-    
-    // Verify token manually to avoid access control issues
-    let user = null
-    try {
-      const jwt = await import('jsonwebtoken')
-      const secret = process.env.PAYLOAD_SECRET || ''
-      
-      if (!secret) {
-        console.error('PAYLOAD_SECRET is not set')
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-      }
-      
-      const decoded = jwt.verify(token, secret) as { id: string; collection: string }
-      
-      if (decoded && decoded.collection === 'app-users') {
-        user = await payload.findByID({
-          collection: 'app-users',
-          id: decoded.id,
-          depth: 0,
-        })
-      }
-    } catch (e) {
-      console.error('Token verification failed:', e)
-    }
+    // Get authenticated user from better-auth session
+    const { user } = await payload.auth({ headers: requestHeaders })
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Fetch addresses for this user
+    // Fetch addresses for this user using Payload Local API with access control
     const addresses = await payload.find({
       collection: 'addresses',
       where: {
@@ -53,7 +22,12 @@ export async function GET(request: NextRequest) {
           equals: user.id,
         },
       },
-      overrideAccess: true, // Bypass access control since we already verified the user
+      req: {
+        user,
+        payload,
+        headers: requestHeaders,
+      } as any,
+      overrideAccess: false, // Enforce access control
     })
     
     return NextResponse.json(addresses)
@@ -68,32 +42,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
+    const requestHeaders = await headers()
     
-    // Get user from session cookie
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookies = cookieHeader.split(';').map(c => c.trim())
-    const tokenCookie = cookies.find(c => c.startsWith('payload-token-app-users='))
-    
-    if (!tokenCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const token = tokenCookie.split('=')[1]
-    
-    // Verify token manually
-    let user = null
-    try {
-      const jwt = await import('jsonwebtoken')
-      const secret = process.env.PAYLOAD_SECRET || ''
-      const decoded = jwt.verify(token, secret) as { id: string; collection: string }
-      
-      if (decoded && decoded.collection === 'app-users') {
-        user = { id: decoded.id }
-      }
-    } catch (e) {
-      console.error('Token verification failed:', e)
-    }
+    // Get authenticated user from better-auth session
+    const { user } = await payload.auth({ headers: requestHeaders })
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -101,14 +54,19 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json()
     
-    // Create address
+    // Create address using Payload Local API with access control
     const address = await payload.create({
       collection: 'addresses',
       data: {
         ...body,
         user: user.id,
       },
-      overrideAccess: true,
+      req: {
+        user,
+        payload,
+        headers: requestHeaders,
+      } as any,
+      overrideAccess: false, // Enforce access control
     })
     
     return NextResponse.json(address)

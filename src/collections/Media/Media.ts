@@ -4,6 +4,10 @@ export const Media: CollectionConfig = {
   slug: 'media',
   access: {
     read: () => true,
+    create: ({ req: { user } }) => {
+      // Allow authenticated users to create media (for profile pictures)
+      return Boolean(user)
+    },
   },
   fields: [
     {

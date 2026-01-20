@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { headers } from 'next/headers'
 
 export async function DELETE(
   request: NextRequest,
@@ -9,55 +9,38 @@ export async function DELETE(
   const params = await props.params
   
   try {
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
+    const requestHeaders = await headers()
     
-    // Get user from session cookie
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookies = cookieHeader.split(';').map(c => c.trim())
-    const tokenCookie = cookies.find(c => c.startsWith('payload-token-app-users='))
-    
-    if (!tokenCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    
-    const token = tokenCookie.split('=')[1]
-    
-    // Verify token manually
-    let user = null
-    try {
-      const jwt = await import('jsonwebtoken')
-      const secret = process.env.PAYLOAD_SECRET || ''
-      const decoded = jwt.verify(token, secret) as { id: string; collection: string }
-      
-      if (decoded && decoded.collection === 'app-users') {
-        user = { id: decoded.id }
-      }
-    } catch (e) {
-      console.error('Token verification failed:', e)
-    }
+    // Get authenticated user from better-auth session
+    const { user } = await payload.auth({ headers: requestHeaders })
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Verify the address belongs to this user
+    // Verify the address belongs to this user using Payload Local API with access control
     const address = await payload.findByID({
       collection: 'addresses',
       id: params.id,
-      overrideAccess: true,
+      req: {
+        user,
+        payload,
+        headers: requestHeaders,
+      } as any,
+      overrideAccess: false, // Enforce access control - will only return if user owns it
     })
     
-    const addressUserId = typeof address.user === 'string' ? address.user : address.user.id
-    
-    if (addressUserId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    
-    // Delete the address
+    // Delete the address using Payload Local API with access control
     await payload.delete({
       collection: 'addresses',
       id: params.id,
-      overrideAccess: true,
+      req: {
+        user,
+        payload,
+        headers: requestHeaders,
+      } as any,
+      overrideAccess: false, // Enforce access control
     })
     
     return NextResponse.json({ success: true })

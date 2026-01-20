@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Image from 'next/image'
-import { useSession } from '@/features/auth/hooks/useSession'
-import { payloadFetch } from '@/lib/payloadFetch'
+import { useSession, updateUser, authClient } from '@/lib/auth/client'
 
 function EditProfileFormSkeleton() {
   return (
@@ -84,7 +83,11 @@ function EditProfileFormSkeleton() {
 
 export default function EditProfileForm() {
   const router = useRouter()
-  const { user: sessionUser, isSuccess: isAuthenticated, refreshSession, loading } = useSession()
+  const { data: sessionData, isPending: loading, refetch: refetchSession } = useSession()
+  const sessionUser = sessionData?.user || null
+  const isAuthenticated = !!sessionUser
+  // Note: refreshSession is not available in better-auth, use router.refresh() instead
+  const [mounted, setMounted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -92,7 +95,6 @@ export default function EditProfileForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [initialized, setInitialized] = useState(false)
-  const [currentProfilePictureId, setCurrentProfilePictureId] = useState<string | null>(null)
   const [compressing, setCompressing] = useState(false)
   const [originalFileSize, setOriginalFileSize] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -214,28 +216,21 @@ export default function EditProfileForm() {
     })
   }, [])
 
+  // Handle client-side mounting to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Initialize form with user data
   useEffect(() => {
     if (!loading && sessionUser && !initialized) {
       setName(sessionUser.name || '')
       setEmail(sessionUser.email || '')
-      setPhoneNumber(sessionUser.phoneNumber || '')
+      setPhoneNumber((sessionUser as any).phoneNumber || '')
       
-      // Set existing profile picture preview if available
-      if (sessionUser.profilePicture) {
-        if (typeof sessionUser.profilePicture === 'object') {
-          const profilePic = sessionUser.profilePicture as any
-          const url = profilePic.url || profilePic.thumbnailURL || profilePic.sizes?.thumbnail?.url
-          if (url) {
-            setPreviewUrl(url)
-          }
-          // Store the current profile picture ID
-          if (profilePic.id) {
-            setCurrentProfilePictureId(profilePic.id)
-          }
-        } else if (typeof sessionUser.profilePicture === 'string') {
-          setCurrentProfilePictureId(sessionUser.profilePicture)
-        }
+      // Set existing profile picture preview if available (using better-auth's image field)
+      if (sessionUser.image) {
+        setPreviewUrl(sessionUser.image)
       }
       
       setInitialized(true)
@@ -325,24 +320,24 @@ export default function EditProfileForm() {
     
     setSaving(true)
     try {
-      // Remove profile picture from user
-      const response = await payloadFetch(`/api/users/${sessionUser?.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ profilePicture: null }),
+      // Remove profile picture using better-auth's updateUser
+      await updateUser({
+        image: undefined,
+        fetchOptions: {
+          onSuccess: () => {
+            router.refresh()
+            setPreviewUrl(null)
+            setSelectedFile(null)
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ''
+            }
+          },
+          onError: (error) => {
+            console.error('Error deleting profile picture:', error)
+            alert(error.error?.message || 'Failed to delete profile picture')
+          }
+        }
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete profile picture')
-      }
-
-      await refreshSession()
-      
-      setPreviewUrl(null)
-      setSelectedFile(null)
-      setCurrentProfilePictureId(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     } catch (error) {
       console.error('Error deleting profile picture:', error)
     } finally {
@@ -360,80 +355,92 @@ export default function EditProfileForm() {
     setSaving(true)
 
     try {
-      let profilePictureId: string | null = null
-
+      // Upload image to S3 first, then get URL
+      let imageUrl: string | undefined = undefined
       if (selectedFile) {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const uploadResponse = await payloadFetch('/api/profile-pictures', {
+        const uploadResponse = await fetch('/api/profile-image', {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         })
 
         if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text()
-          let errorData
-          try {
-            errorData = JSON.parse(errorText)
-          } catch {
-            errorData = { message: errorText || 'Failed to upload profile picture' }
-          }
-          
-          if (uploadResponse.status === 403) {
-            throw new Error('Access denied. Your session may have expired. Please sign in again.')
-          }
-          
-          throw new Error(errorData.message || `Failed to upload profile picture (${uploadResponse.status})`)
+          const errorData = await uploadResponse.json().catch(() => ({}))
+          throw new Error(errorData.error || 'Failed to upload profile image')
         }
 
-        const uploadedFile = await uploadResponse.json()
-        profilePictureId = uploadedFile.doc?.id || uploadedFile.id || null
+        const uploadData = await uploadResponse.json()
+        imageUrl = uploadData.url
 
-        if (!profilePictureId) {
-          throw new Error('Failed to get profile picture ID after upload')
+        if (!imageUrl) {
+          throw new Error('Failed to get image URL after upload')
         }
+
+        console.log('[EditProfileForm] Image uploaded to S3:', {
+          url: imageUrl,
+          length: imageUrl.length,
+        })
       }
 
-      const updateData: {
-        name?: string
-        phoneNumber?: string
-        profilePicture?: string | null
-      } = {}
-
-      if (name.trim()) {
-        updateData.name = name.trim()
-      }
-
-      if (phoneNumber.trim()) {
-        updateData.phoneNumber = phoneNumber.trim()
-      }
-
-      if (profilePictureId) {
-        updateData.profilePicture = profilePictureId
-      }
-
-      const response = await payloadFetch(`/api/users/${sessionUser.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updateData),
+      // Use better-auth's updateUser with S3 URL (not base64)
+      console.log('[EditProfileForm] Updating user with:', {
+        hasName: !!name.trim(),
+        hasImage: !!imageUrl,
+        imageUrl: imageUrl?.substring(0, 50) + '...',
+        hasPhoneNumber: !!phoneNumber.trim(),
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to update profile')
-      }
-
-      await refreshSession()
-
-      setPreviewUrl(null)
-      setSelectedFile(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      
+      await updateUser({
+        name: name.trim() || undefined,
+        image: imageUrl || undefined,
+        phoneNumber: phoneNumber.trim() || undefined,
+        fetchOptions: {
+          onSuccess: async () => {
+            console.log('[EditProfileForm] Update successful, refreshing session...')
+            // Wait a bit for database to update, then refresh session
+            await new Promise(resolve => setTimeout(resolve, 500))
+            // Manually refresh the session to get updated user data
+            try {
+              // Force session refresh by calling getSession
+              const newSession = await authClient.getSession()
+              console.log('[EditProfileForm] Session refreshed:', {
+                hasUser: !!newSession?.data?.user,
+                hasImage: !!newSession?.data?.user?.image,
+                imageUrl: newSession?.data?.user?.image?.substring(0, 50),
+              })
+              // Trigger session signal to notify all useSession hooks
+              if (authClient.$store) {
+                authClient.$store.notify('$sessionSignal')
+              }
+            } catch (error) {
+              console.error('[EditProfileForm] Error refreshing session:', error)
+            }
+            // Dispatch a custom event to notify other components of session update
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('session-updated'))
+            }
+            setPreviewUrl(null)
+            setSelectedFile(null)
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ''
+            }
+          },
+          onError: (error) => {
+            console.error('[EditProfileForm] Error updating profile:', error)
+            alert(error.error?.message || 'Failed to update profile')
+          }
+        }
+      })
     } catch (error) {
       console.error('Error updating profile:', error)
+      alert('Failed to update profile. Please try again.')
     } finally {
       setSaving(false)
+      // Refresh router after update (like demo does)
+      router.refresh()
     }
   }
 
@@ -441,8 +448,8 @@ export default function EditProfileForm() {
     router.back()
   }
 
-  // Show skeleton while loading
-  if (loading) {
+  // Show skeleton while loading or not mounted (prevents hydration mismatch)
+  if (!mounted || loading) {
     return <EditProfileFormSkeleton />
   }
 

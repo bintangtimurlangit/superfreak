@@ -7,7 +7,7 @@ import SummaryStep from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
 import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { useSession } from '@/lib/auth/client'
 
 const steps = [
   { id: 1, name: 'Upload Model' },
@@ -22,7 +22,8 @@ export default function OrderForm() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [pendingNextStep, setPendingNextStep] = useState(false)
-  const { isSuccess: isAuthenticated, loading: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const isAuthenticated = !!sessionData?.user
 
   // Check for files from Hero Section or restored order state on mount
   useEffect(() => {

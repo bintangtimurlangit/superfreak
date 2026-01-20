@@ -5,8 +5,7 @@ import { Calendar, Filter, Package, Search } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
-import { useSession } from '@/features/auth/hooks/useSession'
-import { payloadFetch } from '@/lib/payloadFetch'
+import { useSession } from '@/lib/auth/client'
 
 type DateFilter = 'all' | '7days' | '30days' | '90days' | 'custom'
 
@@ -51,7 +50,9 @@ function OrderHistoryListSkeleton() {
 }
 
 export default function OrderHistoryList({ className = '' }: OrderHistoryListProps) {
-  const { user, isSuccess: isAuthenticated, loading: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const user = sessionData?.user || null
+  const isAuthenticated = !!user
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
@@ -68,8 +69,9 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
       try {
         setLoading(true)
-        const response = await payloadFetch('/api/orders', {
+        const response = await fetch('/api/orders', {
           method: 'GET',
+          credentials: 'include',
         })
 
         if (!response.ok) {

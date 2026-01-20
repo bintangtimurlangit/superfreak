@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { appAuth } from '@/features/auth/utils/auth'
+import { authClient } from '@/lib/auth/client'
+import { useRouter } from 'next/navigation'
 import EmailConfirmationModal from './EmailConfirmationModal'
 import SignInModal from './SignInModal'
 
@@ -15,6 +16,7 @@ interface SignUpModalProps {
 }
 
 export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignUpModalProps) {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,8 +29,17 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
   const [signupEmail, setSignupEmail] = useState('')
   const [showSignInAfterVerification, setShowSignInAfterVerification] = useState(false)
 
-  const handleGoogleSignUp = () => {
-    appAuth.googleSignIn()
+  const handleGoogleSignUp = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/'
+      })
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to sign up with Google'
+      setError(errorMessage)
+    }
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -68,7 +79,19 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
     }
 
     try {
-      await appAuth.register(email.trim(), password, name.trim())
+      await authClient.signUp.email(
+        {
+          email: email.trim(),
+          password: password,
+          name: name.trim(),
+          callbackURL: '/'
+        },
+        {
+          onRequest: () => {
+            setLoading(true)
+            setError('')
+          },
+          onSuccess: () => {
       setSignupEmail(email.trim())
       setShowEmailConfirmation(true)
       // Reset form
@@ -77,11 +100,19 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
       setPassword('')
       setConfirmPassword('')
       setError('')
+            setLoading(false)
+          },
+          onError: (ctx: any) => {
+            const errorMessage = ctx.error.message || 'An unexpected error occurred. Please try again.'
+            setError(errorMessage)
+            setLoading(false)
+          }
+        }
+      )
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
-    } finally {
       setLoading(false)
     }
   }

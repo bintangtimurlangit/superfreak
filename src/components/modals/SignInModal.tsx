@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { appAuth } from '@/features/auth/utils/auth'
+import { authClient } from '@/lib/auth/client'
+import { useRouter } from 'next/navigation'
 
 interface SignInModalProps {
   isOpen: boolean
@@ -21,6 +22,7 @@ export default function SignInModal({
   onSwitchToResetPassword,
   initialEmail,
 }: SignInModalProps) {
+  const router = useRouter()
   const [email, setEmail] = useState(initialEmail || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -51,20 +53,47 @@ export default function SignInModal({
     }
 
     try {
-      await appAuth.login(email.trim(), password)
+      await authClient.signIn.email(
+        {
+          email: email.trim(),
+          password: password,
+          callbackURL: '/'
+        },
+        {
+          onRequest: () => {
+            setLoading(true)
+            setError('')
+          },
+          onSuccess: () => {
       onClose()
-      window.location.reload()
+            router.refresh()
+            router.push('/')
+          },
+          onError: (ctx: any) => {
+            setError(ctx.error.message || 'An unexpected error occurred. Please try again.')
+            setLoading(false)
+          }
+        }
+      )
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
-    } finally {
       setLoading(false)
     }
   }
 
-  const handleGoogleSignIn = () => {
-    appAuth.googleSignIn()
+  const handleGoogleSignIn = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/'
+      })
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to sign in with Google'
+      setError(errorMessage)
+    }
   }
 
   if (!isOpen) return null
