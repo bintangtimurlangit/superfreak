@@ -81,11 +81,11 @@ export type ConstructedBetterAuthOptions = typeof betterAuthOptions
 export const betterAuthPluginOptions = {
   disabled: false,
   debug: {
-    logTables: false,
-    enableDebugLogs: false
+    logTables: true, // Enable to see account creation logs
+    enableDebugLogs: true // Enable to see better-auth debug logs
   },
   disableDefaultPayloadAuth: true,
-  hidePluginCollections: true,
+  hidePluginCollections: false, // Set to false to see accounts, sessions, verifications collections
   users: {
     slug: 'app-users', // Use app-users collection instead of users
     hidden: false,
@@ -96,7 +96,8 @@ export const betterAuthPluginOptions = {
     allowedFields: ['name', 'image', 'phoneNumber'] // Fields that can be updated via better-auth
   },
   accounts: {
-    slug: 'accounts'
+    slug: 'accounts',
+    hidden: false // Make visible for debugging account linking
   },
   sessions: {
     slug: 'sessions'
