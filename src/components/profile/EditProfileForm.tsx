@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Image from 'next/image'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/features/auth/hooks/useSession'
 import { payloadFetch } from '@/lib/payloadFetch'
 
 function EditProfileFormSkeleton() {

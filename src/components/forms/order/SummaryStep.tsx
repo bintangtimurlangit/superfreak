@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChevronRight, MapPin, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/features/auth/hooks/useSession'
 import type { UploadedFile } from './UploadStep'
 
 interface Province {

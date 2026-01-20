@@ -5,7 +5,7 @@ import { Calendar, Filter, Package, Search } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/features/auth/hooks/useSession'
 import { payloadFetch } from '@/lib/payloadFetch'
 
 type DateFilter = 'all' | '7days' | '30days' | '90days' | 'custom'

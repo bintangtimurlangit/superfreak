@@ -3,4 +3,4 @@
  * All components should use this hook, which now uses shared context
  * to prevent duplicate API calls and improve performance.
  */
-export { useSession } from '@/contexts/SessionContext'
+export { useSession } from '../contexts/SessionContext'

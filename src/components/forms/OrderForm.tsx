@@ -5,9 +5,9 @@ import StepsProgress from '@/components/ui/StepsProgress'
 import UploadStep, { type UploadedFile, type ModelConfiguration } from './order/UploadStep'
 import SummaryStep from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
-import ConfigureModal from '@/components/modals/ConfigureModal'
+import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/features/auth/hooks/useSession'
 
 const steps = [
   { id: 1, name: 'Upload Model' },

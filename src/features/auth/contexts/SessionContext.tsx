@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
-import { appAuth } from '@/lib/auth'
+import { appAuth } from '@/features/auth/utils/auth'
 
 interface SessionData {
   data: { user?: Record<string, unknown> }

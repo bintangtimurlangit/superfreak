@@ -7,8 +7,8 @@ import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
-import { useSession } from '@/hooks/useSession'
-import { appAuth } from '@/lib/auth'
+import { useSession } from '@/features/auth/hooks/useSession'
+import { appAuth } from '@/features/auth/utils/auth'
 import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
 
 function UserProfileSkeleton() {
@@ -36,7 +36,7 @@ const Navbar = () => {
   
   const profilePictureUrl = user?.profilePicture
     ? typeof user.profilePicture === 'object'
-      ? (user.profilePicture.url || user.profilePicture.thumbnailURL || user.profilePicture.sizes?.thumbnail?.url || null)
+      ? ((user.profilePicture as any).url || (user.profilePicture as any).thumbnailURL || (user.profilePicture as any).sizes?.thumbnail?.url || null)
       : null
     : null
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -242,9 +242,9 @@ const Navbar = () => {
                     </span>
                   )}
                   <span className="hidden sm:flex flex-col leading-tight">
-                    <span className="text-sm font-medium">{displayName}</span>
+                    <span className="text-sm font-medium">{String(displayName)}</span>
                     <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                      {user.email}
+                      {user.email as string}
                     </span>
                   </span>
                 </Button>
@@ -437,9 +437,9 @@ const Navbar = () => {
                       </span>
                     )}
                     <span className="flex flex-col leading-tight">
-                      <span className="text-sm font-medium">{displayName}</span>
+                      <span className="text-sm font-medium">{String(displayName)}</span>
                       <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                        {user.email}
+                        {user.email as string}
                       </span>
                     </span>
                   </Button>

@@ -1,10 +1,10 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/features/auth/hooks/useSession'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
-import { appAuth } from '@/lib/auth'
+import { appAuth } from '@/features/auth/utils/auth'
 import Image from 'next/image'
 
 function ProfileSidebarSkeleton() {

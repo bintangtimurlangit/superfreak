@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useLocationStore } from '@/lib/stores/locationStore'
+import { useLocationStore } from '../stores/locationStore'
 import { Province, Regency, District, Village } from '@/lib/types'
 
 // Fetch provinces

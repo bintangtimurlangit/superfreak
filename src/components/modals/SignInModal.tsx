@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
-import { appAuth } from '@/lib/auth'
+import { appAuth } from '@/features/auth/utils/auth'
 
 interface SignInModalProps {
   isOpen: boolean

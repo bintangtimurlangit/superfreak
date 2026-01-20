@@ -5,7 +5,7 @@ import {
   hashVerificationCode,
   verifyCode,
   isVerificationExpired,
-} from '@/hooks/emailVerification'
+} from './hooks/emailVerification'
 import {
   getVerificationEmailHTML,
   getVerificationEmailText,
@@ -351,70 +351,6 @@ export const AppUsers: CollectionConfig = {
           success: true,
           message: 'Verification code sent successfully',
         })
-      },
-    },
-    {
-      path: '/debug-auth',
-      method: 'get',
-      handler: async (req) => {
-        try {
-          const cookies = req.headers.get('cookie') || ''
-          const cookieArray = cookies.split(';').map(c => c.trim())
-          
-          const authCookie = cookieArray.find(c => c.startsWith('payload-token-app-users='))
-          const token = authCookie ? decodeURIComponent(authCookie.split('=').slice(1).join('=')) : null
-
-          let decodedToken = null
-          let userFromToken = null
-          let tokenError = null
-          
-          if (token) {
-            try {
-              const jwt = await import('jsonwebtoken')
-              const secret = process.env.PAYLOAD_SECRET
-              if (secret) {
-                decodedToken = jwt.verify(token, secret) as { id: string; email: string; collection: string }
-                if (decodedToken?.id) {
-                  try {
-                    userFromToken = await req.payload.findByID({
-                      collection: 'app-users',
-                      id: decodedToken.id,
-                      depth: 0,
-                    })
-                  } catch (error) {
-                    tokenError = error instanceof Error ? error.message : String(error)
-                    console.error('Error fetching user from token:', error)
-                  }
-                }
-              }
-            } catch (error) {
-              tokenError = error instanceof Error ? error.message : String(error)
-              console.error('Error decoding token:', error)
-            }
-          }
-
-          return Response.json({
-            hasUser: !!req.user,
-            userId: req.user?.id || null,
-            userEmail: req.user?.email || null,
-            userCollection: req.user?.collection || null,
-            hasAuthCookie: !!authCookie,
-            tokenPreview: token ? token.substring(0, 30) + '...' : null,
-            decodedToken,
-            userFromToken: userFromToken ? {
-              id: userFromToken.id,
-              email: userFromToken.email,
-              name: userFromToken.name,
-            } : null,
-            tokenError,
-            allCookies: cookieArray,
-          })
-        } catch (error) {
-          return Response.json({
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-          }, { status: 500 })
-        }
       },
     },
   ] as Endpoint[],
