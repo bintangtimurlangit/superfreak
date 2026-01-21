@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Box, Trash2, ChevronRight, ArrowUp, Shield, Minus, Plus, AlertCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import { parseConfigurationValues } from '@/lib/validations/order'
 
 export interface ModelConfiguration {
   material?: string
@@ -142,33 +143,21 @@ export default function UploadStep({
         ),
       )
 
-      // Validate required configuration parameters
-      if (!config.layerHeight) {
-        throw new Error('Layer height is required. Please configure the model first.')
-      }
-      if (!config.infill) {
-        throw new Error('Infill density is required. Please configure the model first.')
-      }
-      if (!config.wallCount) {
-        throw new Error('Wall count is required. Please configure the model first.')
+      // Validate configuration using Zod schema
+      const validation = parseConfigurationValues({
+        layerHeight: config.layerHeight,
+        infill: config.infill,
+        wallCount: config.wallCount,
+      })
+
+      if (!validation.valid) {
+        throw new Error(
+          `Configuration validation failed: ${validation.errors.join(', ')}. Please configure the model first.`,
+        )
       }
 
-      // Map configuration to API parameters (no defaults - all required)
-      const layerHeight = parseFloat(config.layerHeight)
-      const infillDensity = parseInt(config.infill.replace('%', ''), 10)
-      const wallCount = parseInt(config.wallCount, 10)
-      const filamentType = config.material?.toUpperCase() || 'PLA' // Default to PLA if not configured
-
-      // Validate parsed values
-      if (Number.isNaN(layerHeight) || layerHeight <= 0) {
-        throw new Error(`Invalid layer height: ${config.layerHeight}`)
-      }
-      if (Number.isNaN(infillDensity) || infillDensity < 0 || infillDensity > 100) {
-        throw new Error(`Invalid infill density: ${config.infill}`)
-      }
-      if (Number.isNaN(wallCount) || wallCount < 1 || wallCount > 20) {
-        throw new Error(`Invalid wall count: ${config.wallCount}. Must be between 1 and 20`)
-      }
+      const { layerHeight, infillDensity, wallCount } = validation.values
+      const filamentType = config.material?.toUpperCase() || 'PLA'
 
       // Prepare form data
       const formData = new FormData()

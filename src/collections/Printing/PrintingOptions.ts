@@ -7,17 +7,14 @@ export const PrintingOptions: CollectionConfig = {
     defaultColumns: ['type', 'isActive', 'createdAt'],
   },
   access: {
-    read: () => true, // Public read access
+    read: () => true,
     create: ({ req: { user } }) => {
-      // Only admin users can create
       return user?.collection === 'admin-users'
     },
     update: ({ req: { user } }) => {
-      // Only admin users can update
       return user?.collection === 'admin-users'
     },
     delete: ({ req: { user } }) => {
-      // Only admin users can delete
       return user?.collection === 'admin-users'
     },
   },

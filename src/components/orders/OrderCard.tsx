@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { Calendar, Package, ChevronRight } from 'lucide-react'
 import StatusBadge, { type OrderStatus } from './StatusBadge'
 import Button from '@/components/ui/Button'
@@ -129,7 +128,8 @@ export default function OrderCard({ order }: OrderCardProps) {
                 className="text-xs text-[#989898] mt-1"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
-                {item.quantity} {item.quantity > 1 ? 'items' : 'item'} × {formatCurrency(item.price)}
+                {item.quantity} {item.quantity > 1 ? 'items' : 'item'} ×{' '}
+                {formatCurrency(item.price)}
               </p>
             </div>
 
@@ -156,10 +156,7 @@ export default function OrderCard({ order }: OrderCardProps) {
 
       {/* Total Amount */}
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#EFEFEF]">
-        <span
-          className="text-sm text-[#989898]"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
+        <span className="text-sm text-[#989898]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
           Total Amount
         </span>
         <span

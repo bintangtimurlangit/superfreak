@@ -2,7 +2,6 @@ import type { CollectionConfig } from 'payload'
 
 export const AppUsers: CollectionConfig = {
   slug: 'app-users',
-  // auth: true removed - better-auth handles authentication now
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['email', 'name', 'createdAt'],
@@ -19,7 +18,7 @@ export const AppUsers: CollectionConfig = {
         targetId: id,
         idsMatch: user?.id === id,
       })
-      
+
       if (!user || !user.id) {
         console.log('[AppUsers Access Control] No user in request, denying access')
         return false
@@ -49,22 +48,11 @@ export const AppUsers: CollectionConfig = {
     },
   },
   fields: [
-    // The payload-auth plugin automatically adds 'name' and 'image' fields based on allowedFields in options.ts
-    // The 'image' field is stored as a base64 data URL string by better-auth
     {
       name: 'phoneNumber',
       type: 'text',
       label: 'Phone Number',
-      // Not in allowedFields, so it won't be auto-added by plugin, avoiding duplicate
     },
-    // Removed profilePicture upload field - using better-auth's built-in 'image' field instead
-    // better-auth handles image as a base64 data URL string, stored directly in the user document
-    // Removed old auth fields - better-auth handles these:
-    // - googleId (handled by accounts collection)
-    // - authProvider (handled by accounts collection)
-    // - verificationCode, verificationHash, verificationTokenExpire, verificationKind (handled by verifications collection)
   ],
   timestamps: true,
-  // Removed old auth hooks - better-auth handles email verification
-  // Removed old auth endpoints - better-auth handles verification via /api/auth endpoints
 }

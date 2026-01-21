@@ -7,7 +7,6 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { lenisInstance } from '@/components/layout/SmoothScroll'
 
-// Register ScrollTrigger plugin
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
@@ -22,53 +21,43 @@ export default function SeamlessProcess() {
   useEffect(() => {
     if (!sectionRef.current || !card1Ref.current || !card2Ref.current || !card3Ref.current) return
 
-    // Wait for Lenis to be ready
     const setupScrollTrigger = () => {
       if (!lenisInstance.current) {
-        // Retry if Lenis isn't ready yet
         setTimeout(setupScrollTrigger, 100)
         return
       }
 
-      // ScrollTrigger is already connected to Lenis in SmoothScroll component
-
-      // Set initial states
       gsap.set([card1Ref.current, card2Ref.current, card3Ref.current], {
         opacity: 0,
         y: 50,
       })
 
-      // Get navbar height to compensate for sticky navbar
       const navbar = document.querySelector('header')
       const navbarHeight = navbar ? navbar.offsetHeight : 80
 
-      // Create ScrollTrigger timeline - pin the entire section
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: `top-=${navbarHeight} top`, // Start pinning earlier to account for navbar height
-          end: '+=200%', // Pin for 200% of viewport height
+          start: `top-=${navbarHeight} top`,
+          end: '+=200%',
           pin: true,
-          pinSpacing: true, // Enable pin spacing
-          scrub: 1, // Smooth scrubbing
+          pinSpacing: true,
+          scrub: 1,
           invalidateOnRefresh: true,
-          markers: false, // Set to true for debugging
+          markers: false,
         },
       })
 
-      // Set pin spacer background color after ScrollTrigger creates it
       const setPinSpacerBg = () => {
         const pinSpacer = document.querySelector('.pin-spacer') as HTMLElement
         if (pinSpacer) {
           pinSpacer.style.backgroundColor = '#F8F8F8'
         } else {
-          // Retry if not found yet
           setTimeout(setPinSpacerBg, 50)
         }
       }
       setPinSpacerBg()
 
-      // Animate cards sequentially
       tl.to(card1Ref.current, {
         opacity: 1,
         y: 0,
@@ -83,7 +72,7 @@ export default function SeamlessProcess() {
             duration: 0.33,
             ease: 'power2.out',
           },
-          '-=0.1', // Slight overlap
+          '-=0.1',
         )
         .to(
           card3Ref.current,
@@ -93,7 +82,7 @@ export default function SeamlessProcess() {
             duration: 0.34,
             ease: 'power2.out',
           },
-          '-=0.1', // Slight overlap
+          '-=0.1',
         )
     }
 

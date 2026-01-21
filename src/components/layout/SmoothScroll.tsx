@@ -5,7 +5,6 @@ import Lenis from 'lenis'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import 'lenis/dist/lenis.css'
 
-// Export lenis instance so other components can control it
 export const lenisInstance = { current: null as Lenis | null }
 
 export default function SmoothScroll() {
@@ -15,7 +14,6 @@ export default function SmoothScroll() {
     })
     lenisInstance.current = lenis
 
-    // Connect Lenis to ScrollTrigger globally
     lenis.on('scroll', ScrollTrigger.update)
 
     return () => {

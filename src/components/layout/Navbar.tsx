@@ -11,7 +11,17 @@ import { signOut } from '@/lib/auth/client'
 import { useBetterAuth } from '@/lib/auth/context'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, MessageSquareText, ShoppingCart, LogIn, Menu, X, Package, User, LogOut } from 'lucide-react'
+import {
+  ChevronDown,
+  MessageSquareText,
+  ShoppingCart,
+  LogIn,
+  Menu,
+  X,
+  Package,
+  User,
+  LogOut,
+} from 'lucide-react'
 
 function UserProfileSkeleton() {
   return (
@@ -28,9 +38,7 @@ function UserProfileSkeleton() {
 }
 
 function MobileUserProfileSkeleton() {
-  return (
-    <div className="w-full h-11 bg-gray-200 rounded-lg animate-pulse" />
-  )
+  return <div className="w-full h-11 bg-gray-200 rounded-lg animate-pulse" />
 }
 
 const Navbar = () => {
@@ -38,38 +46,28 @@ const Navbar = () => {
   const { currentUserPromise } = useBetterAuth()
   const user = use(currentUserPromise)
   const isAuthenticated = !!user
-  
+
   // Type guard to check if user is AppUser (has image field)
   const appUser = user?.collection === 'app-users' ? user : null
-  
+
   // Get user data from Payload auth (includes all fields like image)
   const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
-  const initials = (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') || (user?.email ? String(user.email)[0]?.toUpperCase() : '') || 'U'
-  
+  const initials =
+    (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') ||
+    (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
+    'U'
+
   // Use image field from Payload user (not from better-auth session)
   const profilePictureUrl = appUser?.image || null
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[Navbar] User updated:', {
-      hasUser: !!user,
-      userCollection: user?.collection,
-      hasImage: !!appUser?.image,
-      imageUrl: appUser?.image?.substring(0, 50),
-    })
-  }, [user, appUser])
-  
-  // Listen for session updates and refresh router
+
   useEffect(() => {
     const handleSessionUpdate = () => {
-      console.log('[Navbar] Session update event received, refreshing...')
-      // Force router refresh to update server components (which will refetch currentUserPromise)
       router.refresh()
     }
     window.addEventListener('session-updated', handleSessionUpdate)
     return () => window.removeEventListener('session-updated', handleSessionUpdate)
   }, [router])
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('English')
@@ -84,25 +82,19 @@ const Navbar = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      
+
       // Don't close if clicking on logout button or its children
       if (target?.closest('[data-logout-button]')) {
         return
       }
-      
+
       // Check if click is outside language dropdown
-      if (
-        languageDropdownRef.current &&
-        !languageDropdownRef.current.contains(target)
-      ) {
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(target)) {
         setIsLanguageDropdownOpen(false)
       }
-      
+
       // Check if click is outside user dropdown
-      if (
-        userDropdownRef.current &&
-        !userDropdownRef.current.contains(target)
-      ) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(target)) {
         setIsUserDropdownOpen(false)
       }
     }
@@ -113,7 +105,7 @@ const Navbar = () => {
       const timeoutId = setTimeout(() => {
         document.addEventListener('click', handleClickOutside, true)
       }, 100)
-      
+
       return () => {
         clearTimeout(timeoutId)
         document.removeEventListener('click', handleClickOutside, true)
@@ -131,9 +123,9 @@ const Navbar = () => {
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     setIsUserDropdownOpen(false)
-    
+
     try {
       await signOut({
         fetchOptions: {
@@ -144,8 +136,8 @@ const Navbar = () => {
           onError: (error: any) => {
             console.error('Logout error:', error)
             router.push('/')
-          }
-        }
+          },
+        },
       })
     } catch (error) {
       console.error('Logout error:', error)
@@ -326,23 +318,24 @@ const Navbar = () => {
                 Sign In
               </Button>
             )}
-
           </div>
 
           {/* Mobile Actions - Icons Only */}
           <div className="flex md:hidden items-center gap-2">
             {!user ? (
               <div className="h-10 w-10 bg-gray-200 rounded-[12px] animate-pulse" />
-            ) : !isAuthenticated && (
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-10 w-10 rounded-[12px] border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] dark:!bg-white dark:text-[#292929] dark:hover:!bg-[#f2f2f2] dark:border-white/20"
-                aria-label="Sign In"
-                onClick={() => setIsSignInModalOpen(true)}
-              >
-                <LogIn className="h-4 w-4" aria-hidden />
-              </Button>
+            ) : (
+              !isAuthenticated && (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-10 w-10 rounded-[12px] border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] dark:!bg-white dark:text-[#292929] dark:hover:!bg-[#f2f2f2] dark:border-white/20"
+                  aria-label="Sign In"
+                  onClick={() => setIsSignInModalOpen(true)}
+                >
+                  <LogIn className="h-4 w-4" aria-hidden />
+                </Button>
+              )
             )}
             <Button
               variant="secondary"

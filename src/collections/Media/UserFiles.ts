@@ -7,7 +7,6 @@ export const UserFiles: CollectionConfig = {
     defaultColumns: ['filename', 'fileType', 'createdAt'],
   },
   access: {
-    // Allow anyone (we'll handle auth via hooks)
     read: () => true,
     create: () => true,
     update: () => true,
@@ -33,17 +32,15 @@ export const UserFiles: CollectionConfig = {
     },
   ],
   upload: {
-    // Only allow 3D file formats
     mimeTypes: [
       'model/stl',
       'model/obj',
       'model/gltf-binary',
       'model/gltf+json',
-      'application/x-msdownload', // .stl
-      'text/plain', // .obj (sometimes)
-      'application/octet-stream', // Generic binary
+      'application/x-msdownload',
+      'text/plain',
+      'application/octet-stream',
     ],
-    // Increase max file size for 3D files (50MB)
     filesRequiredOnCreate: false,
     imageSizes: [],
   },

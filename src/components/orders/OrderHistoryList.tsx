@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, Filter, Package, Search } from 'lucide-react'
+import { Package, Search } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
@@ -97,12 +97,12 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
     if (dateFilter === 'all') return true
 
     const orderDate = new Date(order.createdAt)
-    
+
     // Custom date range filtering
     if (dateFilter === 'custom' && customStartDate && customEndDate) {
       const orderTime = orderDate.getTime()
       const startTime = customStartDate.getTime()
-      const endTime = customEndDate.getTime() + (24 * 60 * 60 * 1000) // Include end date
+      const endTime = customEndDate.getTime() + 24 * 60 * 60 * 1000 // Include end date
       return orderTime >= startTime && orderTime <= endTime
     }
 

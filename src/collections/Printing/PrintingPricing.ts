@@ -7,17 +7,14 @@ export const PrintingPricing: CollectionConfig = {
     defaultColumns: ['filamentType', 'isActive', 'createdAt'],
   },
   access: {
-    read: () => true, // Public read access
+    read: () => true,
     create: ({ req: { user } }) => {
-      // Only admin users can create
       return user?.collection === 'admin-users'
     },
     update: ({ req: { user } }) => {
-      // Only admin users can update
       return user?.collection === 'admin-users'
     },
     delete: ({ req: { user } }) => {
-      // Only admin users can delete
       return user?.collection === 'admin-users'
     },
   },
@@ -125,8 +122,7 @@ export const PrintingPricing: CollectionConfig = {
   timestamps: true,
   hooks: {
     beforeChange: [
-      async ({ data, operation, req, id: docId }) => {
-        // Ensure unique filament type per document
+      async ({ data, operation, req, originalDoc }) => {
         if (operation === 'create' || operation === 'update') {
           const filamentId =
             typeof data?.filamentType === 'string'
@@ -141,9 +137,8 @@ export const PrintingPricing: CollectionConfig = {
             filamentType: { equals: filamentId },
           }
 
-          // If updating, exclude current document
-          if (operation === 'update' && docId) {
-            whereClause.id = { not_equals: docId }
+          if (operation === 'update' && originalDoc?.id) {
+            whereClause.id = { not_equals: originalDoc.id }
           }
 
           const existing = await req.payload.find({
@@ -159,7 +154,6 @@ export const PrintingPricing: CollectionConfig = {
             )
           }
 
-          // Validate unique layer heights within the pricing table
           if (data.pricingTable && Array.isArray(data.pricingTable)) {
             const layerHeights = data.pricingTable
               .map((row: any) => row.layerHeight)

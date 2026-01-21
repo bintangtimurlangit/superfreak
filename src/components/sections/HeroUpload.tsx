@@ -12,7 +12,6 @@ export default function HeroUpload() {
   const [isDragging, setIsDragging] = useState(false)
 
   const processFiles = (files: FileList | File[]) => {
-    // Filter only 3D file formats
     const allowedExtensions = [
       '.stl',
       '.obj',
@@ -43,7 +42,6 @@ export default function HeroUpload() {
       return
     }
 
-    // Store files in sessionStorage as base64 strings
     const filePromises = Array.from(validFiles).map((file) => {
       return new Promise<{ name: string; size: number; data: string }>((resolve) => {
         const reader = new FileReader()

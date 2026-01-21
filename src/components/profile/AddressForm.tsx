@@ -20,28 +20,26 @@ export default function AddressForm() {
   const [success, setSuccess] = useState(false)
   const [provinceDropdownOpened, setProvinceDropdownOpened] = useState(false)
 
-  // Fetch saved addresses using React Query
   const { data: savedAddresses = [], isLoading: addressesLoading } = useQuery({
     queryKey: ['addresses', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-      
+
       const response = await fetch(`/api/user-addresses`, {
         credentials: 'include',
       })
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to fetch addresses' }))
         throw new Error(error.message || 'Failed to fetch addresses')
       }
-      
+
       const data = await response.json()
       return data.docs || []
     },
     enabled: !!user?.id,
   })
 
-  // React Hook Form setup
   const {
     register,
     handleSubmit,
@@ -65,18 +63,14 @@ export default function AddressForm() {
     },
   })
 
-  // Watch form fields for dependent dropdowns
   const provinceCode = watch('provinceCode')
   const regencyCode = watch('regencyCode')
   const districtCode = watch('districtCode')
-
-  // Fetch location data using custom hooks - provinces only load when dropdown is opened
   const { data: provinces = [] } = useProvinces(provinceDropdownOpened)
   const { data: regencies = [], isLoading: regenciesLoading } = useRegencies(provinceCode)
   const { data: districts = [], isLoading: districtsLoading } = useDistricts(regencyCode)
   const { data: villages = [], isLoading: villagesLoading } = useVillages(districtCode)
 
-  // Reset dependent fields when parent changes
   useEffect(() => {
     setValue('regencyCode', '')
     setValue('districtCode', '')
@@ -92,7 +86,6 @@ export default function AddressForm() {
     setValue('villageCode', '')
   }, [districtCode, setValue])
 
-  // Create address mutation
   const createAddressMutation = useMutation({
     mutationFn: async (data: AddressFormData) => {
       const response = await fetch('/api/user-addresses', {
@@ -103,12 +96,12 @@ export default function AddressForm() {
         body: JSON.stringify({ ...data, user: user?.id }),
         credentials: 'include',
       })
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to save address' }))
         throw new Error(error.message || 'Failed to save address')
       }
-      
+
       return response.json()
     },
     onSuccess: () => {
@@ -124,14 +117,13 @@ export default function AddressForm() {
     },
   })
 
-  // Delete address mutation
   const deleteAddressMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/user-addresses/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to delete address' }))
         throw new Error(error.message || 'Failed to delete address')
@@ -148,7 +140,6 @@ export default function AddressForm() {
     },
   })
 
-  // Form submit handler
   const onSubmit = (data: AddressFormData) => {
     if (savedAddresses.length >= 3) {
       setError('Maximum 3 addresses allowed')
@@ -157,7 +148,6 @@ export default function AddressForm() {
     createAddressMutation.mutate(data)
   }
 
-  // Format address for display
   const formatAddress = (address: SavedAddress) => {
     const province = provinces.find((p) => p.code === address.provinceCode)
     const regency = regencies.find((r) => r.code === address.regencyCode)
@@ -173,7 +163,7 @@ export default function AddressForm() {
       province?.name,
       address.postalCode,
     ].filter(Boolean)
-    
+
     return parts.join(', ')
   }
 
@@ -199,7 +189,6 @@ export default function AddressForm() {
 
   return (
     <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 bg-[#1D0DF3] rounded-[12px] flex items-center justify-center flex-shrink-0">
           <Home className="h-6 w-6 text-white" />
@@ -214,7 +203,6 @@ export default function AddressForm() {
 
       <div className="border-t border-[#EFEFEF] -mx-4 md:-mx-5 mb-6"></div>
 
-      {/* Error/Success Messages */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
@@ -228,7 +216,6 @@ export default function AddressForm() {
       )}
 
       <div className="space-y-6">
-        {/* Saved Addresses */}
         {savedAddresses.length > 0 && (
           <div>
             <h3
@@ -296,7 +283,6 @@ export default function AddressForm() {
           </div>
         )}
 
-        {/* Empty State */}
         {savedAddresses.length === 0 && !showAddForm && (
           <div className="text-center py-12 border-2 border-dashed border-[#EFEFEF] rounded-[12px] bg-[#F8F8F8]">
             <MapPin className="h-12 w-12 text-[#989898] mx-auto mb-4" />
@@ -315,7 +301,6 @@ export default function AddressForm() {
           </div>
         )}
 
-        {/* Add New Address Section */}
         {savedAddresses.length > 0 && (
           <div className="flex items-center justify-between mb-4">
             <h3
@@ -338,7 +323,6 @@ export default function AddressForm() {
           </div>
         )}
 
-        {/* Add Address Form */}
         {showAddForm && (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="border border-[#EFEFEF] rounded-[12px] p-5 bg-[#F8F8F8]">
@@ -355,7 +339,6 @@ export default function AddressForm() {
               </div>
 
               <div className="space-y-4">
-                {/* Recipient Name */}
                 <div>
                   <label
                     htmlFor="recipientName"
@@ -377,7 +360,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Phone Number */}
                 <div>
                   <label
                     htmlFor="phoneNumber"
@@ -399,7 +381,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Address Line 1 */}
                 <div>
                   <label
                     htmlFor="addressLine1"
@@ -421,7 +402,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Address Line 2 */}
                 <div>
                   <label
                     htmlFor="addressLine2"
@@ -467,7 +447,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Regency */}
                 <div>
                   <label
                     htmlFor="regencyCode"
@@ -487,8 +466,8 @@ export default function AddressForm() {
                       {regenciesLoading
                         ? 'Loading...'
                         : provinceCode
-                        ? 'Select City/Regency'
-                        : 'Select Province first'}
+                          ? 'Select City/Regency'
+                          : 'Select Province first'}
                     </option>
                     {regencies.map((regency) => (
                       <option key={regency.code} value={regency.code}>
@@ -501,7 +480,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* District */}
                 <div>
                   <label
                     htmlFor="districtCode"
@@ -521,8 +499,8 @@ export default function AddressForm() {
                       {districtsLoading
                         ? 'Loading...'
                         : regencyCode
-                        ? 'Select District'
-                        : 'Select City/Regency first'}
+                          ? 'Select District'
+                          : 'Select City/Regency first'}
                     </option>
                     {districts.map((district) => (
                       <option key={district.code} value={district.code}>
@@ -535,7 +513,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Village */}
                 <div>
                   <label
                     htmlFor="villageCode"
@@ -555,8 +532,8 @@ export default function AddressForm() {
                       {villagesLoading
                         ? 'Loading...'
                         : districtCode
-                        ? 'Select Village/Sub-district'
-                        : 'Select District first'}
+                          ? 'Select Village/Sub-district'
+                          : 'Select District first'}
                     </option>
                     {villages.map((village) => (
                       <option key={village.code} value={village.code}>
@@ -569,7 +546,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Postal Code */}
                 <div>
                   <label
                     htmlFor="postalCode"
@@ -592,7 +568,6 @@ export default function AddressForm() {
                   )}
                 </div>
 
-                {/* Default Checkbox */}
                 <div className="flex items-center gap-3 pt-2">
                   <input
                     type="checkbox"
@@ -611,7 +586,6 @@ export default function AddressForm() {
               </div>
             </div>
 
-            {/* Form Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-[#EFEFEF]">
               <button
                 type="button"
@@ -639,13 +613,10 @@ export default function AddressForm() {
         )}
 
         {savedAddresses.length >= 3 && !showAddForm && (
-          <div className="text-sm text-[#989898] text-center py-2">
-            Maximum 3 addresses reached
-          </div>
+          <div className="text-sm text-[#989898] text-center py-2">Maximum 3 addresses reached</div>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"

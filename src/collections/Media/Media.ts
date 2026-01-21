@@ -5,7 +5,6 @@ export const Media: CollectionConfig = {
   access: {
     read: () => true,
     create: ({ req: { user } }) => {
-      // Allow authenticated users to create media (for profile pictures)
       return Boolean(user)
     },
   },
@@ -16,5 +15,23 @@ export const Media: CollectionConfig = {
       required: true,
     },
   ],
-  upload: true,
+  upload: {
+    imageSizes: [
+      {
+        name: 'thumbnail',
+        width: 400,
+        height: 400,
+        position: 'center',
+      },
+      {
+        name: 'small',
+        width: 800,
+        height: 800,
+        position: 'center',
+      },
+    ],
+    adminThumbnail: 'thumbnail',
+    focalPoint: true,
+    crop: true,
+  },
 }

@@ -70,27 +70,21 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
 
   const handleDateClick = (day: number) => {
     const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    clickedDate.setHours(0, 0, 0, 0) // Reset time to midnight
+    clickedDate.setHours(0, 0, 0, 0)
 
     if (!tempStartDate) {
-      // This shouldn't happen since we auto-select today, but handle it anyway
       setTempStartDate(clickedDate)
       setTempEndDate(null)
     } else if (tempStartDate && !tempEndDate) {
-      // First click after auto-selection: set end date
       if (clickedDate < tempStartDate) {
-        // If clicked date is before start date, swap them
         setTempEndDate(tempStartDate)
         setTempStartDate(clickedDate)
       } else if (clickedDate.getTime() === tempStartDate.getTime()) {
-        // If clicking the same date as start, set end to same date
         setTempEndDate(clickedDate)
       } else {
-        // Normal case: set as end date
         setTempEndDate(clickedDate)
       }
     } else if (tempStartDate && tempEndDate) {
-      // Both dates already selected: start new selection
       setTempStartDate(clickedDate)
       setTempEndDate(null)
     }
@@ -114,21 +108,17 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
   const isDateInRange = (day: number) => {
     if (!tempStartDate) return false
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    
+
     if (tempEndDate) {
-      // If end date is set, show the actual range
       return date >= tempStartDate && date <= tempEndDate
     } else if (hoverDate) {
-      // Show preview range based on hover position
       if (hoverDate > tempStartDate) {
-        // Hovering after start date
         return date >= tempStartDate && date <= hoverDate
       } else if (hoverDate < tempStartDate) {
-        // Hovering before start date
         return date >= hoverDate && date <= tempStartDate
       }
     }
-    
+
     return false
   }
 
@@ -159,12 +149,10 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
     const firstDay = getFirstDayOfMonth(currentMonth)
     const days = []
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-9" />)
     }
 
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const isInRange = isDateInRange(day)
       const isSelected = isDateSelected(day)
@@ -180,13 +168,13 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
             isSelected
               ? 'bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]'
               : isInRange
-              ? 'bg-[#1D0DF3]/10 text-[#1D0DF3]'
-              : 'text-[#292929] hover:bg-[#F8F8F8]'
+                ? 'bg-[#1D0DF3]/10 text-[#1D0DF3]'
+                : 'text-[#292929] hover:bg-[#F8F8F8]'
           }`}
           style={{ fontFamily: 'var(--font-geist-sans)' }}
         >
           {day}
-        </button>
+        </button>,
       )
     }
 
@@ -220,7 +208,6 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 bg-white border border-[#EFEFEF] rounded-[20px] shadow-lg z-50 p-4 min-w-[320px]">
-          {/* Month Navigation */}
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
@@ -244,7 +231,6 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
             </button>
           </div>
 
-          {/* Day Headers */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
               <div
@@ -257,10 +243,8 @@ export default function DateRangePicker({ onRangeSelect, className = '' }: DateR
             ))}
           </div>
 
-          {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1 mb-4">{renderCalendar()}</div>
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-between gap-2 pt-4 border-t border-[#EFEFEF]">
             <button
               type="button"

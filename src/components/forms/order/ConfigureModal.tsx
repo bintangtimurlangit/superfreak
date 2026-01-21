@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useForm, type SubmitHandler } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import type { UploadedFile, ModelConfiguration } from './UploadStep'
+import type { UploadedFile } from './UploadStep'
+import { modelConfigurationSchema, type ModelConfigurationFormData } from '@/lib/validations/order'
 
 interface ConfigureModalProps {
   isOpen: boolean
   onClose: () => void
   file: UploadedFile | null
-  onSave: (fileId: string, configuration: ModelConfiguration) => void
+  onSave: (fileId: string, configuration: ModelConfigurationFormData) => void
 }
 
 const lineHeightOptions = ['0.12', '0.16', '0.20', '0.24']
@@ -18,86 +21,76 @@ const materialOptions = ['PLA', 'PETG', 'ABS', 'Resin', 'Other']
 const colorOptions = ['Black', 'White', 'Grey', 'Transparent', 'Custom']
 
 export default function ConfigureModal({ isOpen, onClose, file, onSave }: ConfigureModalProps) {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<ModelConfiguration>({
-    material: '',
-    layerHeight: '',
-    color: '',
-    infill: '',
-    wallCount: '2',
-    specialRequest: '',
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<ModelConfigurationFormData>({
+    resolver: zodResolver(modelConfigurationSchema),
+    mode: 'onChange',
+    defaultValues: {
+      material: '',
+      color: '',
+      layerHeight: '',
+      infill: '',
+      wallCount: '2',
+      quantity: 1,
+      enabled: true,
+      specialRequest: '',
+    },
   })
+
+  const formData = watch()
 
   useEffect(() => {
     if (file?.configuration) {
-      setFormData({
+      reset({
         material: file.configuration.material || '',
-        layerHeight: file.configuration.layerHeight || '',
         color: file.configuration.color || '',
+        layerHeight: file.configuration.layerHeight || '',
         infill: file.configuration.infill || '',
         wallCount: file.configuration.wallCount || '2',
+        quantity: file.configuration.quantity || 1,
+        enabled: file.configuration.enabled ?? true,
         specialRequest: file.configuration.specialRequest || '',
       })
     } else {
-      setFormData({
+      reset({
         material: '',
-        layerHeight: '',
         color: '',
+        layerHeight: '',
         infill: '',
         wallCount: '2',
+        quantity: 1,
+        enabled: true,
         specialRequest: '',
       })
     }
-    setCurrentStep(1)
-  }, [file, isOpen])
+  }, [file, isOpen, reset])
 
   if (!isOpen || !file) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSave(file.id, formData)
+  const onSubmit: SubmitHandler<ModelConfigurationFormData> = (data) => {
+    onSave(file.id, data)
     onClose()
   }
 
-  const handleChange = (field: keyof ModelConfiguration, value: string) => {
-    if (field === 'wallCount') {
-      const num = Number(value)
-      if (Number.isNaN(num)) {
-        setFormData((prev) => ({ ...prev, wallCount: '' }))
-        return
-      }
-      const clamped = Math.max(1, Math.min(10, Math.round(num)))
-      setFormData((prev) => ({ ...prev, wallCount: String(clamped) }))
+  const handleWallCountChange = (value: string) => {
+    const num = Number(value)
+    if (Number.isNaN(num)) {
+      setValue('wallCount', '', { shouldValidate: true })
       return
     }
-
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const totalSteps = 3
-  const step1Valid = !!(formData.material && formData.color)
-  const step2Valid = !!(formData.layerHeight && formData.infill)
-  const allRequiredSet =
-    !!formData.material && !!formData.color && !!formData.layerHeight && !!formData.infill
-
-  const goNext = () => {
-    if (currentStep === 1 && !step1Valid) return
-    if (currentStep === 2 && !step2Valid) return
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1)
-    }
-  }
-
-  const goBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1)
-    }
+    const clamped = Math.max(1, Math.min(20, Math.round(num)))
+    setValue('wallCount', String(clamped), { shouldValidate: true })
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-[20px] border border-[#EFEFEF] w-full max-w-5xl mx-4 max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#EFEFEF]">
           <h2
             className="text-[24px] font-semibold text-[#292929]"
@@ -114,11 +107,9 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-4 overflow-y-auto min-h-[520px]">
-          <div className="flex gap-8 h-full items-center">
-            {/* Large 3D Preview placeholder - left column (big fixed 1:1 square) */}
-            <div className="hidden md:flex w-[480px] h-[480px] rounded-[16px] border border-dashed border-[#DCDCDC] bg-[#F8F8F8] flex-shrink-0 items-center justify-center">
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex gap-8 h-full items-start">
+            <div className="hidden md:flex w-[480px] h-[480px] rounded-[16px] border border-dashed border-[#DCDCDC] bg-[#F8F8F8] flex-shrink-0 items-center justify-center sticky top-0">
               <span
                 className="text-xs text-[#7C7C7C] text-center leading-tight"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
@@ -129,8 +120,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
               </span>
             </div>
 
-            {/* Right column - form */}
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
               <div className="mb-4">
                 <p
                   className="text-sm text-[#292929] font-medium"
@@ -146,215 +136,201 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                 </p>
               </div>
 
-              <div className="space-y-6 min-h-[320px]">
-                {currentStep === 1 && (
-                  <>
-                    {/* Material */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
+              <div className="space-y-6">
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Material <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {materialOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setValue('material', option, { shouldValidate: true })}
+                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                          formData.material === option
+                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                        }`}
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
-                        Material <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex flex-wrap gap-3">
-                        {materialOptions.map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleChange('material', option)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.material === option
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.material && (
+                    <p className="mt-1 text-xs text-red-600">{errors.material.message}</p>
+                  )}
+                </div>
 
-                    {/* Color */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Color <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {colorOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setValue('color', option, { shouldValidate: true })}
+                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                          formData.color === option
+                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                        }`}
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
-                        Color <span className="text-red-500">*</span>
-                      </label>
-                      <div className="flex flex-wrap gap-3">
-                        {colorOptions.map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleChange('color', option)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.color === option
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.color && (
+                    <p className="mt-1 text-xs text-red-600">{errors.color.message}</p>
+                  )}
+                </div>
 
-                {currentStep === 2 && (
-                  <>
-                    {/* Line Height */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Layer Height <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {lineHeightOptions.map((height) => (
+                      <button
+                        key={height}
+                        type="button"
+                        onClick={() => setValue('layerHeight', height, { shouldValidate: true })}
+                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                          formData.layerHeight === height
+                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                        }`}
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
-                        Line Height <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grid grid-cols-4 gap-3">
-                        {lineHeightOptions.map((height) => (
-                          <button
-                            key={height}
-                            type="button"
-                            onClick={() => handleChange('layerHeight', height)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.layerHeight === height
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {height}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                        {height}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.layerHeight && (
+                    <p className="mt-1 text-xs text-red-600">{errors.layerHeight.message}</p>
+                  )}
+                </div>
 
-                    {/* Infill */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Infill <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-5 gap-3">
+                    {infillOptions.map((infill) => (
+                      <button
+                        key={infill}
+                        type="button"
+                        onClick={() => setValue('infill', infill, { shouldValidate: true })}
+                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                          formData.infill === infill
+                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                        }`}
                         style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
-                        Infill <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grid grid-cols-5 gap-3">
-                        {infillOptions.map((infill) => (
-                          <button
-                            key={infill}
-                            type="button"
-                            onClick={() => handleChange('infill', infill)}
-                            className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                              formData.infill === infill
-                                ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                                : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                            }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {infill}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                        {infill}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.infill && (
+                    <p className="mt-1 text-xs text-red-600">{errors.infill.message}</p>
+                  )}
+                </div>
 
-                    {/* Wall Count */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Wall Count
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={formData.wallCount || ''}
-                        onChange={(e) => handleChange('wallCount', e.target.value)}
-                        placeholder="2"
-                        className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      />
-                    </div>
-                  </>
-                )}
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Wall Count
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    step={1}
+                    {...register('wallCount')}
+                    onChange={(e) => handleWallCountChange(e.target.value)}
+                    placeholder="2"
+                    className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  />
+                  {errors.wallCount && (
+                    <p className="mt-1 text-xs text-red-600">{errors.wallCount.message}</p>
+                  )}
+                </div>
 
-                {currentStep === 3 && (
-                  <>
-                    {/* Special Request */}
-                    <div>
-                      <label
-                        className="block text-sm font-medium text-[#292929] mb-2"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Special Request
-                      </label>
-                      <textarea
-                        value={formData.specialRequest || ''}
-                        onChange={(e) => handleChange('specialRequest', e.target.value)}
-                        placeholder="Any special requests or notes..."
-                        rows={4}
-                        className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent resize-none"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      />
-                    </div>
+                <div>
+                  <label
+                    className="block text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Special Request
+                  </label>
+                  <textarea
+                    {...register('specialRequest')}
+                    placeholder="Any special requests or notes..."
+                    rows={4}
+                    className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent resize-none"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  />
+                  {errors.specialRequest && (
+                    <p className="mt-1 text-xs text-red-600">{errors.specialRequest.message}</p>
+                  )}
+                </div>
 
-                    {/* Quick summary */}
-                    <div className="mt-4 rounded-[12px] border border-[#EFEFEF] bg-[#F8F8F8] p-4">
-                      <h3
-                        className="text-sm font-medium text-[#292929] mb-2"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Summary
-                      </h3>
-                      <ul
-                        className="text-xs text-[#7C7C7C] space-y-1"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        <li>Material: {formData.material || '-'}</li>
-                        <li>Color: {formData.color || '-'}</li>
-                        <li>Line Height: {formData.layerHeight || '-'}</li>
-                        <li>Infill: {formData.infill || '-'}</li>
-                        <li>Wall Count: {formData.wallCount || '-'}</li>
-                      </ul>
-                    </div>
-                  </>
-                )}
+                <div className="rounded-[12px] border border-[#EFEFEF] bg-[#F8F8F8] p-4">
+                  <h3
+                    className="text-sm font-medium text-[#292929] mb-2"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Configuration Summary
+                  </h3>
+                  <ul
+                    className="text-xs text-[#7C7C7C] space-y-1"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    <li>Material: {formData.material || '-'}</li>
+                    <li>Color: {formData.color || '-'}</li>
+                    <li>Layer Height: {formData.layerHeight || '-'}</li>
+                    <li>Infill: {formData.infill || '-'}</li>
+                    <li>Wall Count: {formData.wallCount || '-'}</li>
+                  </ul>
+                </div>
               </div>
 
-              {/* Footer */}
               <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-[#EFEFEF]">
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={currentStep === 1 ? onClose : goBack}
+                  onClick={onClose}
                   className="h-11 px-6 rounded-[12px] text-sm"
                 >
-                  {currentStep === 1 ? 'Cancel' : 'Back'}
+                  Cancel
                 </Button>
-                {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    onClick={goNext}
-                    disabled={currentStep === 1 ? !step1Valid : !step2Valid}
-                    className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-                  >
-                    Next
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    disabled={!allRequiredSet}
-                    className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-                  >
-                    Save Configuration
-                  </Button>
-                )}
+                <Button
+                  type="submit"
+                  disabled={!isValid}
+                  className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
+                >
+                  Save Configuration
+                </Button>
               </div>
             </form>
           </div>

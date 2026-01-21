@@ -17,7 +17,6 @@ export default function SuperfreakOriginal() {
     { id: 11, image: '/superfreak-originals/abyssal-1-pendant.jpg', name: 'Abyssal I Pendant' },
   ]
 
-  // Duplicate the designs array for seamless looping
   const duplicatedDesigns = [...designs, ...designs]
 
   return (
@@ -27,7 +26,6 @@ export default function SuperfreakOriginal() {
     >
       <div className="mx-auto max-w-7xl">
         <div className="pb-10 md:pb-12 pt-10 md:pt-12 bg-black relative rounded-[20px] overflow-hidden">
-          {/* Dot pattern background */}
           <div
             className="absolute inset-0"
             style={{
@@ -37,18 +35,14 @@ export default function SuperfreakOriginal() {
               zIndex: 1,
             }}
           ></div>
-          {/* Gradient overlay from bottom to top */}
           <div
             className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-30"
             style={{ zIndex: 2 }}
           ></div>
-          {/* Left overlay */}
           <div className="absolute left-0 top-0 w-[50px] md:w-[100px] h-full bg-gradient-to-r from-black to-transparent z-30 pointer-events-none rounded-l-[20px]"></div>
-          {/* Right overlay */}
           <div className="absolute right-0 top-0 w-[50px] md:w-[100px] h-full bg-gradient-to-l from-black to-transparent z-30 pointer-events-none rounded-r-[20px]"></div>
 
           <div className="mx-auto bg-transparent relative z-10">
-            {/* Logo */}
             <div className="flex justify-center mb-6 md:mb-8">
               <Image
                 src="/originals-logo.png"
@@ -58,7 +52,6 @@ export default function SuperfreakOriginal() {
                 className="object-contain w-[180px] h-auto md:w-[250px]"
               />
             </div>
-            {/* Carousel Container */}
             <div className="overflow-hidden">
               <div
                 className="flex gap-2 md:gap-4"
@@ -86,11 +79,9 @@ export default function SuperfreakOriginal() {
               </div>
             </div>
 
-            {/* Available at Section */}
             <div className="mt-6 md:mt-10 flex flex-col items-center gap-2 md:gap-3 px-4">
               <h3 className="text-white text-sm md:text-[20px] font-medium">Available at</h3>
               <div className="flex flex-col sm:flex-row gap-2 md:gap-4 w-full sm:w-auto">
-                {/* Shopee Button */}
                 <a
                   href="https://shopee.co.id/superfreakoriginals"
                   target="_blank"
@@ -122,7 +113,6 @@ export default function SuperfreakOriginal() {
                   </svg>
                 </a>
 
-                {/* Tokopedia Button */}
                 <a
                   href="https://www.tokopedia.com/superfreak-originals"
                   target="_blank"
@@ -154,7 +144,6 @@ export default function SuperfreakOriginal() {
                   </svg>
                 </a>
 
-                {/* TikTok Shop Button */}
                 <a
                   href="https://vt.tiktok.com/ZS5CXKE4o"
                   target="_blank"

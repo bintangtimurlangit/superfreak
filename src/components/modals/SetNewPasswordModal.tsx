@@ -29,7 +29,6 @@ export default function SetNewPasswordModal({
     setError('')
     setLoading(true)
 
-    // Validation
     if (!password) {
       setError('Password is required')
       setLoading(false)
@@ -119,8 +118,12 @@ export default function SetNewPasswordModal({
               {/* Success Message */}
               {success && (
                 <div className="mb-3 p-2.5 rounded-[12px] bg-green-50 border border-green-200">
-                  <p className="text-xs text-green-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                    Your password has been successfully reset. You can now sign in with your new password.
+                  <p
+                    className="text-xs text-green-600"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
+                    Your password has been successfully reset. You can now sign in with your new
+                    password.
                   </p>
                 </div>
               )}
@@ -128,7 +131,10 @@ export default function SetNewPasswordModal({
               {/* Error Message */}
               {error && !success && (
                 <div className="mb-3 p-2.5 rounded-[12px] bg-red-50 border border-red-200">
-                  <p className="text-xs text-red-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                  <p
+                    className="text-xs text-red-600"
+                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  >
                     {error}
                   </p>
                 </div>
@@ -164,10 +170,17 @@ export default function SetNewPasswordModal({
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#292929] transition-colors"
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
-                    <p className="text-[10px] text-[#6b7280] mt-0.5" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    <p
+                      className="text-[10px] text-[#6b7280] mt-0.5"
+                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    >
                       Must be at least 8 characters
                     </p>
                   </div>
@@ -198,7 +211,11 @@ export default function SetNewPasswordModal({
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#292929] transition-colors"
                         aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>

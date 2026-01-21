@@ -7,23 +7,17 @@ export const Orders: CollectionConfig = {
     defaultColumns: ['orderNumber', 'user', 'status', 'totalAmount', 'createdAt'],
   },
   access: {
-    // Users can only read their own orders
     read: ({ req: { user } }) => {
       if (!user) return false
-      // Admin users can see all orders
       if (user.collection === 'admin-users') return true
-      // App users can only see their own orders
       return {
         user: {
           equals: user.id,
         },
       }
     },
-    // Only authenticated users can create orders
     create: ({ req: { user } }) => Boolean(user),
-    // Only admins can update orders
     update: ({ req: { user } }) => user?.collection === 'admin-users',
-    // Only admins can delete orders
     delete: ({ req: { user } }) => user?.collection === 'admin-users',
   },
   fields: [
@@ -38,7 +32,6 @@ export const Orders: CollectionConfig = {
       hooks: {
         beforeValidate: [
           ({ value, operation }) => {
-            // Auto-generate order number on create
             if (operation === 'create' && !value) {
               const timestamp = Date.now()
               const random = Math.floor(Math.random() * 1000)
@@ -280,7 +273,6 @@ export const Orders: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
-        // Track status changes
         if (operation === 'update' && originalDoc && data.status !== originalDoc.status) {
           const statusHistory = data.statusHistory || []
           statusHistory.push({

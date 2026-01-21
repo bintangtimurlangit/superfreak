@@ -1,7 +1,6 @@
 import type { Account, DeviceSession } from '@/lib/auth/types'
 import { getPayload } from '@/lib/payload'
 import { headers as requestHeaders } from 'next/headers'
-import type { TypedUser } from 'payload'
 
 export const getSession = async () => {
   const payload = await getPayload()

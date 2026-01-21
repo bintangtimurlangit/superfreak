@@ -10,7 +10,6 @@ import { useSession, updateUser, authClient } from '@/lib/auth/client'
 function EditProfileFormSkeleton() {
   return (
     <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
-      {/* Header Skeleton */}
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-gray-200 rounded-[12px] animate-pulse flex-shrink-0" />
@@ -22,7 +21,6 @@ function EditProfileFormSkeleton() {
 
       <div className="space-y-8">
         <section className="flex flex-col lg:flex-row gap-6">
-          {/* Personal Information Skeleton */}
           <div className="flex-1">
             <div className="mb-6">
               <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-1" />
@@ -30,20 +28,17 @@ function EditProfileFormSkeleton() {
             </div>
 
             <div className="space-y-4">
-              {/* Name Field Skeleton */}
               <div>
                 <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2" />
                 <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
               </div>
 
-              {/* Email Field Skeleton */}
               <div>
                 <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2" />
                 <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
                 <div className="h-3 w-40 bg-gray-200 rounded animate-pulse mt-1" />
               </div>
 
-              {/* Phone Number Field Skeleton */}
               <div>
                 <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
                 <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
@@ -51,7 +46,6 @@ function EditProfileFormSkeleton() {
             </div>
           </div>
 
-          {/* Profile Picture Skeleton */}
           <div className="flex-1 lg:max-w-[400px]">
             <div className="border border-[#EFEFEF] rounded-lg p-6 bg-[#F8F8F8] h-full">
               <div className="mb-4">
@@ -71,7 +65,6 @@ function EditProfileFormSkeleton() {
           </div>
         </section>
 
-        {/* Action Buttons Skeleton */}
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#EFEFEF]">
           <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse" />
           <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
@@ -86,7 +79,6 @@ export default function EditProfileForm() {
   const { data: sessionData, isPending: loading, refetch: refetchSession } = useSession()
   const sessionUser = sessionData?.user || null
   const isAuthenticated = !!sessionUser
-  // Note: refreshSession is not available in better-auth, use router.refresh() instead
   const [mounted, setMounted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
@@ -99,7 +91,6 @@ export default function EditProfileForm() {
   const [originalFileSize, setOriginalFileSize] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Compress image function
   const compressImage = useCallback(async (file: File, maxSizeMB: number = 2): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -109,8 +100,7 @@ export default function EditProfileForm() {
           const canvas = document.createElement('canvas')
           let width = img.width
           let height = img.height
-          
-          // Calculate max dimensions (max 1920px on longest side for profile pictures)
+
           const maxDimension = 1920
           if (width > height) {
             if (width > maxDimension) {
@@ -123,26 +113,23 @@ export default function EditProfileForm() {
               height = maxDimension
             }
           }
-          
+
           canvas.width = width
           canvas.height = height
-          
+
           const ctx = canvas.getContext('2d')
           if (!ctx) {
             reject(new Error('Failed to get canvas context'))
             return
           }
-          
-          // Draw image with high quality
+
           ctx.drawImage(img, 0, 0, width, height)
-          
-          // Try different quality levels to get under 2MB
+
           const maxSizeBytes = maxSizeMB * 1024 * 1024
-          
-          // Binary search for optimal quality
+
           let minQuality = 0.1
           let maxQuality = 0.95
-          
+
           const tryCompress = (q: number): Promise<Blob> => {
             return new Promise<Blob>((resolveBlob) => {
               canvas.toBlob(
@@ -150,39 +137,34 @@ export default function EditProfileForm() {
                   resolveBlob(blob || new Blob())
                 },
                 'image/jpeg',
-                q
+                q,
               )
             })
           }
-          
+
           const compress = async () => {
             let attempts = 0
             const maxAttempts = 10
             let quality = 0.92
             let compressedBlob: Blob | null = null
-            
+
             while (attempts < maxAttempts) {
               quality = (minQuality + maxQuality) / 2
               compressedBlob = await tryCompress(quality)
-              
+
               if (compressedBlob.size <= maxSizeBytes) {
-                // File is small enough, try higher quality
                 minQuality = quality
-                if (maxQuality - minQuality < 0.05) break // Close enough
+                if (maxQuality - minQuality < 0.05) break
               } else {
-                // File is too large, reduce quality
                 maxQuality = quality
               }
-              
+
               attempts++
             }
-            
-            // Final compression with found quality
+
             compressedBlob = await tryCompress(quality)
-            
-            // If still too large, reduce dimensions and try again
+
             if (compressedBlob.size > maxSizeBytes) {
-              // Reduce dimensions by 10% and try again
               width = Math.floor(width * 0.9)
               height = Math.floor(height * 0.9)
               canvas.width = width
@@ -190,20 +172,19 @@ export default function EditProfileForm() {
               ctx.drawImage(img, 0, 0, width, height)
               compressedBlob = await tryCompress(0.85)
             }
-            
-            // Convert blob to file
+
             const compressedFile = new File(
               [compressedBlob],
               file.name.replace(/\.[^/.]+$/, '.jpg'),
               {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
-              }
+              },
             )
-            
+
             resolve(compressedFile)
           }
-          
+
           compress().catch(reject)
         }
         img.onerror = () => reject(new Error('Failed to load image'))
@@ -216,87 +197,84 @@ export default function EditProfileForm() {
     })
   }, [])
 
-  // Handle client-side mounting to prevent hydration mismatch
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Initialize form with user data
   useEffect(() => {
     if (!loading && sessionUser && !initialized) {
       setName(sessionUser.name || '')
       setEmail(sessionUser.email || '')
       setPhoneNumber((sessionUser as any).phoneNumber || '')
-      
-      // Set existing profile picture preview if available (using better-auth's image field)
+
       if (sessionUser.image) {
         setPreviewUrl(sessionUser.image)
       }
-      
+
       setInitialized(true)
     }
   }, [loading, sessionUser, initialized])
 
-  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
 
-    if (!file) return
+      if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file (PNG or JPG)')
-      e.target.value = ''
-      return
-    }
-
-    const maxSize = 2 * 1024 * 1024 // 2MB limit
-    setOriginalFileSize(file.size)
-    setCompressing(true)
-
-    try {
-      let fileToUse = file
-      
-      // Compress if file is larger than 2MB or if it's a large image
-      if (file.size > maxSize || file.size > 500 * 1024) { // Compress if > 2MB or > 500KB
-        fileToUse = await compressImage(file, 2)
-      }
-
-      // Verify compressed file is under 2MB
-      if (fileToUse.size > maxSize) {
-        alert('Unable to compress image to under 2MB. Please select a smaller image.')
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file (PNG or JPG)')
         e.target.value = ''
-        setCompressing(false)
-        setOriginalFileSize(null)
         return
       }
 
-      // Create preview
-      const reader = new FileReader()
-      reader.onerror = () => {
-        alert('Failed to read the selected file. Please try again.')
+      const maxSize = 2 * 1024 * 1024
+      setOriginalFileSize(file.size)
+      setCompressing(true)
+
+      try {
+        let fileToUse = file
+
+        if (file.size > maxSize || file.size > 500 * 1024) {
+          fileToUse = await compressImage(file, 2)
+        }
+
+        if (fileToUse.size > maxSize) {
+          alert('Unable to compress image to under 2MB. Please select a smaller image.')
+          e.target.value = ''
+          setCompressing(false)
+          setOriginalFileSize(null)
+          return
+        }
+
+        const reader = new FileReader()
+        reader.onerror = () => {
+          alert('Failed to read the selected file. Please try again.')
+          e.target.value = ''
+          setCompressing(false)
+          setOriginalFileSize(null)
+        }
+        reader.onloadend = () => {
+          if (reader.result) {
+            setPreviewUrl(reader.result as string)
+            setSelectedFile(fileToUse)
+            setCompressing(false)
+          } else {
+            alert('Failed to read the selected file. Please try again.')
+            setCompressing(false)
+            setOriginalFileSize(null)
+          }
+        }
+        reader.readAsDataURL(fileToUse)
+      } catch (error) {
+        console.error('Error compressing image:', error)
+        alert('Failed to process image. Please try again.')
         e.target.value = ''
         setCompressing(false)
         setOriginalFileSize(null)
       }
-      reader.onloadend = () => {
-        if (reader.result) {
-          setPreviewUrl(reader.result as string)
-          setSelectedFile(fileToUse)
-          setCompressing(false)
-        } else {
-          alert('Failed to read the selected file. Please try again.')
-          setCompressing(false)
-          setOriginalFileSize(null)
-        }
-      }
-      reader.readAsDataURL(fileToUse)
-    } catch (error) {
-      console.error('Error compressing image:', error)
-      alert('Failed to process image. Please try again.')
-      e.target.value = ''
-      setCompressing(false)
-      setOriginalFileSize(null)
-    }
-  }, [compressImage])
+    },
+    [compressImage],
+  )
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''
@@ -317,10 +295,9 @@ export default function EditProfileForm() {
     if (!confirm('Are you sure you want to delete your profile picture?')) {
       return
     }
-    
+
     setSaving(true)
     try {
-      // Remove profile picture using better-auth's updateUser
       await updateUser({
         image: undefined,
         fetchOptions: {
@@ -335,8 +312,8 @@ export default function EditProfileForm() {
           onError: (error) => {
             console.error('Error deleting profile picture:', error)
             alert(error.error?.message || 'Failed to delete profile picture')
-          }
-        }
+          },
+        },
       })
     } catch (error) {
       console.error('Error deleting profile picture:', error)
@@ -355,7 +332,6 @@ export default function EditProfileForm() {
     setSaving(true)
 
     try {
-      // Upload image to S3 first, then get URL
       let imageUrl: string | undefined = undefined
       if (selectedFile) {
         const formData = new FormData()
@@ -385,14 +361,13 @@ export default function EditProfileForm() {
         })
       }
 
-      // Use better-auth's updateUser with S3 URL (not base64)
       console.log('[EditProfileForm] Updating user with:', {
         hasName: !!name.trim(),
         hasImage: !!imageUrl,
         imageUrl: imageUrl?.substring(0, 50) + '...',
         hasPhoneNumber: !!phoneNumber.trim(),
       })
-      
+
       await updateUser({
         name: name.trim() || undefined,
         image: imageUrl || undefined,
@@ -400,25 +375,20 @@ export default function EditProfileForm() {
         fetchOptions: {
           onSuccess: async () => {
             console.log('[EditProfileForm] Update successful, refreshing session...')
-            // Wait a bit for database to update, then refresh session
-            await new Promise(resolve => setTimeout(resolve, 500))
-            // Manually refresh the session to get updated user data
+            await new Promise((resolve) => setTimeout(resolve, 500))
             try {
-              // Force session refresh by calling getSession
               const newSession = await authClient.getSession()
               console.log('[EditProfileForm] Session refreshed:', {
                 hasUser: !!newSession?.data?.user,
                 hasImage: !!newSession?.data?.user?.image,
                 imageUrl: newSession?.data?.user?.image?.substring(0, 50),
               })
-              // Trigger session signal to notify all useSession hooks
               if (authClient.$store) {
                 authClient.$store.notify('$sessionSignal')
               }
             } catch (error) {
               console.error('[EditProfileForm] Error refreshing session:', error)
             }
-            // Dispatch a custom event to notify other components of session update
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('session-updated'))
             }
@@ -431,15 +401,14 @@ export default function EditProfileForm() {
           onError: (error) => {
             console.error('[EditProfileForm] Error updating profile:', error)
             alert(error.error?.message || 'Failed to update profile')
-          }
-        }
+          },
+        },
       })
     } catch (error) {
       console.error('Error updating profile:', error)
       alert('Failed to update profile. Please try again.')
     } finally {
       setSaving(false)
-      // Refresh router after update (like demo does)
       router.refresh()
     }
   }
@@ -448,12 +417,10 @@ export default function EditProfileForm() {
     router.back()
   }
 
-  // Show skeleton while loading or not mounted (prevents hydration mismatch)
   if (!mounted || loading) {
     return <EditProfileFormSkeleton />
   }
 
-  // Don't show form if not authenticated
   if (!isAuthenticated || !sessionUser) {
     return null
   }
@@ -667,7 +634,7 @@ export default function EditProfileForm() {
                   )}
                 </div>
               ) : (
-                  <div className="space-y-4 flex flex-col items-center">
+                <div className="space-y-4 flex flex-col items-center">
                   <div className="flex items-center justify-center w-24 h-24 rounded-lg bg-blue-700 border-2 border-white">
                     <User className="h-12 w-12 text-white" />
                   </div>

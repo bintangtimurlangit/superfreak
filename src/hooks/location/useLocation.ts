@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Province, Regency, District, Village } from '@/lib/types'
 
-// Fetch provinces
 export function useProvinces(enabled: boolean = true) {
   return useQuery({
     queryKey: ['provinces'],
@@ -11,12 +10,11 @@ export function useProvinces(enabled: boolean = true) {
       const data: Province[] = await response.json()
       return data
     },
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - React Query handles caching
+    staleTime: 24 * 60 * 60 * 1000,
     enabled: enabled,
   })
 }
 
-// Fetch regencies by province code
 export function useRegencies(provinceCode: string | undefined) {
   return useQuery({
     queryKey: ['regencies', provinceCode],
@@ -28,11 +26,10 @@ export function useRegencies(provinceCode: string | undefined) {
       return data
     },
     enabled: !!provinceCode,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - React Query handles caching
+    staleTime: 24 * 60 * 60 * 1000,
   })
 }
 
-// Fetch districts by regency code
 export function useDistricts(regencyCode: string | undefined) {
   return useQuery({
     queryKey: ['districts', regencyCode],
@@ -44,11 +41,10 @@ export function useDistricts(regencyCode: string | undefined) {
       return data
     },
     enabled: !!regencyCode,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - React Query handles caching
+    staleTime: 24 * 60 * 60 * 1000,
   })
 }
 
-// Fetch villages by district code
 export function useVillages(districtCode: string | undefined) {
   return useQuery({
     queryKey: ['villages', districtCode],
@@ -60,6 +56,6 @@ export function useVillages(districtCode: string | undefined) {
       return data
     },
     enabled: !!districtCode,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - React Query handles caching
+    staleTime: 24 * 60 * 60 * 1000,
   })
 }

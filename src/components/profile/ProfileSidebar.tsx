@@ -41,22 +41,18 @@ export default function ProfileSidebar() {
   const user = use(currentUserPromise)
   const isAuthenticated = !!user
 
-  // Type guard to check if user is AppUser (has image field)
   const appUser = user?.collection === 'app-users' ? user : null
 
-  // Listen for session updates (must be before any early returns)
   useEffect(() => {
     const handleSessionUpdate = () => {
       console.log('[ProfileSidebar] Session update event received, refreshing...')
-      // Force router refresh to update server components (which will refetch currentUserPromise)
       router.refresh()
     }
-    
+
     window.addEventListener('session-updated', handleSessionUpdate)
     return () => window.removeEventListener('session-updated', handleSessionUpdate)
   }, [router])
-  
-  // Debug logging
+
   useEffect(() => {
     console.log('[ProfileSidebar] User updated:', {
       hasUser: !!user,
@@ -66,16 +62,16 @@ export default function ProfileSidebar() {
     })
   }, [user, appUser])
 
-  // Get user data from Payload auth (includes all fields like image)
   const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
-  const initials = (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') || (user?.email ? String(user.email)[0]?.toUpperCase() : '') || 'U'
+  const initials =
+    (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') ||
+    (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
+    'U'
 
-  // Don't show sidebar if not authenticated
   if (!isAuthenticated || !user) {
     return null
   }
 
-  // Use image field from Payload user (not from better-auth session)
   const profilePictureUrl = appUser?.image || null
 
   const handleLogout = async () => {
@@ -89,8 +85,8 @@ export default function ProfileSidebar() {
           onError: (error: any) => {
             console.error('Logout error:', error)
             router.push('/')
-          }
-        }
+          },
+        },
       })
     } catch (error) {
       console.error('Logout error:', error)
@@ -101,7 +97,6 @@ export default function ProfileSidebar() {
   return (
     <aside className="w-full lg:w-64 flex-shrink-0">
       <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
-        {/* Back Button */}
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
@@ -110,17 +105,11 @@ export default function ProfileSidebar() {
           <span className="text-sm font-medium">Back</span>
         </button>
 
-        {/* User Info */}
         <div className="mb-6 pb-6 border-b border-[#EFEFEF]">
           <div className="flex items-center gap-3 mb-2">
             {profilePictureUrl ? (
               <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
-                <Image
-                  src={profilePictureUrl}
-                  alt={displayName}
-                  fill
-                  className="object-cover"
-                />
+                <Image src={profilePictureUrl} alt={displayName} fill className="object-cover" />
               </div>
             ) : (
               <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center flex-shrink-0">
@@ -128,19 +117,27 @@ export default function ProfileSidebar() {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-[#292929] truncate" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              <h3
+                className="text-base font-semibold text-[#292929] truncate"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              >
                 {displayName}
               </h3>
-              <p className="text-sm text-[#989898] truncate" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              <p
+                className="text-sm text-[#989898] truncate"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              >
                 {user?.email}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="space-y-2">
-          <div className="text-xs font-medium text-[#989898] uppercase tracking-wider mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+          <div
+            className="text-xs font-medium text-[#989898] uppercase tracking-wider mb-4"
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
+          >
             MY PROFILE
           </div>
 
@@ -171,7 +168,7 @@ export default function ProfileSidebar() {
           </Link>
 
           <Link
-            href="/profile/addresses"
+            href="/profile/address"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
               pathname === '/profile/addresses'
                 ? 'bg-[#1D0DF3] text-white'
@@ -184,9 +181,9 @@ export default function ProfileSidebar() {
           </Link>
 
           <Link
-            href="/profile/change-password"
+            href="/profile/password"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-              pathname === '/profile/change-password'
+              pathname === '/profile/password'
                 ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
@@ -197,7 +194,6 @@ export default function ProfileSidebar() {
           </Link>
         </nav>
 
-        {/* Logout */}
         <div className="mt-6 pt-6 border-t border-[#EFEFEF]">
           <button
             onClick={handleLogout}

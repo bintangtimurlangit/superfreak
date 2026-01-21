@@ -5,7 +5,6 @@ import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { authClient } from '@/lib/auth/client'
-import { useRouter } from 'next/navigation'
 import EmailConfirmationModal from './EmailConfirmationModal'
 import SignInModal from './SignInModal'
 
@@ -16,7 +15,6 @@ interface SignUpModalProps {
 }
 
 export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignUpModalProps) {
-  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -84,7 +82,10 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
           email: email.trim(),
           password: password,
           name: name.trim(),
-          callbackURL: '/'
+          callbackURL: '/',
+          role: 'user',
+          phoneNumber: '',
+          image: '',
         },
         {
           onRequest: () => {
@@ -92,18 +93,17 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
             setError('')
           },
           onSuccess: () => {
-      setSignupEmail(email.trim())
-      setShowEmailConfirmation(true)
-      // Reset form
-      setName('')
-      setEmail('')
-      setPassword('')
-      setConfirmPassword('')
-      setError('')
+            setSignupEmail(email.trim())
+            setShowEmailConfirmation(true)
+            setName('')
+            setEmail('')
+            setPassword('')
+            setConfirmPassword('')
+            setError('')
             setLoading(false)
           },
-          onError: (ctx: any) => {
-            const errorMessage = ctx.error.message || 'An unexpected error occurred. Please try again.'
+          onError: (ctx: { error?: { message?: string } }) => {
+            const errorMessage = ctx.error?.message || 'An unexpected error occurred. Please try again.'
             setError(errorMessage)
             setLoading(false)
           }

@@ -1,15 +1,15 @@
 export interface Address {
-    id: string
-    recipientName: string
-    phoneNumber: string
-    addressLine1: string
-    addressLine2: string
-    provinceCode: string
-    regencyCode: string
-    districtCode: string
-    villageCode: string
-    postalCode: string
-    isDefault: boolean
+  id: string
+  recipientName: string
+  phoneNumber: string
+  addressLine1: string
+  addressLine2: string
+  provinceCode: string
+  regencyCode: string
+  districtCode: string
+  villageCode: string
+  postalCode: string
+  isDefault: boolean
 }
 
 export interface Province {

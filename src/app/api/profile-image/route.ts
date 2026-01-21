@@ -7,49 +7,35 @@ export async function POST(request: NextRequest) {
     const payload = await getPayload()
     const requestHeaders = await headers()
 
-    // Authenticate user via better-auth
     const { user } = await payload.auth({ headers: requestHeaders })
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please sign in' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 })
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed.' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    // Validate file size (2MB max)
     const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File size exceeds 2MB limit' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'File size exceeds 2MB limit' }, { status: 400 })
     }
 
-    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to S3 via Payload's Media collection
     const uploadedFile = await payload.create({
       collection: 'media',
       data: {
@@ -73,15 +59,11 @@ export async function POST(request: NextRequest) {
       overrideAccess: false,
     })
 
-    // Get the URL from the uploaded file
-    // Payload's S3 adapter provides the URL in the file object
-    const imageUrl = uploadedFile.url || uploadedFile.sizes?.thumbnail?.url || uploadedFile.sizes?.small?.url
+    const imageUrl =
+      uploadedFile.url || uploadedFile.sizes?.thumbnail?.url || uploadedFile.sizes?.small?.url
 
     if (!imageUrl) {
-      return NextResponse.json(
-        { error: 'Failed to get image URL after upload' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to get image URL after upload' }, { status: 500 })
     }
 
     console.log('[Profile Image Upload] Success:', {
@@ -90,16 +72,18 @@ export async function POST(request: NextRequest) {
       userId: user.id,
     })
 
-    return NextResponse.json({
-      url: imageUrl,
-      id: uploadedFile.id,
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        url: imageUrl,
+        id: uploadedFile.id,
+      },
+      { status: 201 },
+    )
   } catch (error) {
     console.error('[Profile Image Upload] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to upload profile image' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

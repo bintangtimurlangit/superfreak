@@ -4,9 +4,6 @@ import { useEffect } from 'react'
 import { useSession } from '@/lib/auth/client'
 import { usePathname } from 'next/navigation'
 
-/**
- * Handles redirect to /order page after OAuth login when there's pending order state
- */
 export default function OrderRedirectHandler() {
   const { data: sessionData, isPending: sessionLoading } = useSession()
   const isAuthenticated = !!sessionData?.user
@@ -15,7 +12,6 @@ export default function OrderRedirectHandler() {
   useEffect(() => {
     if (typeof window === 'undefined' || sessionLoading) return
 
-    // Check if we have pending order state and user is authenticated
     const pendingOrderState = sessionStorage.getItem('pendingOrderState')
     const pendingNextStep = sessionStorage.getItem('pendingOrderNextStep')
 
@@ -24,7 +20,6 @@ export default function OrderRedirectHandler() {
       isAuthenticated &&
       pathname !== '/order'
     ) {
-      // Redirect to order page to restore state
       window.location.href = '/order'
     }
   }, [isAuthenticated, sessionLoading, pathname])
