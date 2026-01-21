@@ -8,9 +8,10 @@ export const Orders: CollectionConfig = {
     defaultColumns: ['orderNumber', 'user', 'status', 'totalAmount', 'createdAt'],
   },
   access: {
-    read: ({ req: { user } }) => {
+    read: async ({ req }) => {
+      const { user } = req
       if (!user) return false
-      if (hasRole(['admin'])({ req: { user } })) return true
+      if (await hasRole(['admin'])({ req })) return true
       return {
         user: {
           equals: user.id,

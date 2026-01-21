@@ -8,17 +8,19 @@ export const Addresses: CollectionConfig = {
     useAsTitle: 'recipientName',
   },
   access: {
-    read: ({ req: { user } }) => {
+    read: async ({ req }) => {
+      const { user } = req
       if (!user) return false
-      if (hasRole(['admin'])({ req: { user } })) return true
+      if (await hasRole(['admin'])({ req })) return true
       return {
         user: { equals: user.id },
       }
     },
     create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => {
+    update: async ({ req }) => {
+      const { user } = req
       if (!user) return false
-      if (hasRole(['admin'])({ req: { user } })) return true
+      if (await hasRole(['admin'])({ req })) return true
       return {
         user: { equals: user.id },
       }
@@ -26,7 +28,7 @@ export const Addresses: CollectionConfig = {
     delete: async ({ req, id }) => {
       const { user } = req
       if (!user) return false
-      if (hasRole(['admin'])({ req: { user } })) return true
+      if (await hasRole(['admin'])({ req })) return true
       
       if (!id) return false
       
