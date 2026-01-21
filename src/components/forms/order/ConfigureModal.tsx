@@ -7,6 +7,7 @@ import { X } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import type { UploadedFile } from './UploadStep'
 import { modelConfigurationSchema, type ModelConfigurationFormData } from '@/lib/validations/order'
+import { useQuery } from '@tanstack/react-query'
 
 interface ConfigureModalProps {
   isOpen: boolean
@@ -15,12 +16,28 @@ interface ConfigureModalProps {
   onSave: (fileId: string, configuration: ModelConfigurationFormData) => void
 }
 
-const lineHeightOptions = ['0.12', '0.16', '0.20', '0.24']
-const infillOptions = ['20%', '40%', '60%', '80%', '95%']
-const materialOptions = ['PLA', 'PETG', 'ABS', 'Resin', 'Other']
-const colorOptions = ['Black', 'White', 'Grey', 'Transparent', 'Custom']
+interface PrintingOptionsData {
+  materials: string[]
+  colors: string[]
+  layerHeights: string[]
+  infill: Array<{ label: string; value: string }>
+  maxWallCount: number
+}
 
 export default function ConfigureModal({ isOpen, onClose, file, onSave }: ConfigureModalProps) {
+  // Fetch printing options from API
+  const { data: printingOptions, isLoading: loadingOptions } = useQuery<PrintingOptionsData>({
+    queryKey: ['printing-options'],
+    queryFn: async () => {
+      const response = await fetch('/api/printing-options')
+      if (!response.ok) {
+        throw new Error('Failed to fetch printing options')
+      }
+      return response.json()
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+
   const {
     register,
     handleSubmit,
@@ -44,6 +61,13 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
   })
 
   const formData = watch()
+
+  // Extract options from fetched data
+  const materialOptions = printingOptions?.materials || []
+  const colorOptions = printingOptions?.colors || []
+  const layerHeightOptions = printingOptions?.layerHeights || []
+  const infillOptions = printingOptions?.infill || []
+  const maxWallCount = printingOptions?.maxWallCount || 20
 
   useEffect(() => {
     if (file?.configuration) {
@@ -144,23 +168,36 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   >
                     Material <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex flex-wrap gap-3">
-                    {materialOptions.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setValue('material', option, { shouldValidate: true })}
-                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                          formData.material === option
-                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                        }`}
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
+                  {loadingOptions ? (
+                    <div className="flex flex-wrap gap-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                          key={i}
+                          className="h-12 w-20 bg-gray-200 rounded-[12px] animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : materialOptions.length > 0 ? (
+                    <div className="flex flex-wrap gap-3">
+                      {materialOptions.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setValue('material', option, { shouldValidate: true })}
+                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                            formData.material === option
+                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                          }`}
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#7C7C7C]">No material options available</p>
+                  )}
                   {errors.material && (
                     <p className="mt-1 text-xs text-red-600">{errors.material.message}</p>
                   )}
@@ -173,23 +210,36 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   >
                     Color <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex flex-wrap gap-3">
-                    {colorOptions.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setValue('color', option, { shouldValidate: true })}
-                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                          formData.color === option
-                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                        }`}
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
+                  {loadingOptions ? (
+                    <div className="flex flex-wrap gap-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                          key={i}
+                          className="h-12 w-20 bg-gray-200 rounded-[12px] animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : colorOptions.length > 0 ? (
+                    <div className="flex flex-wrap gap-3">
+                      {colorOptions.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setValue('color', option, { shouldValidate: true })}
+                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                            formData.color === option
+                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                          }`}
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#7C7C7C]">No color options available</p>
+                  )}
                   {errors.color && (
                     <p className="mt-1 text-xs text-red-600">{errors.color.message}</p>
                   )}
@@ -202,23 +252,36 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   >
                     Layer Height <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-4 gap-3">
-                    {lineHeightOptions.map((height) => (
-                      <button
-                        key={height}
-                        type="button"
-                        onClick={() => setValue('layerHeight', height, { shouldValidate: true })}
-                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                          formData.layerHeight === height
-                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                        }`}
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        {height}
-                      </button>
-                    ))}
-                  </div>
+                  {loadingOptions ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="h-12 bg-gray-200 rounded-[12px] animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : layerHeightOptions.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {layerHeightOptions.map((height) => (
+                        <button
+                          key={height}
+                          type="button"
+                          onClick={() => setValue('layerHeight', height, { shouldValidate: true })}
+                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                            formData.layerHeight === height
+                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                          }`}
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {height}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#7C7C7C]">No layer height options available</p>
+                  )}
                   {errors.layerHeight && (
                     <p className="mt-1 text-xs text-red-600">{errors.layerHeight.message}</p>
                   )}
@@ -231,23 +294,36 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   >
                     Infill <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-5 gap-3">
-                    {infillOptions.map((infill) => (
-                      <button
-                        key={infill}
-                        type="button"
-                        onClick={() => setValue('infill', infill, { shouldValidate: true })}
-                        className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                          formData.infill === infill
-                            ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                            : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                        }`}
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        {infill}
-                      </button>
-                    ))}
-                  </div>
+                  {loadingOptions ? (
+                    <div className="grid grid-cols-5 gap-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                          key={i}
+                          className="h-12 bg-gray-200 rounded-[12px] animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : infillOptions.length > 0 ? (
+                    <div className="grid grid-cols-5 gap-3">
+                      {infillOptions.map((infill) => (
+                        <button
+                          key={infill.value}
+                          type="button"
+                          onClick={() => setValue('infill', infill.value, { shouldValidate: true })}
+                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                            formData.infill === infill.value
+                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                          }`}
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          {infill.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#7C7C7C]">No infill options available</p>
+                  )}
                   {errors.infill && (
                     <p className="mt-1 text-xs text-red-600">{errors.infill.message}</p>
                   )}
@@ -263,7 +339,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   <input
                     type="number"
                     min={1}
-                    max={20}
+                    max={maxWallCount}
                     step={1}
                     {...register('wallCount')}
                     onChange={(e) => handleWallCountChange(e.target.value)}
