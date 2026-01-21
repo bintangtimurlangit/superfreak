@@ -1,11 +1,16 @@
 import type { User } from '@/lib/auth/types'
 
+import { getSession } from '@/lib/auth/context/get-context-props'
 import type { AccessArgs } from 'payload'
 
-import { userHasRole, type UserRole } from './userHasRole'
+import { userHasRole } from './userHasRole'
 
 export const hasRole =
   (roles: NonNullable<User['role']>) =>
-  ({ req: { user } }: Pick<AccessArgs, 'req'>): boolean => {
-    return userHasRole(user as UserRole | null, roles)
+  async ({ req }: Pick<AccessArgs, 'req'>): Promise<boolean> => {
+    const session = await getSession()
+    if (!session || !session.user) {
+      return false
+    }
+    return userHasRole(session.user, roles)
   }

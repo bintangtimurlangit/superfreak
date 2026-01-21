@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasRole } from '@/access/hasRoles'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -9,7 +10,7 @@ export const Orders: CollectionConfig = {
   access: {
     read: ({ req: { user } }) => {
       if (!user) return false
-      if (user.collection === 'admin-users') return true
+      if (hasRole(['admin'])({ req: { user } })) return true
       return {
         user: {
           equals: user.id,
@@ -17,8 +18,8 @@ export const Orders: CollectionConfig = {
       }
     },
     create: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user } }) => user?.collection === 'admin-users',
-    delete: ({ req: { user } }) => user?.collection === 'admin-users',
+    update: hasRole(['admin']),
+    delete: hasRole(['admin']),
   },
   fields: [
     {
@@ -265,7 +266,7 @@ export const Orders: CollectionConfig = {
         {
           name: 'changedBy',
           type: 'relationship',
-          relationTo: ['admin-users', 'app-users'],
+          relationTo: 'app-users',
         },
       ],
     },

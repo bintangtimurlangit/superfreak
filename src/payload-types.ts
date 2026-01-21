@@ -64,7 +64,6 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     'app-users': AppUserAuthOperations;
-    'admin-users': AdminUserAuthOperations;
   };
   blocks: {};
   collections: {
@@ -73,7 +72,6 @@ export interface Config {
     accounts: Account;
     verifications: Verification;
     'admin-invitations': AdminInvitation;
-    'admin-users': AdminUser;
     media: Media;
     'user-files': UserFile;
     addresses: Address;
@@ -98,7 +96,6 @@ export interface Config {
     accounts: AccountsSelect<false> | AccountsSelect<true>;
     verifications: VerificationsSelect<false> | VerificationsSelect<true>;
     'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
-    'admin-users': AdminUsersSelect<false> | AdminUsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'user-files': UserFilesSelect<false> | UserFilesSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -118,13 +115,9 @@ export interface Config {
   globals: {};
   globalsSelect: {};
   locale: null;
-  user:
-    | (AppUser & {
-        collection: 'app-users';
-      })
-    | (AdminUser & {
-        collection: 'admin-users';
-      });
+  user: AppUser & {
+    collection: 'app-users';
+  };
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -148,31 +141,12 @@ export interface AppUserAuthOperations {
     password: string;
   };
 }
-export interface AdminUserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
-  registerFirstUser: {
-    email: string;
-    password: string;
-  };
-  unlock: {
-    email: string;
-    password: string;
-  };
-}
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "app-users".
  */
 export interface AppUser {
   id: string;
-  phoneNumber?: string | null;
   /**
    * Users chosen display name
    */
@@ -195,6 +169,18 @@ export interface AppUser {
    * The role/ roles of the user
    */
   role?: ('admin' | 'user')[] | null;
+  /**
+   * Whether the user is banned from the platform
+   */
+  banned?: boolean | null;
+  /**
+   * The reason for the ban
+   */
+  banReason?: string | null;
+  /**
+   * The date and time when the ban will expire
+   */
+  banExpires?: string | null;
   account?: {
     docs?: (string | Account)[];
     hasNextPage?: boolean;
@@ -205,6 +191,7 @@ export interface AppUser {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  phoneNumber?: string | null;
 }
 /**
  * Accounts are used to store user accounts for authentication providers
@@ -287,6 +274,10 @@ export interface Session {
    * The user that the session belongs to
    */
   user: string | AppUser;
+  /**
+   * The admin who is impersonating this session
+   */
+  impersonatedBy?: (string | null) | AppUser;
 }
 /**
  * Verifications are used to verify authentication requests
@@ -322,32 +313,6 @@ export interface AdminInvitation {
   url?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admin-users".
- */
-export interface AdminUser {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -590,15 +555,7 @@ export interface Order {
     | {
         status: string;
         changedAt: string;
-        changedBy?:
-          | ({
-              relationTo: 'admin-users';
-              value: string | AdminUser;
-            } | null)
-          | ({
-              relationTo: 'app-users';
-              value: string | AppUser;
-            } | null);
+        changedBy?: (string | null) | AppUser;
         id?: string | null;
       }[]
     | null;
@@ -650,10 +607,6 @@ export interface PayloadLockedDocument {
         value: string | AdminInvitation;
       } | null)
     | ({
-        relationTo: 'admin-users';
-        value: string | AdminUser;
-      } | null)
-    | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
@@ -682,15 +635,10 @@ export interface PayloadLockedDocument {
         value: string | Order;
       } | null);
   globalSlug?: string | null;
-  user:
-    | {
-        relationTo: 'app-users';
-        value: string | AppUser;
-      }
-    | {
-        relationTo: 'admin-users';
-        value: string | AdminUser;
-      };
+  user: {
+    relationTo: 'app-users';
+    value: string | AppUser;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -700,15 +648,10 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: string;
-  user:
-    | {
-        relationTo: 'app-users';
-        value: string | AppUser;
-      }
-    | {
-        relationTo: 'admin-users';
-        value: string | AdminUser;
-      };
+  user: {
+    relationTo: 'app-users';
+    value: string | AppUser;
+  };
   key?: string | null;
   value?:
     | {
@@ -738,7 +681,6 @@ export interface PayloadMigration {
  * via the `definition` "app-users_select".
  */
 export interface AppUsersSelect<T extends boolean = true> {
-  phoneNumber?: T;
   name?: T;
   email?: T;
   emailVerified?: T;
@@ -746,8 +688,12 @@ export interface AppUsersSelect<T extends boolean = true> {
   createdAt?: T;
   updatedAt?: T;
   role?: T;
+  banned?: T;
+  banReason?: T;
+  banExpires?: T;
   account?: T;
   session?: T;
+  phoneNumber?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -761,6 +707,7 @@ export interface SessionsSelect<T extends boolean = true> {
   ipAddress?: T;
   userAgent?: T;
   user?: T;
+  impersonatedBy?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -801,30 +748,6 @@ export interface AdminInvitationsSelect<T extends boolean = true> {
   url?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admin-users_select".
- */
-export interface AdminUsersSelect<T extends boolean = true> {
-  firstName?: T;
-  lastName?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

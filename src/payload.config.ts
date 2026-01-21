@@ -7,8 +7,7 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-import { AdminUsers } from './collections/Users/AdminUsers'
-import { AppUsers } from './collections/Users/AppUsers'
+// AdminUsers removed - using app-users (created by better-auth plugin) for admin panel
 import { Media } from './collections/Media/Media'
 import { UserFiles } from './collections/Media/UserFiles'
 import { Addresses } from './collections/Addresses/Addresses'
@@ -30,14 +29,13 @@ export default buildConfig({
     process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
   ],
   admin: {
-    user: AdminUsers.slug, // Use AdminUsers for admin panel
+    user: 'app-users', // Use app-users (created by better-auth plugin) for admin panel
     importMap: {
       baseDir: path.resolve(dirname),
     },
   },
   collections: [
-    AdminUsers,
-    AppUsers,
+    // app-users is created by better-auth plugin automatically, don't add it here
     Media,
     UserFiles,
     // ProfilePictures removed - using better-auth's built-in image field instead

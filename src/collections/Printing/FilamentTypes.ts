@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasRole } from '@/access/hasRoles'
 
 export const FilamentTypes: CollectionConfig = {
   slug: 'filament-types',
@@ -8,15 +9,9 @@ export const FilamentTypes: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => {
-      return user?.collection === 'admin-users'
-    },
-    update: ({ req: { user } }) => {
-      return user?.collection === 'admin-users'
-    },
-    delete: ({ req: { user } }) => {
-      return user?.collection === 'admin-users'
-    },
+    create: hasRole(['admin']),
+    update: hasRole(['admin']),
+    delete: hasRole(['admin']),
   },
   fields: [
     {

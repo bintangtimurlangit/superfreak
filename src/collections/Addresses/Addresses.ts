@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { hasRole } from '@/access/hasRoles'
 
 export const Addresses: CollectionConfig = {
   slug: 'addresses',
@@ -9,7 +10,7 @@ export const Addresses: CollectionConfig = {
   access: {
     read: ({ req: { user } }) => {
       if (!user) return false
-      if (user.collection === 'admin-users') return true
+      if (hasRole(['admin'])({ req: { user } })) return true
       return {
         user: { equals: user.id },
       }
@@ -17,7 +18,7 @@ export const Addresses: CollectionConfig = {
     create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => {
       if (!user) return false
-      if (user.collection === 'admin-users') return true
+      if (hasRole(['admin'])({ req: { user } })) return true
       return {
         user: { equals: user.id },
       }
@@ -25,7 +26,7 @@ export const Addresses: CollectionConfig = {
     delete: async ({ req, id }) => {
       const { user } = req
       if (!user) return false
-      if (user.collection === 'admin-users') return true
+      if (hasRole(['admin'])({ req: { user } })) return true
       
       if (!id) return false
       

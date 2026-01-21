@@ -1,9 +1,10 @@
 import type { BetterAuthOptions, PayloadAuthOptions } from 'payload-auth/better-auth'
 import { nextCookies } from 'better-auth/next-js'
-import { magicLink } from 'better-auth/plugins'
+import { admin, magicLink } from 'better-auth/plugins'
 
 export const betterAuthPlugins = [
   nextCookies(),
+  admin(),
   magicLink({
     sendMagicLink: async ({ email, token, url }, request) => {
       // Dynamically import to avoid client-side bundling
@@ -120,11 +121,11 @@ export type ConstructedBetterAuthOptions = typeof betterAuthOptions
 export const betterAuthPluginOptions = {
   disabled: false,
   debug: {
-    logTables: true,
-    enableDebugLogs: true,
+    logTables: false,
+    enableDebugLogs: false,
   },
   disableDefaultPayloadAuth: true,
-  hidePluginCollections: false,
+  hidePluginCollections: true,
   users: {
     slug: 'app-users',
     hidden: false,
@@ -132,11 +133,10 @@ export const betterAuthPluginOptions = {
     defaultRole: 'user',
     defaultAdminRole: 'admin',
     roles: ['user', 'admin'] as const,
-    allowedFields: ['name', 'image', 'phoneNumber'],
+    allowedFields: ['name', 'image'],
   },
   accounts: {
     slug: 'accounts',
-    hidden: false,
   },
   sessions: {
     slug: 'sessions',
