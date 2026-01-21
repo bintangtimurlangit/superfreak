@@ -10,6 +10,15 @@ export interface Address {
   villageCode: string
   postalCode: string
   isDefault: boolean
+  // RajaOngkir fields
+  rajaOngkirDestinationId?: number
+  rajaOngkirLocationLabel?: string
+  rajaOngkirZipCode?: string
+  rajaOngkirLastVerified?: string
+  rajaOngkirProvinceName?: string
+  rajaOngkirCityName?: string
+  rajaOngkirDistrictName?: string
+  rajaOngkirSubdistrictName?: string
 }
 
 export interface Province {

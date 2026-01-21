@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Home, Plus, Trash2, MapPin, Edit2, Check, X, AlertTriangle } from 'lucide-react'
+import { Home, Plus, Trash2, MapPin, X, AlertTriangle } from 'lucide-react'
 import { useSession } from '@/lib/auth/client'
 import { SavedAddress } from '@/lib/types'
 import { addressSchema, type AddressFormData } from '@/lib/validations/address'
@@ -140,12 +140,57 @@ export default function AddressForm() {
     },
   })
 
-  const onSubmit = (data: AddressFormData) => {
+  const onSubmit = async (data: AddressFormData) => {
     if (savedAddresses.length >= 3) {
       setError('Maximum 3 addresses allowed')
       return
     }
-    createAddressMutation.mutate(data)
+
+    try {
+      // Get location names from wilayah.id data
+      const province = provinces.find((p) => p.code === data.provinceCode)
+      const regency = regencies.find((r) => r.code === data.regencyCode)
+      const district = districts.find((d) => d.code === data.districtCode)
+      const village = villages.find((v) => v.code === data.villageCode)
+
+      if (!province || !regency || !district || !village) {
+        setError('Please select all location fields')
+        return
+      }
+
+      // Import the matching function
+      const { matchRajaOngkirLocation } = await import('@/lib/rajaongkir')
+
+      // Match RajaOngkir location
+      const rajaOngkirMatch = await matchRajaOngkirLocation({
+        provinceName: province.name,
+        regencyName: regency.name,
+        districtName: district.name,
+        villageName: village.name,
+      })
+
+      // Prepare address data with RajaOngkir fields
+      const addressData = {
+        ...data,
+        user: user?.id,
+        // RajaOngkir fields (optional - will be null if matching failed)
+        rajaOngkirDestinationId: rajaOngkirMatch?.id || null,
+        rajaOngkirLocationLabel: rajaOngkirMatch?.label || null,
+        rajaOngkirZipCode: rajaOngkirMatch?.zip_code || null,
+        rajaOngkirLastVerified: rajaOngkirMatch ? new Date().toISOString() : null,
+        rajaOngkirProvinceName: rajaOngkirMatch?.province_name || null,
+        rajaOngkirCityName: rajaOngkirMatch?.city_name || null,
+        rajaOngkirDistrictName: rajaOngkirMatch?.district_name || null,
+        rajaOngkirSubdistrictName: rajaOngkirMatch?.subdistrict_name || null,
+      }
+
+      // Save address
+      createAddressMutation.mutate(addressData)
+    } catch (err) {
+      console.error('Error processing address:', err)
+      setError('Failed to process address. Please try again.')
+      setTimeout(() => setError(null), 5000)
+    }
   }
 
   const formatAddress = (address: SavedAddress) => {

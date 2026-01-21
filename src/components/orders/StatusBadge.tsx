@@ -10,17 +10,19 @@ import {
   Package,
   CheckCircle,
   Check,
+  XCircle,
 } from 'lucide-react'
 
 export type OrderStatus =
   | 'unpaid'
-  | 'checking'
-  | 'discuss'
+  | 'in-review'
+  | 'needs-discussion'
   | 'printing'
   | 'shipping'
-  | 'delivery'
+  | 'in-delivery'
   | 'delivered'
-  | 'done'
+  | 'completed'
+  | 'canceled'
 
 interface StatusBadgeProps {
   status: OrderStatus
@@ -42,14 +44,14 @@ const statusConfig: Record<
     textColor: 'text-red-700',
     icon: CreditCard,
   },
-  checking: {
-    label: 'Checking',
+  'in-review': {
+    label: 'In Review',
     bgColor: 'bg-blue-50',
     textColor: 'text-blue-700',
     icon: Search,
   },
-  discuss: {
-    label: 'Discuss',
+  'needs-discussion': {
+    label: 'Needs Discussion',
     bgColor: 'bg-purple-50',
     textColor: 'text-purple-700',
     icon: MessageSquare,
@@ -66,7 +68,7 @@ const statusConfig: Record<
     textColor: 'text-cyan-700',
     icon: Truck,
   },
-  delivery: {
+  'in-delivery': {
     label: 'In Delivery',
     bgColor: 'bg-teal-50',
     textColor: 'text-teal-700',
@@ -78,11 +80,17 @@ const statusConfig: Record<
     textColor: 'text-green-700',
     icon: CheckCircle,
   },
-  done: {
-    label: 'Done',
+  completed: {
+    label: 'Completed',
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-700',
     icon: Check,
+  },
+  canceled: {
+    label: 'Canceled',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-800',
+    icon: XCircle,
   },
 }
 

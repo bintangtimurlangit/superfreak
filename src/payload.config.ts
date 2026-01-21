@@ -17,17 +17,16 @@ import { PrintingOptions } from './collections/Printing/PrintingOptions'
 import { Orders } from './collections/Orders/Orders'
 import { plugins } from './payload/plugins'
 
+import { CourierSettings } from './collections/Globals/CourierSettings'
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || process.env.SERVER_URL || 'http://localhost:3000',
-  cors: [
-    process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
-  ],
-  csrf: [
-    process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
-  ],
+  serverURL:
+    process.env.NEXT_PUBLIC_SERVER_URL || process.env.SERVER_URL || 'http://localhost:3000',
+  cors: [process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'],
+  csrf: [process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'],
   admin: {
     user: 'app-users', // Use app-users (created by better-auth plugin) for admin panel
     importMap: {
@@ -45,6 +44,7 @@ export default buildConfig({
     PrintingOptions,
     Orders,
   ],
+  globals: [CourierSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

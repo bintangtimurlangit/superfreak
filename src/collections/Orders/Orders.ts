@@ -67,12 +67,12 @@ export const Orders: CollectionConfig = {
           value: 'unpaid',
         },
         {
-          label: 'Checking',
-          value: 'checking',
+          label: 'In Review',
+          value: 'in-review',
         },
         {
-          label: 'Discuss',
-          value: 'discuss',
+          label: 'Needs Discussion',
+          value: 'needs-discussion',
         },
         {
           label: 'Printing',
@@ -83,16 +83,20 @@ export const Orders: CollectionConfig = {
           value: 'shipping',
         },
         {
-          label: 'Delivery',
-          value: 'delivery',
+          label: 'In Delivery',
+          value: 'in-delivery',
         },
         {
           label: 'Delivered',
           value: 'delivered',
         },
         {
-          label: 'Done',
-          value: 'done',
+          label: 'Completed',
+          value: 'completed',
+        },
+        {
+          label: 'Canceled',
+          value: 'canceled',
         },
       ],
       admin: {
@@ -230,14 +234,15 @@ export const Orders: CollectionConfig = {
       name: 'trackingNumber',
       type: 'text',
       admin: {
-        condition: (data) => ['shipping', 'delivery', 'delivered', 'done'].includes(data.status),
+        condition: (data) =>
+          ['shipping', 'in-delivery', 'delivered', 'completed'].includes(data.status),
       },
     },
     {
       name: 'adminNotes',
       type: 'textarea',
       admin: {
-        description: 'Internal notes for admin use, especially for discuss status',
+        description: 'Internal notes for admin use, especially for needs-discussion status',
       },
     },
     {

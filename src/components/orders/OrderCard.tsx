@@ -3,7 +3,6 @@
 import React from 'react'
 import { Calendar, Package, ChevronRight } from 'lucide-react'
 import StatusBadge, { type OrderStatus } from './StatusBadge'
-import Button from '@/components/ui/Button'
 
 export interface Order {
   id: string
@@ -38,46 +37,6 @@ export default function OrderCard({ order }: OrderCardProps) {
       style: 'currency',
       currency: 'USD',
     }).format(amount)
-  }
-
-  const getActionButton = () => {
-    switch (order.status) {
-      case 'unpaid':
-        return (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="!bg-[#1D0DF3] !text-white hover:!bg-[#1a0cd9] text-sm font-medium"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
-            Pay Now
-          </Button>
-        )
-      case 'shipping':
-      case 'delivery':
-      case 'delivered':
-        return (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="border border-[#DCDCDC] bg-white text-[#1D0DF3] hover:bg-[#F5F5F5] text-sm font-medium"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
-            Track Order
-          </Button>
-        )
-      default:
-        return (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F5F5F5] text-sm font-medium"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
-            View Details
-          </Button>
-        )
-    }
   }
 
   return (
@@ -189,12 +148,6 @@ export default function OrderCard({ order }: OrderCardProps) {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-3">
-        <button
-          className="flex-1 px-4 py-2.5 border border-[#1D0DF3] text-[#1D0DF3] rounded-lg text-sm font-medium hover:bg-[#1D0DF3]/5 transition-colors"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
-          View Details
-        </button>
         {order.status === 'unpaid' ? (
           <button
             className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
@@ -202,7 +155,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           >
             Pay Now
           </button>
-        ) : order.status === 'delivered' || order.status === 'done' ? (
+        ) : order.status === 'delivered' || order.status === 'completed' ? (
           <button
             className="flex-1 px-4 py-2.5 bg-[#10B981] text-white rounded-lg text-sm font-medium hover:bg-[#059669] transition-colors"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
@@ -214,7 +167,7 @@ export default function OrderCard({ order }: OrderCardProps) {
             className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            Track Order
+            View Details
           </button>
         )}
         <button

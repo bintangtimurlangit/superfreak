@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Package, Search } from 'lucide-react'
+import { Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
@@ -59,39 +59,165 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([]) // Changed to array for multiple selection
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null)
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ordersPerPage = 5
 
+  // Mock data for testing - replace with real API call later
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!isAuthenticated || !user) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
-        const response = await fetch('/api/orders', {
-          method: 'GET',
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders')
-        }
-
-        const data = await response.json()
-        setOrders(data.docs || [])
-      } catch (error) {
-        console.error('Error fetching orders:', error)
-        setOrders([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
     if (!sessionLoading) {
-      fetchOrders()
+      // Simulate loading delay
+      setLoading(true)
+      setTimeout(() => {
+        if (isAuthenticated) {
+          // Hardcoded mock orders with all statuses
+          const mockOrders: Order[] = [
+            {
+              id: '1',
+              orderNumber: 'ORD-1737456123-001',
+              status: 'in-review',
+              totalAmount: 145.5,
+              createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+              items: [
+                {
+                  fileName: 'custom-phone-case.stl',
+                  quantity: 2,
+                  price: 35.0,
+                },
+                {
+                  fileName: 'desk-organizer-v2.3mf',
+                  quantity: 1,
+                  price: 75.5,
+                },
+              ],
+            },
+            {
+              id: '2',
+              orderNumber: 'ORD-1737369723-002',
+              status: 'needs-discussion',
+              totalAmount: 289.99,
+              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+              items: [
+                {
+                  fileName: 'complex-mechanical-part.step',
+                  quantity: 1,
+                  price: 289.99,
+                },
+              ],
+            },
+            {
+              id: '3',
+              orderNumber: 'ORD-1737283323-003',
+              status: 'printing',
+              totalAmount: 67.25,
+              createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+              items: [
+                {
+                  fileName: 'miniature-figurine.stl',
+                  quantity: 5,
+                  price: 13.45,
+                },
+              ],
+            },
+            {
+              id: '4',
+              orderNumber: 'ORD-1737196923-004',
+              status: 'shipping',
+              totalAmount: 425.0,
+              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+              items: [
+                {
+                  fileName: 'prototype-housing.stl',
+                  quantity: 3,
+                  price: 125.0,
+                },
+                {
+                  fileName: 'mounting-bracket.3mf',
+                  quantity: 4,
+                  price: 18.75,
+                },
+              ],
+              trackingNumber: 'TRK-US-2024-789456',
+            },
+            {
+              id: '5',
+              orderNumber: 'ORD-1737110523-005',
+              status: 'in-delivery',
+              totalAmount: 156.8,
+              createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+              items: [
+                {
+                  fileName: 'custom-keycaps-set.stl',
+                  quantity: 1,
+                  price: 156.8,
+                },
+              ],
+              trackingNumber: 'TRK-US-2024-654321',
+            },
+            {
+              id: '6',
+              orderNumber: 'ORD-1736937723-006',
+              status: 'delivered',
+              totalAmount: 89.5,
+              createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+              items: [
+                {
+                  fileName: 'wall-mount-holder.stl',
+                  quantity: 2,
+                  price: 44.75,
+                },
+              ],
+              trackingNumber: 'TRK-US-2024-123789',
+            },
+            {
+              id: '7',
+              orderNumber: 'ORD-1736505723-007',
+              status: 'completed',
+              totalAmount: 234.0,
+              createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 days ago
+              items: [
+                {
+                  fileName: 'drone-frame-parts.3mf',
+                  quantity: 1,
+                  price: 234.0,
+                },
+              ],
+              trackingNumber: 'TRK-US-2024-987654',
+            },
+            {
+              id: '8',
+              orderNumber: 'ORD-1736332923-008',
+              status: 'unpaid',
+              totalAmount: 52.3,
+              createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+              items: [
+                {
+                  fileName: 'cable-clip-v3.stl',
+                  quantity: 10,
+                  price: 5.23,
+                },
+              ],
+            },
+            {
+              id: '9',
+              orderNumber: 'ORD-1735900923-009',
+              status: 'canceled',
+              totalAmount: 178.9,
+              createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+              items: [
+                {
+                  fileName: 'large-prototype.step',
+                  quantity: 1,
+                  price: 178.9,
+                },
+              ],
+            },
+          ]
+          setOrders(mockOrders)
+        }
+        setLoading(false)
+      }, 500)
     }
-  }, [isAuthenticated, user, sessionLoading])
+  }, [isAuthenticated, sessionLoading])
 
   const filterOrdersByDate = (order: Order): boolean => {
     if (dateFilter === 'all') return true
@@ -159,6 +285,17 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const filteredOrders = orders.filter(
     (order) => filterOrdersByDate(order) && filterOrdersByStatus(order),
   )
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
+  const startIndex = (currentPage - 1) * ordersPerPage
+  const endIndex = startIndex + ordersPerPage
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter, dateFilter, customStartDate, customEndDate])
 
   if (sessionLoading || loading) {
     return <OrderHistoryListSkeleton />
@@ -241,13 +378,14 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
             </button>
             {[
               { value: 'unpaid', label: 'Unpaid' },
-              { value: 'checking', label: 'Checking' },
-              { value: 'discuss', label: 'Discuss' },
+              { value: 'in-review', label: 'In Review' },
+              { value: 'needs-discussion', label: 'Needs Discussion' },
               { value: 'printing', label: 'Printing' },
               { value: 'shipping', label: 'Shipping' },
-              { value: 'delivery', label: 'Delivery' },
+              { value: 'in-delivery', label: 'In Delivery' },
               { value: 'delivered', label: 'Delivered' },
-              { value: 'done', label: 'Done' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'canceled', label: 'Canceled' },
             ].map((option) => (
               <button
                 key={option.value}
@@ -280,10 +418,15 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
         </div>
       </div>
 
-      {/* Results Count */}
+      {/* Results Count and Pagination Info */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-[#989898]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
           {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'} found
+          {filteredOrders.length > ordersPerPage && (
+            <span className="ml-2">
+              (Page {currentPage} of {totalPages})
+            </span>
+          )}
         </p>
       </div>
 
@@ -304,11 +447,78 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-4">
+            {paginatedOrders.map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-[#DCDCDC] hover:bg-[#F8F8F8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-5 w-5 text-[#292929]" />
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+
+                  if (!showPage) {
+                    // Show ellipsis
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span
+                          key={page}
+                          className="px-2 text-[#989898]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          ...
+                        </span>
+                      )
+                    }
+                    return null
+                  }
+
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`min-w-[40px] h-10 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-[#1D0DF3] text-white'
+                          : 'border border-[#DCDCDC] text-[#292929] hover:bg-[#F8F8F8]'
+                      }`}
+                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    >
+                      {page}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-[#DCDCDC] hover:bg-[#F8F8F8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-5 w-5 text-[#292929]" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

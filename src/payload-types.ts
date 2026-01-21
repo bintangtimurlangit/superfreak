@@ -112,8 +112,12 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'courier-settings': CourierSetting;
+  };
+  globalsSelect: {
+    'courier-settings': CourierSettingsSelect<false> | CourierSettingsSelect<true>;
+  };
   locale: null;
   user: AppUser & {
     collection: 'app-users';
@@ -394,6 +398,38 @@ export interface Address {
   villageCode: string;
   postalCode: string;
   isDefault?: boolean | null;
+  /**
+   * Location ID from RajaOngkir API (auto-populated when address is saved)
+   */
+  rajaOngkirDestinationId?: number | null;
+  /**
+   * Full location label from RajaOngkir for verification
+   */
+  rajaOngkirLocationLabel?: string | null;
+  /**
+   * Zip code from RajaOngkir (may differ from user input)
+   */
+  rajaOngkirZipCode?: string | null;
+  /**
+   * Last time RajaOngkir location was verified
+   */
+  rajaOngkirLastVerified?: string | null;
+  /**
+   * Province name from RajaOngkir
+   */
+  rajaOngkirProvinceName?: string | null;
+  /**
+   * City name from RajaOngkir
+   */
+  rajaOngkirCityName?: string | null;
+  /**
+   * District name from RajaOngkir
+   */
+  rajaOngkirDistrictName?: string | null;
+  /**
+   * Subdistrict name from RajaOngkir
+   */
+  rajaOngkirSubdistrictName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -510,7 +546,16 @@ export interface Order {
   id: string;
   orderNumber: string;
   user: string | AppUser;
-  status: 'unpaid' | 'checking' | 'discuss' | 'printing' | 'shipping' | 'delivery' | 'delivered' | 'done';
+  status:
+    | 'unpaid'
+    | 'in-review'
+    | 'needs-discussion'
+    | 'printing'
+    | 'shipping'
+    | 'in-delivery'
+    | 'delivered'
+    | 'completed'
+    | 'canceled';
   items: {
     file: string | UserFile;
     fileName: string;
@@ -544,7 +589,7 @@ export interface Order {
   shippingAddress?: (string | null) | Address;
   trackingNumber?: string | null;
   /**
-   * Internal notes for admin use, especially for discuss status
+   * Internal notes for admin use, especially for needs-discussion status
    */
   adminNotes?: string | null;
   /**
@@ -829,6 +874,14 @@ export interface AddressesSelect<T extends boolean = true> {
   villageCode?: T;
   postalCode?: T;
   isDefault?: T;
+  rajaOngkirDestinationId?: T;
+  rajaOngkirLocationLabel?: T;
+  rajaOngkirZipCode?: T;
+  rajaOngkirLastVerified?: T;
+  rajaOngkirProvinceName?: T;
+  rajaOngkirCityName?: T;
+  rajaOngkirDistrictName?: T;
+  rajaOngkirSubdistrictName?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -982,6 +1035,116 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Configure shipping couriers and warehouse settings for RajaOngkir
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courier-settings".
+ */
+export interface CourierSetting {
+  id: string;
+  /**
+   * Your warehouse location ID from RajaOngkir (origin for shipping calculations)
+   */
+  warehouseId: number;
+  /**
+   * Name/label for your warehouse location (for reference)
+   */
+  warehouseName?: string | null;
+  /**
+   * Full warehouse address (for reference)
+   */
+  warehouseAddress?: string | null;
+  /**
+   * Select all courier services you want to offer. These will be available during checkout.
+   */
+  enabledCouriers: (
+    | 'jne'
+    | 'jnt'
+    | 'sicepat'
+    | 'ide'
+    | 'sap'
+    | 'ninja'
+    | 'tiki'
+    | 'lion'
+    | 'anteraja'
+    | 'pos'
+    | 'ncs'
+    | 'rex'
+    | 'rpx'
+    | 'sentral'
+    | 'star'
+    | 'wahana'
+    | 'dse'
+  )[];
+  /**
+   * Drag to reorder how couriers appear in checkout (optional - defaults to alphabetical)
+   */
+  courierDisplayOrder?:
+    | {
+        courier:
+          | 'jne'
+          | 'jnt'
+          | 'sicepat'
+          | 'ide'
+          | 'sap'
+          | 'ninja'
+          | 'tiki'
+          | 'lion'
+          | 'anteraja'
+          | 'pos'
+          | 'ncs'
+          | 'rex'
+          | 'rpx'
+          | 'sentral'
+          | 'star'
+          | 'wahana'
+          | 'dse';
+        /**
+         * Lower numbers appear first (1 = highest priority)
+         */
+        priority?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Minimum order value for free shipping (set to 0 to disable free shipping)
+   */
+  freeShippingThreshold?: number | null;
+  /**
+   * Which courier service to pre-select in checkout (optional)
+   */
+  defaultShippingService?: ('' | 'jne' | 'jnt' | 'sicepat') | null;
+  /**
+   * How many days it takes to process orders before shipping (added to courier delivery time)
+   */
+  estimatedProcessingDays: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courier-settings_select".
+ */
+export interface CourierSettingsSelect<T extends boolean = true> {
+  warehouseId?: T;
+  warehouseName?: T;
+  warehouseAddress?: T;
+  enabledCouriers?: T;
+  courierDisplayOrder?:
+    | T
+    | {
+        courier?: T;
+        priority?: T;
+        id?: T;
+      };
+  freeShippingThreshold?: T;
+  defaultShippingService?: T;
+  estimatedProcessingDays?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
