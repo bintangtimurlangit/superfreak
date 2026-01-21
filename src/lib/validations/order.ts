@@ -15,8 +15,7 @@ export const modelConfigurationSchema = z.object({
     ),
   infill: z
     .string()
-    .min(1, 'Infill is required')
-    .regex(/^\d+%$/, 'Infill must be a percentage (e.g., 20%)'),
+    .min(1, 'Infill is required'),
   wallCount: z
     .string()
     .min(1, 'Wall count is required')
