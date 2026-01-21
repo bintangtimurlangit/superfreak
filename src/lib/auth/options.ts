@@ -1,7 +1,21 @@
 import type { BetterAuthOptions, PayloadAuthOptions } from 'payload-auth/better-auth'
 import { nextCookies } from 'better-auth/next-js'
+import { magicLink } from 'better-auth/plugins'
 
-export const betterAuthPlugins = [nextCookies()]
+export const betterAuthPlugins = [
+  nextCookies(),
+  magicLink({
+    sendMagicLink: async ({ email, token, url }, request) => {
+      // Dynamically import to avoid client-side bundling
+      const { sendMagicLinkEmail } = await import('@/lib/email/send')
+      await sendMagicLinkEmail({
+        to: email,
+        url,
+        userName: undefined, // You can extract from request if available
+      })
+    },
+  }),
+]
 
 export type BetterAuthPlugins = typeof betterAuthPlugins
 
@@ -21,8 +35,12 @@ export const betterAuthOptions = {
     enabled: true,
     requireEmailVerification: true,
     async sendResetPassword({ user, url }: { user: any; url: string }) {
-      console.log('Send reset password for user: ', user.id, 'at url', url)
-      // TODO: Implement password reset email sending via Resend
+      const { sendPasswordResetEmail } = await import('@/lib/email/send')
+      await sendPasswordResetEmail({
+        to: user.email,
+        url,
+        userName: user.name,
+      })
     },
   },
   socialProviders: {
@@ -35,8 +53,12 @@ export const betterAuthOptions = {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }: { user: any; url: string }) {
-      console.log('Send verification email for user: ', url)
-      // TODO: Implement email verification sending via Resend
+      const { sendVerificationEmail } = await import('@/lib/email/send')
+      await sendVerificationEmail({
+        to: user.email,
+        url,
+        userName: user.name,
+      })
     },
   },
   plugins: betterAuthPlugins,

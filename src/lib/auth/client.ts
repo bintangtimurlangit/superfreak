@@ -32,6 +32,6 @@ export const authClient = createAuthClient({
   $InferAuth: betterAuthOptions,
 })
 
-export const { signUp, signIn, signOut, useSession, updateUser, changePassword } = authClient
+export const { signUp, signIn, signOut, useSession, updateUser, changePassword, sendVerificationEmail } = authClient
 
 authClient.$store.listen('$sessionSignal', async () => {})
