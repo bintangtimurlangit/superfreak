@@ -27,6 +27,8 @@
     "@payloadcms/storage-s3": "3.69.0",
     "@payloadcms/ui": "3.69.0",
     "@react-email/render": "2.0.4",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-query": "^5.90.18",
     "better-auth": "^1.4.16",
@@ -48,6 +50,7 @@
     "server-only": "^0.0.1",
     "sharp": "0.34.2",
     "tailwindcss": "^4.1.18",
+    "three": "^0.182.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {
@@ -56,6 +59,7 @@
     "@types/node": "^22.5.4",
     "@types/react": "19.2.1",
     "@types/react-dom": "19.2.1",
+    "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "4.5.2",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.4.7",

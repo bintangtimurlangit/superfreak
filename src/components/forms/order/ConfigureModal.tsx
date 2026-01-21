@@ -10,6 +10,7 @@ import { modelConfigurationSchema, type ModelConfigurationFormData } from '@/lib
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import type { FilamentType, PrintingOption, PrintingPricing } from '@/payload-types'
+import ModelViewer from '@/components/3d/ModelViewer'
 
 interface ConfigureModalProps {
   isOpen: boolean
@@ -101,8 +102,9 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
       })
 
       // Organize data
-      const materials = (filamentTypes.docs?.map((doc) => doc.name).filter(Boolean) || []) as string[]
-      
+      const materials = (filamentTypes.docs?.map((doc) => doc.name).filter(Boolean) ||
+        []) as string[]
+
       // Get all colors from all filament types
       const allColors = new Set<string>()
       filamentTypes.docs?.forEach((doc) => {
@@ -159,12 +161,9 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
       infill: z
         .string()
         .min(1, 'Infill is required')
-        .refine(
-          (val) => infillValues.includes(val),
-          {
-            message: `Infill must be one of the available options: ${infillValues.join(', ')}`,
-          }
-        ),
+        .refine((val) => infillValues.includes(val), {
+          message: `Infill must be one of the available options: ${infillValues.join(', ')}`,
+        }),
     })
   }, [infillOptions])
 
@@ -222,13 +221,13 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
   const handleNext = (e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
-    
+
     // Validate current step before proceeding
     if (currentStep === 1) {
       const material = formData.material
       const color = formData.color
       const layerHeight = formData.layerHeight
-      
+
       if (!material || !color || !layerHeight) {
         // Trigger validation
         setValue('material', material || '', { shouldValidate: true })
@@ -239,7 +238,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
       setCurrentStep(2)
     } else if (currentStep === 2) {
       const infill = formData.infill
-      
+
       if (!infill) {
         // Trigger validation
         setValue('infill', infill || '', { shouldValidate: true })
@@ -324,25 +323,29 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
 
         <div className="flex-1 p-4 overflow-y-auto min-h-0">
           <div className="flex gap-8 h-full items-start">
-            <div className="hidden md:flex w-[480px] h-[480px] rounded-[16px] border border-dashed border-[#DCDCDC] bg-[#F8F8F8] flex-shrink-0 items-center justify-center sticky top-0">
-              <span
-                className="text-xs text-[#7C7C7C] text-center leading-tight"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
-                3D Preview
-                <br />
-                (Coming Soon)
-              </span>
+            <div className="hidden md:flex w-[480px] h-[480px] rounded-[16px] border border-[#DCDCDC] bg-white flex-shrink-0 items-center justify-center sticky top-0 overflow-hidden">
+              {file?.file ? (
+                <ModelViewer file={file.file} className="w-full h-full" />
+              ) : (
+                <span
+                  className="text-xs text-[#7C7C7C] text-center leading-tight"
+                  style={{ fontFamily: 'var(--font-geist-sans)' }}
+                >
+                  3D Preview
+                  <br />
+                  (No file available)
+                </span>
+              )}
             </div>
 
-            <form 
+            <form
               onSubmit={(e) => {
                 e.preventDefault()
                 if (currentStep === totalSteps) {
                   handleSubmit(onSubmit)(e)
                 }
-              }} 
-              className="flex-1 flex flex-col min-h-0" 
+              }}
+              className="flex-1 flex flex-col min-h-0"
               id="configure-form"
             >
               <div className="mb-4">
@@ -372,39 +375,39 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                         Material <span className="text-red-500 ml-1">*</span>
                         <InfoTooltip content="Choose the filament type. Different materials have different properties like strength, flexibility, and temperature resistance." />
                       </label>
-                  {loadingOptions ? (
-                    <div className="flex flex-wrap gap-3">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div
-                          key={i}
-                          className="h-12 w-20 bg-gray-200 rounded-[12px] animate-pulse"
-                        />
-                      ))}
-                    </div>
-                  ) : materialOptions.length > 0 ? (
-                    <div className="flex flex-wrap gap-3">
-                      {materialOptions.map((option: string) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => setValue('material', option, { shouldValidate: true })}
-                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                            formData.material === option
-                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                          }`}
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-[#7C7C7C]">No material options available</p>
-                  )}
-                  {errors.material && (
-                    <p className="mt-1 text-xs text-red-600">{errors.material.message}</p>
-                  )}
+                      {loadingOptions ? (
+                        <div className="flex flex-wrap gap-3">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <div
+                              key={i}
+                              className="h-12 w-20 bg-gray-200 rounded-[12px] animate-pulse"
+                            />
+                          ))}
+                        </div>
+                      ) : materialOptions.length > 0 ? (
+                        <div className="flex flex-wrap gap-3">
+                          {materialOptions.map((option: string) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => setValue('material', option, { shouldValidate: true })}
+                              className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                                formData.material === option
+                                  ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                  : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                              }`}
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#7C7C7C]">No material options available</p>
+                      )}
+                      {errors.material && (
+                        <p className="mt-1 text-xs text-red-600">{errors.material.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -458,7 +461,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                         Layer Height <span className="text-red-500 ml-1">*</span>
                         <InfoTooltip content="Print resolution. Smaller values (0.12mm) = smoother but slower. Larger values (0.28mm) = faster but more visible layers." />
                       </label>
-                          {loadingOptions ? (
+                      {loadingOptions ? (
                         <div className="grid grid-cols-4 gap-3">
                           {[1, 2, 3, 4].map((i) => (
                             <div
@@ -473,7 +476,9 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                             <button
                               key={height}
                               type="button"
-                              onClick={() => setValue('layerHeight', height, { shouldValidate: true })}
+                              onClick={() =>
+                                setValue('layerHeight', height, { shouldValidate: true })
+                              }
                               className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
                                 formData.layerHeight === height
                                   ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
@@ -506,39 +511,41 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                         Infill <span className="text-red-500 ml-1">*</span>
                         <InfoTooltip content="Internal density. Higher (60-100%) = stronger but heavier. Lower (10-20%) = lighter and faster but weaker." />
                       </label>
-                  {loadingOptions ? (
-                    <div className="grid grid-cols-5 gap-3">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div
-                          key={i}
-                          className="h-12 bg-gray-200 rounded-[12px] animate-pulse"
-                        />
-                      ))}
-                    </div>
-                  ) : infillOptions.length > 0 ? (
-                    <div className="grid grid-cols-5 gap-3">
-                      {infillOptions.map((infill: { label: string; value: string }) => (
-                        <button
-                          key={infill.value}
-                          type="button"
-                          onClick={() => setValue('infill', infill.value, { shouldValidate: true })}
-                          className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
-                            formData.infill === infill.value
-                              ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
-                              : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
-                          }`}
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
-                          {infill.label}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-[#7C7C7C]">No infill options available</p>
-                  )}
-                  {errors.infill && (
-                    <p className="mt-1 text-xs text-red-600">{errors.infill.message}</p>
-                  )}
+                      {loadingOptions ? (
+                        <div className="grid grid-cols-5 gap-3">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <div
+                              key={i}
+                              className="h-12 bg-gray-200 rounded-[12px] animate-pulse"
+                            />
+                          ))}
+                        </div>
+                      ) : infillOptions.length > 0 ? (
+                        <div className="grid grid-cols-5 gap-3">
+                          {infillOptions.map((infill: { label: string; value: string }) => (
+                            <button
+                              key={infill.value}
+                              type="button"
+                              onClick={() =>
+                                setValue('infill', infill.value, { shouldValidate: true })
+                              }
+                              className={`px-4 py-3 rounded-[12px] border text-sm font-medium transition-colors ${
+                                formData.infill === infill.value
+                                  ? 'border-[#1D0DF3] bg-[#1D0DF3] text-white'
+                                  : 'border-[#EFEFEF] bg-white text-[#292929] hover:bg-[#F8F8F8]'
+                              }`}
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {infill.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#7C7C7C]">No infill options available</p>
+                      )}
+                      {errors.infill && (
+                        <p className="mt-1 text-xs text-red-600">{errors.infill.message}</p>
+                      )}
                     </div>
 
                     <div>
@@ -550,16 +557,16 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                         <InfoTooltip content="Outer shell thickness. More walls = stronger and smoother but use more material. Recommended: 2-3 walls." />
                       </label>
                       <input
-                    type="number"
-                    min={1}
-                    max={maxWallCount}
-                    step={1}
-                    {...register('wallCount')}
-                    onChange={(e) => handleWallCountChange(e.target.value)}
-                    placeholder="2"
-                    className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
-                  />
+                        type="number"
+                        min={1}
+                        max={maxWallCount}
+                        step={1}
+                        {...register('wallCount')}
+                        onChange={(e) => handleWallCountChange(e.target.value)}
+                        placeholder="2"
+                        className="w-full px-4 py-3 rounded-[12px] border border-[#EFEFEF] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
+                        style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      />
                       {errors.wallCount && (
                         <p className="mt-1 text-xs text-red-600">{errors.wallCount.message}</p>
                       )}
@@ -611,7 +618,6 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                   </>
                 )}
               </div>
-
             </form>
           </div>
         </div>
@@ -651,16 +657,16 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      form="configure-form"
-                      disabled={!isValid}
-                      className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-                    >
-                      Save Configuration
-                    </Button>
-                  )}
+            ) : (
+              <Button
+                type="submit"
+                form="configure-form"
+                disabled={!isValid}
+                className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
+              >
+                Save Configuration
+              </Button>
+            )}
           </div>
         </div>
       </div>

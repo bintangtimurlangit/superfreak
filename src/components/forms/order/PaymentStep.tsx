@@ -2,9 +2,13 @@
 
 import { ChevronRight } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import type { UploadedFile } from './UploadStep'
 
 interface PaymentStepProps {
   onBack: () => void
+  uploadedFiles: UploadedFile[]
+  // When order is created, call finalizeFiles with orderId and tempFileIds
+  // Example: await fetch('/api/files/finalize', { method: 'POST', body: JSON.stringify({ orderId, tempFileIds }) })
 }
 
 export default function PaymentStep({ onBack }: PaymentStepProps) {

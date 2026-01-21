@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { Box, Trash2, ChevronRight, ArrowUp, Shield, Minus, Plus, AlertCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { parseConfigurationValues } from '@/lib/validations/order'
+import ModelViewer from '@/components/3d/ModelViewer'
 
 export interface ModelConfiguration {
   material?: string
@@ -27,6 +28,7 @@ export interface UploadedFile {
   status: 'pending' | 'uploading' | 'completed' | 'error'
   configuration?: ModelConfiguration
   file?: File // Store the actual File object for API upload
+  tempFileId?: string // ID from temporary storage upload
   statistics?: {
     print_time_minutes: number
     print_time_formatted: string
@@ -295,6 +297,76 @@ export default function UploadStep({
       .every((f) => isModelConfigured(f))
   }
 
+  const uploadToTempStorage = async (files: UploadedFile[]): Promise<void> => {
+    // Filter files that need to be uploaded (have File object and no tempFileId)
+    const filesToUpload = files.filter((f) => f.file && !f.tempFileId)
+
+    if (filesToUpload.length === 0) {
+      console.log('[TempUpload] No files to upload to temp storage')
+      return
+    }
+
+    console.log(`[TempUpload] Uploading ${filesToUpload.length} files to temp storage`)
+
+    try {
+      // Generate or get session ID
+      let sessionId = sessionStorage.getItem('orderSessionId')
+      if (!sessionId) {
+        sessionId =
+          Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+        sessionStorage.setItem('orderSessionId', sessionId)
+      }
+
+      // Prepare FormData
+      const formData = new FormData()
+      formData.append('sessionId', sessionId)
+      filesToUpload.forEach((file) => {
+        if (file.file) {
+          formData.append('files', file.file)
+        }
+      })
+
+      // Upload to temp storage
+      const response = await fetch('/api/files/temp', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log('[TempUpload] Upload successful:', result)
+
+      // Update files with tempFileId
+      const tempFileMap = new Map<string, string>()
+      result.files.forEach((tempFile: { tempFileId: string; fileName: string }) => {
+        const uploadedFile = filesToUpload.find((f) => f.name === tempFile.fileName)
+        if (uploadedFile) {
+          tempFileMap.set(uploadedFile.id, tempFile.tempFileId)
+        }
+      })
+
+      // Update state with tempFileIds
+      setUploadedFiles((prev) =>
+        prev.map((file) => {
+          const tempFileId = tempFileMap.get(file.id)
+          if (tempFileId) {
+            return { ...file, tempFileId }
+          }
+          return file
+        }),
+      )
+
+      console.log('[TempUpload] Files updated with temp IDs')
+    } catch (error) {
+      console.error('[TempUpload] Error uploading to temp storage:', error)
+      throw error
+    }
+  }
+
   const processAllFiles = async () => {
     console.log('[SuperSlice] processAllFiles called')
     console.log('[SuperSlice] uploadedFiles:', uploadedFiles)
@@ -342,10 +414,17 @@ export default function UploadStep({
         return
       }
 
-      // All files already processed, proceed to next step
-      console.log('[SuperSlice] No files to process, proceeding to next step')
+      // All files already processed, upload to temp storage before proceeding
+      console.log('[SuperSlice] No files to process, uploading to temp storage')
       setIsProcessing(false)
-      onNext()
+      try {
+        await uploadToTempStorage(uploadedFiles)
+        console.log('[SuperSlice] Temp upload complete, proceeding to next step')
+        onNext()
+      } catch (error) {
+        console.error('[SuperSlice] Error uploading to temp storage:', error)
+        alert('Failed to upload files. Please try again.')
+      }
       return
     }
 
@@ -384,7 +463,17 @@ export default function UploadStep({
       if (allSucceeded) {
         // Small delay to ensure state updates have propagated
         await new Promise((resolve) => setTimeout(resolve, 200))
-        onNext()
+
+        // Upload to temp storage before proceeding
+        try {
+          await uploadToTempStorage(uploadedFiles)
+          console.log('[SuperSlice] Temp upload complete, proceeding to next step')
+          onNext()
+        } catch (error) {
+          console.error('[SuperSlice] Error uploading to temp storage:', error)
+          alert('Failed to upload files. Please try again.')
+          setIsProcessing(false)
+        }
       } else {
         console.error('[SuperSlice] Some files failed to process')
       }
@@ -575,13 +664,25 @@ export default function UploadStep({
                 >
                   <div className="flex items-start gap-4">
                     {/* Left: Thumbnail */}
-                    <div className="flex-shrink-0 w-20 h-20 bg-[#F8F8F8] rounded-[8px] border border-[#EFEFEF] flex items-center justify-center">
+                    <div className="flex-shrink-0 w-20 h-20 bg-[#F8F8F8] rounded-[8px] border border-[#EFEFEF] overflow-hidden">
                       {file.status === 'uploading' && (
-                        <div className="h-6 w-6 border-2 border-[#1D0DF3] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="h-6 w-6 border-2 border-[#1D0DF3] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
                       )}
                       {(file.status === 'completed' || file.status === 'pending') && (
-                        <div className="w-full h-full bg-[#F8F8F8] rounded-[8px] flex items-center justify-center">
-                          <Box className="h-8 w-8 text-[#DCDCDC]" />
+                        <div className="w-full h-full">
+                          {file.file ? (
+                            <ModelViewer
+                              file={file.file}
+                              className="w-full h-full"
+                              showControls={false}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-[#F8F8F8] flex items-center justify-center">
+                              <Box className="h-8 w-8 text-[#DCDCDC]" />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
