@@ -61,7 +61,16 @@ const mockConversations = [
 const mockOrder = {
   id: '1',
   orderNumber: 'ORD-1737456123-001',
-  status: 'in-review' as const,
+  status: 'in-review' as
+    | 'unpaid'
+    | 'in-review'
+    | 'needs-discussion'
+    | 'printing'
+    | 'shipping'
+    | 'in-delivery'
+    | 'delivered'
+    | 'completed'
+    | 'canceled',
   totalAmount: 145.5,
   createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   items: [

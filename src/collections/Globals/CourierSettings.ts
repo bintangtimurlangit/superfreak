@@ -189,6 +189,59 @@ export const CourierSettings: GlobalConfig = {
           ],
         },
         {
+          label: 'Pricing Configuration',
+          description: 'Configure pricing for print calculations (used for new orders only)',
+          fields: [
+            {
+              name: 'pricingSettings',
+              type: 'group',
+              label: 'Pricing Settings',
+              fields: [
+                {
+                  name: 'filamentCostPerGram',
+                  type: 'number',
+                  label: 'Filament Cost per Gram (IDR)',
+                  required: true,
+                  defaultValue: 100,
+                  min: 0,
+                  admin: {
+                    description:
+                      'Current cost per gram of filament. This value is SNAPSHOT into orders and does not affect historical orders.',
+                    step: 1,
+                  },
+                },
+                {
+                  name: 'printTimeCostPerHour',
+                  type: 'number',
+                  label: 'Print Time Cost per Hour (IDR)',
+                  required: true,
+                  defaultValue: 10000,
+                  min: 0,
+                  admin: {
+                    description:
+                      'Current cost per hour of print time. This value is SNAPSHOT into orders and does not affect historical orders.',
+                    step: 100,
+                  },
+                },
+                {
+                  name: 'markupPercentage',
+                  type: 'number',
+                  label: 'Markup Percentage (%)',
+                  required: true,
+                  defaultValue: 30,
+                  min: 0,
+                  max: 100,
+                  admin: {
+                    description:
+                      'Markup percentage applied to base cost (filament + print time). This value is SNAPSHOT into orders and does not affect historical orders.',
+                    step: 1,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
           label: 'Shipping Options',
           description: 'Additional shipping configuration',
           fields: [

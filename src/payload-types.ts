@@ -544,8 +544,8 @@ export interface PrintingOption {
  */
 export interface Order {
   id: string;
-  orderNumber: string;
-  user: string | AppUser;
+  orderNumber?: string | null;
+  user?: (string | null) | AppUser;
   status:
     | 'unpaid'
     | 'in-review'
@@ -557,11 +557,19 @@ export interface Order {
     | 'completed'
     | 'canceled';
   items: {
-    file: string | UserFile;
+    /**
+     * Temporary file ID or reference
+     */
+    file: string;
     fileName: string;
+    /**
+     * File size in bytes
+     */
+    fileSize?: number | null;
     quantity: number;
     configuration: {
       material: string;
+      color: string;
       layerHeight: string;
       infill: string;
       wallCount: string;
@@ -576,18 +584,137 @@ export interface Order {
        */
       filamentWeight?: number | null;
     };
-    price: number;
+    /**
+     * Pricing breakdown snapshot (frozen at order creation)
+     */
+    pricing: {
+      /**
+       * Cost per gram at time of order (IDR)
+       */
+      filamentCostPerGram: number;
+      /**
+       * Total filament cost (weight × cost per gram)
+       */
+      filamentTotalCost: number;
+      /**
+       * Cost per hour at time of order (IDR)
+       */
+      printTimeCostPerHour: number;
+      /**
+       * Total print time cost ((time/60) × cost per hour)
+       */
+      printTimeTotalCost: number;
+      /**
+       * Base price (filament + print time)
+       */
+      basePrice: number;
+      /**
+       * Markup percentage at time of order
+       */
+      markupPercentage: number;
+      /**
+       * Markup amount (basePrice × markup%)
+       */
+      markupAmount: number;
+      /**
+       * Subtotal per unit (basePrice + markup)
+       */
+      subtotalPerUnit: number;
+    };
+    /**
+     * Total price for this item (subtotalPerUnit × quantity)
+     */
+    totalPrice: number;
     id?: string | null;
   }[];
-  totalAmount: number;
   paymentInfo?: {
     paymentMethod?: ('bank_transfer' | 'credit_card' | 'e_wallet') | null;
     paymentStatus?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
     transactionId?: string | null;
     paidAt?: string | null;
+    /**
+     * Midtrans order ID
+     */
+    midtransOrderId?: string | null;
+    /**
+     * Midtrans Snap token for payment
+     */
+    midtransSnapToken?: string | null;
+    /**
+     * Midtrans Snap payment URL
+     */
+    midtransSnapUrl?: string | null;
+    /**
+     * Payment expiration date/time
+     */
+    paymentExpiry?: string | null;
   };
-  shippingAddress?: (string | null) | Address;
-  trackingNumber?: string | null;
+  /**
+   * Order totals and summary
+   */
+  summary: {
+    /**
+     * Sum of all item prices
+     */
+    subtotal: number;
+    /**
+     * Shipping cost snapshot
+     */
+    shippingCost: number;
+    /**
+     * Subtotal + shipping cost
+     */
+    totalAmount: number;
+    /**
+     * Total filament weight in grams
+     */
+    totalWeight?: number | null;
+    /**
+     * Total print time in minutes
+     */
+    totalPrintTime?: number | null;
+  };
+  /**
+   * Complete shipping information snapshot
+   */
+  shipping?: {
+    /**
+     * Reference to original address (for tracking only)
+     */
+    addressId?: (string | null) | Address;
+    recipientName?: string | null;
+    phoneNumber?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    villageName?: string | null;
+    districtName?: string | null;
+    regencyName?: string | null;
+    provinceName?: string | null;
+    postalCode?: string | null;
+    /**
+     * Courier name (e.g., JNE, TIKI)
+     */
+    courier?: string | null;
+    /**
+     * Service type (e.g., REG, YES)
+     */
+    service?: string | null;
+    /**
+     * Estimated delivery time (e.g., 2-3 days)
+     */
+    estimatedDelivery?: string | null;
+    /**
+     * Shipping cost snapshot from RajaOngkir (IDR)
+     */
+    shippingCost?: number | null;
+    /**
+     * Total package weight in grams
+     */
+    totalWeight?: number | null;
+    trackingNumber?: string | null;
+    shippedAt?: string | null;
+    deliveredAt?: string | null;
+  };
   /**
    * Internal notes for admin use, especially for needs-discussion status
    */
@@ -954,11 +1081,13 @@ export interface OrdersSelect<T extends boolean = true> {
     | {
         file?: T;
         fileName?: T;
+        fileSize?: T;
         quantity?: T;
         configuration?:
           | T
           | {
               material?: T;
+              color?: T;
               layerHeight?: T;
               infill?: T;
               wallCount?: T;
@@ -969,10 +1098,21 @@ export interface OrdersSelect<T extends boolean = true> {
               printTime?: T;
               filamentWeight?: T;
             };
-        price?: T;
+        pricing?:
+          | T
+          | {
+              filamentCostPerGram?: T;
+              filamentTotalCost?: T;
+              printTimeCostPerHour?: T;
+              printTimeTotalCost?: T;
+              basePrice?: T;
+              markupPercentage?: T;
+              markupAmount?: T;
+              subtotalPerUnit?: T;
+            };
+        totalPrice?: T;
         id?: T;
       };
-  totalAmount?: T;
   paymentInfo?:
     | T
     | {
@@ -980,9 +1120,42 @@ export interface OrdersSelect<T extends boolean = true> {
         paymentStatus?: T;
         transactionId?: T;
         paidAt?: T;
+        midtransOrderId?: T;
+        midtransSnapToken?: T;
+        midtransSnapUrl?: T;
+        paymentExpiry?: T;
       };
-  shippingAddress?: T;
-  trackingNumber?: T;
+  summary?:
+    | T
+    | {
+        subtotal?: T;
+        shippingCost?: T;
+        totalAmount?: T;
+        totalWeight?: T;
+        totalPrintTime?: T;
+      };
+  shipping?:
+    | T
+    | {
+        addressId?: T;
+        recipientName?: T;
+        phoneNumber?: T;
+        addressLine1?: T;
+        addressLine2?: T;
+        villageName?: T;
+        districtName?: T;
+        regencyName?: T;
+        provinceName?: T;
+        postalCode?: T;
+        courier?: T;
+        service?: T;
+        estimatedDelivery?: T;
+        shippingCost?: T;
+        totalWeight?: T;
+        trackingNumber?: T;
+        shippedAt?: T;
+        deliveredAt?: T;
+      };
   adminNotes?: T;
   customerNotes?: T;
   statusHistory?:
@@ -1108,6 +1281,20 @@ export interface CourierSetting {
         id?: string | null;
       }[]
     | null;
+  pricingSettings: {
+    /**
+     * Current cost per gram of filament. This value is SNAPSHOT into orders and does not affect historical orders.
+     */
+    filamentCostPerGram: number;
+    /**
+     * Current cost per hour of print time. This value is SNAPSHOT into orders and does not affect historical orders.
+     */
+    printTimeCostPerHour: number;
+    /**
+     * Markup percentage applied to base cost (filament + print time). This value is SNAPSHOT into orders and does not affect historical orders.
+     */
+    markupPercentage: number;
+  };
   /**
    * Minimum order value for free shipping (set to 0 to disable free shipping)
    */
@@ -1138,6 +1325,13 @@ export interface CourierSettingsSelect<T extends boolean = true> {
         courier?: T;
         priority?: T;
         id?: T;
+      };
+  pricingSettings?:
+    | T
+    | {
+        filamentCostPerGram?: T;
+        printTimeCostPerHour?: T;
+        markupPercentage?: T;
       };
   freeShippingThreshold?: T;
   defaultShippingService?: T;

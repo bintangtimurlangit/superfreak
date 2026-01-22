@@ -117,18 +117,48 @@ export default function UploadStep({
     setUploadedFiles((prev) => [...prev, ...newFiles])
   }
 
-  const uploadToBackend = async (fileId: string, file: File, config: ModelConfiguration) => {
+  // Helper function to convert data URL to File object
+  const dataURLtoFile = (dataurl: string, filename: string): File => {
+    const arr = dataurl.split(',')
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/octet-stream'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    return new File([u8arr], filename, { type: mime })
+  }
+
+  const uploadToBackend = async (
+    fileId: string,
+    file: File | string,
+    config: ModelConfiguration,
+  ) => {
     const apiUrl = process.env.NEXT_PUBLIC_SUPERSLICE_API_URL || 'http://localhost:8000'
-    console.log(`[SuperSlice] uploadToBackend called for ${file.name}`)
+
+    // Convert data URL to File if needed
+    let fileObject: File
+    if (typeof file === 'string') {
+      // Find the original filename from uploadedFiles
+      const uploadedFile = uploadedFiles.find((f) => f.id === fileId)
+      const filename = uploadedFile?.name || 'model.stl'
+      console.log(`[SuperSlice] Converting data URL to File object: ${filename}`)
+      fileObject = dataURLtoFile(file, filename)
+    } else {
+      fileObject = file
+    }
+
+    console.log(`[SuperSlice] uploadToBackend called for ${fileObject.name}`)
     console.log(`[SuperSlice] API URL: ${apiUrl}`)
 
     // Only process STL and 3MF files for now (backend limitation)
-    const extension = '.' + file.name.split('.').pop()?.toLowerCase()
+    const extension = '.' + fileObject.name.split('.').pop()?.toLowerCase()
     console.log(`[SuperSlice] File extension: ${extension}`)
 
     if (!['.stl', '.3mf'].includes(extension)) {
       // For other file types, mark as completed without API call
-      console.log(`[SuperSlice] File ${file.name} is not STL/3MF, skipping API call`)
+      console.log(`[SuperSlice] File ${fileObject.name} is not STL/3MF, skipping API call`)
       setUploadedFiles((prev) =>
         prev.map((f) =>
           f.id === fileId ? { ...f, status: 'completed' as const, progress: 100 } : f,
@@ -163,7 +193,7 @@ export default function UploadStep({
 
       // Prepare form data
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', fileObject)
       formData.append('layer_height', layerHeight.toString())
       formData.append('infill_density', infillDensity.toString())
       formData.append('wall_count', wallCount.toString())
@@ -175,8 +205,8 @@ export default function UploadStep({
         infill_density: infillDensity,
         wall_count: wallCount,
         filament_type: filamentType,
-        file_size: file.size,
-        file_name: file.name,
+        file_size: fileObject.size,
+        file_name: fileObject.name,
       })
 
       setUploadedFiles((prev) =>
@@ -207,7 +237,7 @@ export default function UploadStep({
       const statistics = await response.json()
 
       // Log statistics to console
-      console.log(`[SuperSlice] Statistics for ${file.name}:`, statistics)
+      console.log(`[SuperSlice] Statistics for ${fileObject.name}:`, statistics)
 
       // Update file with statistics and mark as completed
       setUploadedFiles((prev) =>
@@ -223,7 +253,7 @@ export default function UploadStep({
         ),
       )
     } catch (error) {
-      console.error(`[SuperSlice] Error processing ${file.name}:`, error)
+      console.error(`[SuperSlice] Error processing ${fileObject.name}:`, error)
       setUploadedFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
@@ -320,9 +350,16 @@ export default function UploadStep({
       // Prepare FormData
       const formData = new FormData()
       formData.append('sessionId', sessionId)
-      filesToUpload.forEach((file) => {
-        if (file.file) {
-          formData.append('files', file.file)
+      filesToUpload.forEach((uploadedFile) => {
+        if (uploadedFile.file) {
+          // Convert data URL to File if needed
+          let fileObject: File
+          if (typeof uploadedFile.file === 'string') {
+            fileObject = dataURLtoFile(uploadedFile.file, uploadedFile.name)
+          } else {
+            fileObject = uploadedFile.file
+          }
+          formData.append('files', fileObject)
         }
       })
 

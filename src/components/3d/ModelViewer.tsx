@@ -15,7 +15,7 @@ import { Mesh, Object3D } from 'three'
 
 interface ModelViewerProps {
   url?: string
-  file?: File
+  file?: File | string // Can be File object or base64 data URL
   className?: string
   showControls?: boolean
 }
@@ -76,8 +76,21 @@ function GLTFModel({ url }: { url: string }) {
   return <primitive ref={sceneRef} object={scene} />
 }
 
-function Model({ url, file }: { url?: string; file?: File }) {
-  const fileName = file?.name || url || ''
+function Model({ url, file }: { url?: string; file?: File | string }) {
+  // Extract filename from File object or data URL
+  let fileName = ''
+  if (file) {
+    if (typeof file === 'string') {
+      // Extract filename from data URL if present (data:...;name=filename.stl,...)
+      // Otherwise use url or empty string
+      fileName = url || ''
+    } else {
+      fileName = file.name
+    }
+  } else if (url) {
+    fileName = url
+  }
+
   const fileExtension = fileName.split('.').pop()?.toLowerCase()
   console.log('[ModelViewer] File extension:', fileExtension, 'for file:', fileName)
 
@@ -109,13 +122,21 @@ export default function ModelViewer({
 
     if (file) {
       try {
-        const blobUrl = URL.createObjectURL(file)
-        console.log('[ModelViewer] Created blob URL:', blobUrl, 'for file:', file.name)
-        setObjectUrl(blobUrl)
-        setLoading(false)
-        return () => {
-          console.log('[ModelViewer] Revoking blob URL:', blobUrl)
-          URL.revokeObjectURL(blobUrl)
+        // Check if file is a string (base64 data URL) or File object
+        if (typeof file === 'string') {
+          console.log('[ModelViewer] Using data URL directly')
+          setObjectUrl(file)
+          setLoading(false)
+        } else {
+          // File object - create blob URL
+          const blobUrl = URL.createObjectURL(file)
+          console.log('[ModelViewer] Created blob URL:', blobUrl, 'for file:', file.name)
+          setObjectUrl(blobUrl)
+          setLoading(false)
+          return () => {
+            console.log('[ModelViewer] Revoking blob URL:', blobUrl)
+            URL.revokeObjectURL(blobUrl)
+          }
         }
       } catch (err) {
         console.error('[ModelViewer] Error creating blob URL:', err)

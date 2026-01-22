@@ -68,9 +68,19 @@ interface SummaryStepProps {
   uploadedFiles: UploadedFile[]
   onBack: () => void
   onNext: () => void
+  onShippingUpdate?: (details: any) => void
+  onAddressUpdate?: (address: any) => void
+  isCreatingOrder?: boolean
 }
 
-export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummaryStepProps) {
+export default function SummaryStep({
+  uploadedFiles,
+  onBack,
+  onNext,
+  onShippingUpdate,
+  onAddressUpdate,
+  isCreatingOrder = false,
+}: SummaryStepProps) {
   const router = useRouter()
   const { data: sessionData, isPending: sessionLoading } = useSession()
   const user = sessionData?.user || null
@@ -821,10 +831,10 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
             {/* Proceed Button */}
             <Button
               onClick={onNext}
-              disabled={!hasAddress}
+              disabled={!hasAddress || isCreatingOrder}
               className="w-full h-11 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
             >
-              Proceed to Payment
+              {isCreatingOrder ? 'Creating Order...' : 'Proceed to Payment'}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

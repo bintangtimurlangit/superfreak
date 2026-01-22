@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { hasRole } from '@/access/hasRoles'
+import { finalizeOrderFiles } from './hooks/finalizeOrderFiles'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -26,7 +27,6 @@ export const Orders: CollectionConfig = {
     {
       name: 'orderNumber',
       type: 'text',
-      required: true,
       unique: true,
       admin: {
         readOnly: true,
@@ -50,10 +50,22 @@ export const Orders: CollectionConfig = {
       name: 'user',
       type: 'relationship',
       relationTo: 'app-users',
-      required: true,
+      required: false, // Will be auto-populated by hook
       hasMany: false,
       admin: {
         position: 'sidebar',
+        readOnly: true,
+      },
+      hooks: {
+        beforeValidate: [
+          ({ req, value }) => {
+            // Auto-populate user from authenticated session
+            if (!value && req.user) {
+              return req.user.id
+            }
+            return value
+          },
+        ],
       },
     },
     {
@@ -111,14 +123,23 @@ export const Orders: CollectionConfig = {
       fields: [
         {
           name: 'file',
-          type: 'relationship',
-          relationTo: 'user-files',
+          type: 'text',
           required: true,
+          admin: {
+            description: 'Temporary file ID or reference',
+          },
         },
         {
           name: 'fileName',
           type: 'text',
           required: true,
+        },
+        {
+          name: 'fileSize',
+          type: 'number',
+          admin: {
+            description: 'File size in bytes',
+          },
         },
         {
           name: 'quantity',
@@ -133,6 +154,11 @@ export const Orders: CollectionConfig = {
           fields: [
             {
               name: 'material',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'color',
               type: 'text',
               required: true,
             },
@@ -174,21 +200,88 @@ export const Orders: CollectionConfig = {
           ],
         },
         {
-          name: 'price',
+          name: 'pricing',
+          type: 'group',
+          admin: {
+            description: 'Pricing breakdown snapshot (frozen at order creation)',
+          },
+          fields: [
+            {
+              name: 'filamentCostPerGram',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Cost per gram at time of order (IDR)',
+              },
+            },
+            {
+              name: 'filamentTotalCost',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Total filament cost (weight × cost per gram)',
+              },
+            },
+            {
+              name: 'printTimeCostPerHour',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Cost per hour at time of order (IDR)',
+              },
+            },
+            {
+              name: 'printTimeTotalCost',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Total print time cost ((time/60) × cost per hour)',
+              },
+            },
+            {
+              name: 'basePrice',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Base price (filament + print time)',
+              },
+            },
+            {
+              name: 'markupPercentage',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Markup percentage at time of order',
+              },
+            },
+            {
+              name: 'markupAmount',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Markup amount (basePrice × markup%)',
+              },
+            },
+            {
+              name: 'subtotalPerUnit',
+              type: 'number',
+              required: true,
+              admin: {
+                description: 'Subtotal per unit (basePrice + markup)',
+              },
+            },
+          ],
+        },
+        {
+          name: 'totalPrice',
           type: 'number',
           required: true,
           min: 0,
+          admin: {
+            description: 'Total price for this item (subtotalPerUnit × quantity)',
+          },
         },
       ],
-    },
-    {
-      name: 'totalAmount',
-      type: 'number',
-      required: true,
-      min: 0,
-      admin: {
-        position: 'sidebar',
-      },
     },
     {
       name: 'paymentInfo',
@@ -222,21 +315,193 @@ export const Orders: CollectionConfig = {
           name: 'paidAt',
           type: 'date',
         },
+        {
+          name: 'midtransOrderId',
+          type: 'text',
+          admin: {
+            description: 'Midtrans order ID',
+          },
+        },
+        {
+          name: 'midtransSnapToken',
+          type: 'text',
+          admin: {
+            description: 'Midtrans Snap token for payment',
+          },
+        },
+        {
+          name: 'midtransSnapUrl',
+          type: 'text',
+          admin: {
+            description: 'Midtrans Snap payment URL',
+          },
+        },
+        {
+          name: 'paymentExpiry',
+          type: 'date',
+          admin: {
+            description: 'Payment expiration date/time',
+          },
+        },
       ],
     },
     {
-      name: 'shippingAddress',
-      type: 'relationship',
-      relationTo: 'addresses',
-      hasMany: false,
+      name: 'summary',
+      type: 'group',
+      admin: {
+        description: 'Order totals and summary',
+      },
+      fields: [
+        {
+          name: 'subtotal',
+          type: 'number',
+          required: true,
+          admin: {
+            description: 'Sum of all item prices',
+          },
+        },
+        {
+          name: 'shippingCost',
+          type: 'number',
+          required: true,
+          admin: {
+            description: 'Shipping cost snapshot',
+          },
+        },
+        {
+          name: 'totalAmount',
+          type: 'number',
+          required: true,
+          admin: {
+            description: 'Subtotal + shipping cost',
+          },
+        },
+        {
+          name: 'totalWeight',
+          type: 'number',
+          admin: {
+            description: 'Total filament weight in grams',
+          },
+        },
+        {
+          name: 'totalPrintTime',
+          type: 'number',
+          admin: {
+            description: 'Total print time in minutes',
+          },
+        },
+      ],
     },
     {
-      name: 'trackingNumber',
-      type: 'text',
+      name: 'shipping',
+      type: 'group',
       admin: {
-        condition: (data) =>
-          ['shipping', 'in-delivery', 'delivered', 'completed'].includes(data.status),
+        description: 'Complete shipping information snapshot',
       },
+      fields: [
+        {
+          name: 'addressId',
+          type: 'relationship',
+          relationTo: 'addresses',
+          admin: {
+            description: 'Reference to original address (for tracking only)',
+          },
+        },
+        {
+          name: 'recipientName',
+          type: 'text',
+        },
+        {
+          name: 'phoneNumber',
+          type: 'text',
+        },
+        {
+          name: 'addressLine1',
+          type: 'text',
+        },
+        {
+          name: 'addressLine2',
+          type: 'text',
+        },
+        {
+          name: 'villageName',
+          type: 'text',
+        },
+        {
+          name: 'districtName',
+          type: 'text',
+        },
+        {
+          name: 'regencyName',
+          type: 'text',
+        },
+        {
+          name: 'provinceName',
+          type: 'text',
+        },
+        {
+          name: 'postalCode',
+          type: 'text',
+        },
+        {
+          name: 'courier',
+          type: 'text',
+          admin: {
+            description: 'Courier name (e.g., JNE, TIKI)',
+          },
+        },
+        {
+          name: 'service',
+          type: 'text',
+          admin: {
+            description: 'Service type (e.g., REG, YES)',
+          },
+        },
+        {
+          name: 'estimatedDelivery',
+          type: 'text',
+          admin: {
+            description: 'Estimated delivery time (e.g., 2-3 days)',
+          },
+        },
+        {
+          name: 'shippingCost',
+          type: 'number',
+          admin: {
+            description: 'Shipping cost snapshot from RajaOngkir (IDR)',
+          },
+        },
+        {
+          name: 'totalWeight',
+          type: 'number',
+          admin: {
+            description: 'Total package weight in grams',
+          },
+        },
+        {
+          name: 'trackingNumber',
+          type: 'text',
+          admin: {
+            condition: (data) =>
+              ['shipping', 'in-delivery', 'delivered', 'completed'].includes(data.status),
+          },
+        },
+        {
+          name: 'shippedAt',
+          type: 'date',
+          admin: {
+            condition: (data) =>
+              ['shipping', 'in-delivery', 'delivered', 'completed'].includes(data.status),
+          },
+        },
+        {
+          name: 'deliveredAt',
+          type: 'date',
+          admin: {
+            condition: (data) => ['delivered', 'completed'].includes(data.status),
+          },
+        },
+      ],
     },
     {
       name: 'adminNotes',
@@ -292,6 +557,7 @@ export const Orders: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [finalizeOrderFiles],
   },
   timestamps: true,
 }
