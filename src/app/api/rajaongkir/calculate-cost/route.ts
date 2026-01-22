@@ -1,3 +1,5 @@
+import { getCachedShippingCost, setCachedShippingCost } from '@/lib/redis'
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -34,7 +36,25 @@ export async function POST(request: Request) {
     // Apply weight offset: if weight < 300, add 300g for packaging
     const adjustedWeight = weight < 300 ? weight + 300 : weight
 
-    console.log('📦 Calculating shipping cost:', {
+    // Check Redis cache first
+    const cachedResult = await getCachedShippingCost(
+      warehouseId.toString(),
+      destinationId.toString(),
+      adjustedWeight,
+      courier,
+    )
+
+    if (cachedResult) {
+      console.log('Shipping cost from cache:', {
+        origin: warehouseId,
+        destination: destinationId,
+        weight: adjustedWeight,
+        courier,
+      })
+      return Response.json(cachedResult)
+    }
+
+    console.log('Calculating shipping cost (cache miss):', {
       origin: warehouseId,
       destination: destinationId,
       originalWeight: weight,
@@ -62,7 +82,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('❌ RajaOngkir Cost API Error:', {
+      console.error('RajaOngkir Cost API Error:', {
         status: response.status,
         error: errorText,
       })
@@ -78,18 +98,27 @@ export async function POST(request: Request) {
 
     const data = await response.json()
 
-    console.log('✅ RajaOngkir Cost Response:', {
+    console.log('RajaOngkir Cost Response:', {
       courier,
       servicesCount: data.data?.costs?.length || 0,
       meta: data.meta,
     })
 
-    // Log full response for debugging
-    console.log('📋 Full RajaOngkir Response:', JSON.stringify(data, null, 2))
+    // Cache the result for 24 hours (86400 seconds)
+    await setCachedShippingCost(
+      warehouseId.toString(),
+      destinationId.toString(),
+      adjustedWeight,
+      courier,
+      data,
+      86400,
+    )
+
+    console.log('Cached shipping cost for 24 hours')
 
     return Response.json(data)
   } catch (error) {
-    console.error('❌ Shipping cost calculation error:', error)
+    console.error('Shipping cost calculation error:', error)
     return Response.json(
       {
         error: 'Failed to calculate shipping cost',

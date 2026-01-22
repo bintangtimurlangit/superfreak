@@ -1,3 +1,5 @@
+import { cacheGet, cacheSet } from '@/lib/redis'
+
 export async function GET(
   request: Request,
   props: { params: Promise<{ type: string; params?: string[] }> },
@@ -14,9 +16,11 @@ export async function GET(
 
   try {
     let url: string
+    let cacheKey: string
 
     if (type === 'provinces') {
       url = 'https://wilayah.id/api/provinces.json'
+      cacheKey = 'wilayah:provinces'
     } else {
       const code = params?.[0]
 
@@ -25,13 +29,19 @@ export async function GET(
       }
 
       url = `https://wilayah.id/api/${type}/${code}.json`
+      cacheKey = `wilayah:${type}:${code}`
+    }
+
+    const cachedData = await cacheGet(cacheKey)
+    if (cachedData) {
+      console.log(`Wilayah ${type} from cache`)
+      return Response.json(cachedData)
     }
 
     const response = await fetch(url, {
       headers: {
         Accept: 'application/json',
       },
-      next: { revalidate: 86400 },
     })
 
     if (!response.ok) {
@@ -39,7 +49,12 @@ export async function GET(
     }
 
     const result = await response.json()
-    return Response.json(result.data || result)
+    const data = result.data || result
+
+    await cacheSet(cacheKey, data, 2592000)
+    console.log(`Cached wilayah ${type} for 30 days`)
+
+    return Response.json(data)
   } catch (error) {
     console.error(`Error fetching ${type}:`, error)
     return Response.json({ error: `Failed to fetch ${type}` }, { status: 500 })

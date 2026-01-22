@@ -249,8 +249,8 @@ export default function SummaryStep({ uploadedFiles, onBack, onNext }: SummarySt
 
         const result = await calculateShippingCost(rajaOngkirId, adjustedWeight, selectedCourier)
 
-        console.log('🔍 Frontend received result:', result)
-        console.log('🔍 Result.data:', result.data)
+        console.log('Frontend received result:', result)
+        console.log('Result.data:', result.data)
 
         if (result.data && Array.isArray(result.data) && result.data.length > 0) {
           // Filter out heavy cargo services for shipments under 10kg

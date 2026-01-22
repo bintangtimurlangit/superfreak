@@ -12,6 +12,7 @@ services:
     command: sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm dev"
     depends_on:
       - mongo
+      - redis
     env_file:
       - .env
 
@@ -26,6 +27,17 @@ services:
     logging:
       driver: none
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    logging:
+      driver: none
+
 volumes:
   data:
+  redis_data:
   node_modules:
