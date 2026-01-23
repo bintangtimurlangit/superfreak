@@ -33,9 +33,11 @@ export default function OrderCard({ order }: OrderCardProps) {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
   }
 
@@ -149,12 +151,21 @@ export default function OrderCard({ order }: OrderCardProps) {
       {/* Action Buttons */}
       <div className="flex items-center gap-3">
         {order.status === 'unpaid' ? (
-          <button
-            className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
-            Pay Now
-          </button>
+          <>
+            <button
+              className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              Pay Now
+            </button>
+            <button
+              onClick={() => (window.location.href = `/orders/${order.id}`)}
+              className="flex-1 px-4 py-2.5 border border-[#DCDCDC] bg-white text-[#292929] rounded-lg text-sm font-medium hover:bg-[#F8F8F8] transition-colors"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              View Details
+            </button>
+          </>
         ) : order.status === 'delivered' || order.status === 'completed' ? (
           <button
             className="flex-1 px-4 py-2.5 bg-[#10B981] text-white rounded-lg text-sm font-medium hover:bg-[#059669] transition-colors"
@@ -164,6 +175,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           </button>
         ) : (
           <button
+            onClick={() => (window.location.href = `/orders/${order.id}`)}
             className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >

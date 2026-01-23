@@ -56,7 +56,7 @@ interface PrintingPricing {
   isActive: boolean
 }
 
-interface FilePrice {
+export interface FilePrice {
   fileId: string
   weight: number
   pricePerGram: number
@@ -70,6 +70,12 @@ interface SummaryStepProps {
   onNext: () => void
   onShippingUpdate?: (details: any) => void
   onAddressUpdate?: (address: any) => void
+  onPricingUpdate?: (summary: {
+    subtotal: number
+    shippingCost: number
+    totalAmount: number
+  }) => void
+  onFilePricesUpdate?: (filePrices: FilePrice[]) => void
   isCreatingOrder?: boolean
 }
 
@@ -79,6 +85,8 @@ export default function SummaryStep({
   onNext,
   onShippingUpdate,
   onAddressUpdate,
+  onPricingUpdate,
+  onFilePricesUpdate,
   isCreatingOrder = false,
 }: SummaryStepProps) {
   const router = useRouter()
@@ -210,6 +218,21 @@ export default function SummaryStep({
     setTotalPrice(totalPriceRp)
   }, [uploadedFiles, pricingData])
 
+  // Notify parent component of pricing changes
+  useEffect(() => {
+    if (onPricingUpdate && totalPrice > 0) {
+      onPricingUpdate({
+        subtotal: totalPrice,
+        shippingCost,
+        totalAmount: totalPrice + shippingCost,
+      })
+    }
+    // Also pass individual file prices
+    if (onFilePricesUpdate && filePrices.length > 0) {
+      onFilePricesUpdate(filePrices)
+    }
+  }, [totalPrice, shippingCost, filePrices, onPricingUpdate, onFilePricesUpdate])
+
   // Fetch available couriers from settings
   useEffect(() => {
     const fetchCourierSettings = async () => {
@@ -280,6 +303,14 @@ export default function SummaryStep({
           if (!selectedService && firstService) {
             setSelectedService(firstService.service)
             setShippingCost(firstService.cost)
+            // Notify parent of auto-selected shipping
+            if (onShippingUpdate) {
+              onShippingUpdate({
+                courier: selectedCourier,
+                service: firstService.service,
+                estimatedDelivery: firstService.etd,
+              })
+            }
           }
         } else {
           console.warn('⚠️ No services data in response:', result)
@@ -393,13 +424,20 @@ export default function SummaryStep({
 
           const province = provinces.find((p) => p.code === address.provinceCode)
 
-          setDefaultAddress({
+          const fullAddress = {
             ...address,
             provinceName: province?.name || '',
             regencyName,
             districtName,
             villageName,
-          })
+          }
+
+          setDefaultAddress(fullAddress)
+
+          // Notify parent of loaded address
+          if (onAddressUpdate) {
+            onAddressUpdate(fullAddress)
+          }
         } else {
           setDefaultAddress(null)
         }
@@ -714,6 +752,14 @@ export default function SummaryStep({
                             onChange={(e) => {
                               setSelectedService(e.target.value)
                               setShippingCost(service.cost)
+                              // Notify parent of shipping selection
+                              if (onShippingUpdate) {
+                                onShippingUpdate({
+                                  courier: selectedCourier,
+                                  service: service.service,
+                                  estimatedDelivery: service.etd,
+                                })
+                              }
                             }}
                             className="w-4 h-4 text-[#1D0DF3] border-gray-300 focus:ring-[#1D0DF3]"
                           />

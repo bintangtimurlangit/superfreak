@@ -585,41 +585,13 @@ export interface Order {
       filamentWeight?: number | null;
     };
     /**
-     * Pricing breakdown snapshot (frozen at order creation)
+     * Pricing snapshot at order creation
      */
     pricing: {
       /**
-       * Cost per gram at time of order (IDR)
+       * Price per gram at time of order (IDR) - based on layer height
        */
-      filamentCostPerGram: number;
-      /**
-       * Total filament cost (weight × cost per gram)
-       */
-      filamentTotalCost: number;
-      /**
-       * Cost per hour at time of order (IDR)
-       */
-      printTimeCostPerHour: number;
-      /**
-       * Total print time cost ((time/60) × cost per hour)
-       */
-      printTimeTotalCost: number;
-      /**
-       * Base price (filament + print time)
-       */
-      basePrice: number;
-      /**
-       * Markup percentage at time of order
-       */
-      markupPercentage: number;
-      /**
-       * Markup amount (basePrice × markup%)
-       */
-      markupAmount: number;
-      /**
-       * Subtotal per unit (basePrice + markup)
-       */
-      subtotalPerUnit: number;
+      pricePerGram: number;
     };
     /**
      * Total price for this item (subtotalPerUnit × quantity)
@@ -1101,14 +1073,7 @@ export interface OrdersSelect<T extends boolean = true> {
         pricing?:
           | T
           | {
-              filamentCostPerGram?: T;
-              filamentTotalCost?: T;
-              printTimeCostPerHour?: T;
-              printTimeTotalCost?: T;
-              basePrice?: T;
-              markupPercentage?: T;
-              markupAmount?: T;
-              subtotalPerUnit?: T;
+              pricePerGram?: T;
             };
         totalPrice?: T;
         id?: T;

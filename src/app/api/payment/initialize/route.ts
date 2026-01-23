@@ -3,10 +3,6 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import midtransClient from 'midtrans-client'
 
-/**
- * Initialize Midtrans payment for an existing order
- * POST /api/payment/initialize
- */
 export async function POST(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
@@ -16,7 +12,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
     }
 
-    // Get the order
     const order = await payload.findByID({
       collection: 'orders',
       id: orderId,
@@ -26,19 +21,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Verify Midtrans credentials
     if (!process.env.MIDTRANS_SERVER_KEY || !process.env.MIDTRANS_CLIENT_KEY) {
       throw new Error('Midtrans credentials not configured')
     }
 
-    // Initialize Midtrans Snap
+    if (!order.shipping) {
+      return NextResponse.json({ error: 'Order shipping information is missing' }, { status: 400 })
+    }
+
+    if (!order.user) {
+      return NextResponse.json({ error: 'Order user information is missing' }, { status: 400 })
+    }
+
+    let userEmail: string
+    if (typeof order.user === 'string') {
+      const userData = await payload.findByID({
+        collection: 'app-users',
+        id: order.user,
+      })
+      userEmail = userData.email
+    } else {
+      userEmail = order.user.email
+    }
+
     const snap = new midtransClient.Snap({
       isProduction: false,
       serverKey: process.env.MIDTRANS_SERVER_KEY,
       clientKey: process.env.MIDTRANS_CLIENT_KEY,
     })
 
-    // Prepare transaction parameters
     const parameter = {
       transaction_details: {
         order_id: order.orderNumber,
@@ -46,15 +57,13 @@ export async function POST(req: NextRequest) {
       },
       customer_details: {
         first_name: order.shipping.recipientName,
-        email: order.user.email,
+        email: userEmail,
         phone: order.shipping.phoneNumber,
       },
     }
 
-    // Create Snap transaction
     const transaction = await snap.createTransaction(parameter)
 
-    // Update order with Midtrans details
     await payload.update({
       collection: 'orders',
       id: orderId,

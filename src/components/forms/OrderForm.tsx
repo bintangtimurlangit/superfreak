@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import StepsProgress from '@/components/ui/StepsProgress'
 import UploadStep, { type UploadedFile, type ModelConfiguration } from './order/UploadStep'
-import SummaryStep from './order/SummaryStep'
+import SummaryStep, { type FilePrice } from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
 import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
@@ -23,6 +23,12 @@ export default function OrderForm() {
   const [snapToken, setSnapToken] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
+  const [pricingSummary, setPricingSummary] = useState<{
+    subtotal: number
+    shippingCost: number
+    totalAmount: number
+  } | null>(null)
+  const [filePrices, setFilePrices] = useState<FilePrice[]>([])
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [pendingNextStep, setPendingNextStep] = useState(false)
   const [shippingDetails, setShippingDetails] = useState<any>(null) // TODO: Type this properly
@@ -136,31 +142,21 @@ export default function OrderForm() {
     if (currentStep === 2) {
       setIsCreatingOrder(true)
       try {
-        // Calculate pricing
-        // TODO: Get these from CourierSettings global or calculate from SummaryStep
-        const FILAMENT_COST_PER_GRAM = 100 // IDR per gram
-        const PRINT_TIME_COST_PER_HOUR = 10000 // IDR per hour
-        const MARKUP_PERCENTAGE = 30 // 30%
+        // Use pricing data from SummaryStep (passed via callback)
+        if (!pricingSummary) {
+          throw new Error('Pricing data not available. Please go back and review the summary.')
+        }
 
-        // Calculate pricing for each item
-        const itemsWithPricing = uploadedFiles.map((file) => {
-          const filamentWeight = file.statistics?.filament_weight_g || 0
-          const printTime = file.statistics?.print_time_minutes || 0
-          const quantity = file.configuration?.quantity || 1
-
-          // Calculate costs
-          const filamentTotalCost = filamentWeight * FILAMENT_COST_PER_GRAM
-          const printTimeTotalCost = (printTime / 60) * PRINT_TIME_COST_PER_HOUR
-          const basePrice = filamentTotalCost + printTimeTotalCost
-          const markupAmount = basePrice * (MARKUP_PERCENTAGE / 100)
-          const subtotalPerUnit = basePrice + markupAmount
-          const totalPrice = subtotalPerUnit * quantity
+        // Prepare items - use pricing from filePrices
+        const orderItems = uploadedFiles.map((file) => {
+          // Find the pricing for this file
+          const filePrice = filePrices.find((fp) => fp.fileId === file.id)
 
           return {
             file: file.id, // Temp file ID - will be converted to permanent by backend hook
             fileName: file.name,
             fileSize: file.file instanceof File ? file.file.size : 0,
-            quantity,
+            quantity: file.configuration?.quantity || 1,
             configuration: {
               material: file.configuration?.material || 'PLA',
               color: file.configuration?.color || 'Black',
@@ -169,27 +165,18 @@ export default function OrderForm() {
               wallCount: file.configuration?.wallCount || '2',
             },
             statistics: {
-              printTime,
-              filamentWeight,
+              printTime: file.statistics?.print_time_minutes || 0,
+              filamentWeight: file.statistics?.filament_weight_g || 0,
             },
+            // Store pricing snapshot: rate per gram at time of order
             pricing: {
-              filamentCostPerGram: FILAMENT_COST_PER_GRAM,
-              filamentTotalCost,
-              printTimeCostPerHour: PRINT_TIME_COST_PER_HOUR,
-              printTimeTotalCost,
-              basePrice,
-              markupPercentage: MARKUP_PERCENTAGE,
-              markupAmount,
-              subtotalPerUnit,
+              pricePerGram: filePrice?.pricePerGram || 0,
             },
-            totalPrice,
+            // Total price for this item (weight × pricePerGram × quantity)
+            totalPrice: filePrice?.totalPrice || 0,
           }
         })
 
-        // Calculate summary
-        const subtotal = itemsWithPricing.reduce((sum, item) => sum + item.totalPrice, 0)
-        const shippingCost = shippingDetails?.cost || 0
-        const totalAmount = subtotal + shippingCost
         const totalWeight = uploadedFiles.reduce(
           (sum, file) => sum + (file.statistics?.filament_weight_g || 0),
           0,
@@ -199,36 +186,52 @@ export default function OrderForm() {
           0,
         )
 
-        // Prepare order data to match Orders schema
+        // Prepare order data using pricing from SummaryStep
         const orderData = {
           status: 'unpaid',
-          items: itemsWithPricing,
+          items: orderItems,
           summary: {
-            subtotal,
-            shippingCost,
-            totalAmount,
+            subtotal: pricingSummary.subtotal,
+            shippingCost: pricingSummary.shippingCost,
+            totalAmount: pricingSummary.totalAmount,
             totalWeight,
             totalPrintTime,
           },
           shipping: {
-            recipientName: selectedAddress?.recipientName || 'Test User',
-            phoneNumber: selectedAddress?.phoneNumber || '08123456789',
-            addressLine1: selectedAddress?.addressLine1 || 'Test Address',
-            addressLine2: selectedAddress?.addressLine2 || '',
-            villageName: selectedAddress?.villageName || 'Test Village',
-            districtName: selectedAddress?.districtName || 'Test District',
-            regencyName: selectedAddress?.regencyName || 'Test Regency',
-            provinceName: selectedAddress?.provinceName || 'Test Province',
-            postalCode: selectedAddress?.postalCode || '12345',
-            courier: shippingDetails?.courier || 'JNE',
-            service: shippingDetails?.service || 'REG',
-            estimatedDelivery: shippingDetails?.estimatedDelivery || '2-3 days',
-            shippingCost,
+            recipientName: selectedAddress?.recipientName,
+            phoneNumber: selectedAddress?.phoneNumber,
+            addressLine1: selectedAddress?.addressLine1,
+            addressLine2: selectedAddress?.addressLine2,
+            villageName: selectedAddress?.villageName,
+            districtName: selectedAddress?.districtName,
+            regencyName: selectedAddress?.regencyName,
+            provinceName: selectedAddress?.provinceName,
+            postalCode: selectedAddress?.postalCode,
+            courier: shippingDetails?.courier,
+            service: shippingDetails?.service,
+            estimatedDelivery: shippingDetails?.estimatedDelivery,
+            shippingCost: pricingSummary.shippingCost,
             totalWeight,
           },
           paymentInfo: {
             paymentStatus: 'pending',
           },
+        }
+
+        // Validate required shipping data
+        if (
+          !orderData.shipping.recipientName ||
+          !orderData.shipping.phoneNumber ||
+          !orderData.shipping.addressLine1 ||
+          !orderData.shipping.regencyName ||
+          !orderData.shipping.provinceName ||
+          !orderData.shipping.postalCode ||
+          !orderData.shipping.courier ||
+          !orderData.shipping.service
+        ) {
+          throw new Error(
+            'Missing required shipping information. Please complete all address fields.',
+          )
         }
 
         // Debug: Check file IDs
@@ -256,6 +259,9 @@ export default function OrderForm() {
         const order = await response.json()
         console.log('Order created:', order)
 
+        // Payload's create method returns { doc: {...} }
+        const orderId = order.doc?.id || order.id
+
         // Now initialize payment with the created order
         const paymentResponse = await fetch('/api/payment/initialize', {
           method: 'POST',
@@ -264,7 +270,7 @@ export default function OrderForm() {
           },
           credentials: 'include',
           body: JSON.stringify({
-            orderId: order.doc.id,
+            orderId: orderId,
           }),
         })
 
@@ -274,7 +280,7 @@ export default function OrderForm() {
 
         const paymentResult = await paymentResponse.json()
         setSnapToken(paymentResult.snapToken)
-        setOrderId(order.doc.id)
+        setOrderId(orderId)
 
         // Move to payment step
         setCurrentStep(currentStep + 1)
@@ -377,6 +383,8 @@ export default function OrderForm() {
               onNext={handleNext}
               onShippingUpdate={setShippingDetails}
               onAddressUpdate={setSelectedAddress}
+              onPricingUpdate={setPricingSummary}
+              onFilePricesUpdate={setFilePrices}
               isCreatingOrder={isCreatingOrder}
             />
           )}

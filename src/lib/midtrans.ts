@@ -1,8 +1,5 @@
 import midtransClient from 'midtrans-client'
 
-/**
- * Initialize Midtrans Snap client
- */
 export function getMidtransSnap() {
   return new midtransClient.Snap({
     isProduction: process.env.NODE_ENV === 'production',
@@ -11,9 +8,6 @@ export function getMidtransSnap() {
   })
 }
 
-/**
- * Initialize Midtrans Core API client
- */
 export function getMidtransCore() {
   return new midtransClient.CoreApi({
     isProduction: process.env.NODE_ENV === 'production',
@@ -22,9 +16,6 @@ export function getMidtransCore() {
   })
 }
 
-/**
- * Create Snap payment transaction
- */
 export async function createSnapTransaction(params: {
   orderId: string
   grossAmount: number
@@ -79,25 +70,16 @@ export async function createSnapTransaction(params: {
   return await snap.createTransaction(parameter)
 }
 
-/**
- * Get transaction status
- */
 export async function getTransactionStatus(orderId: string) {
   const core = getMidtransCore()
   return await core.transaction.status(orderId)
 }
 
-/**
- * Cancel transaction
- */
 export async function cancelTransaction(orderId: string) {
   const core = getMidtransCore()
   return await core.transaction.cancel(orderId)
 }
 
-/**
- * Refund transaction
- */
 export async function refundTransaction(orderId: string, amount?: number) {
   const core = getMidtransCore()
   const params = amount ? { refund_amount: amount } : {}

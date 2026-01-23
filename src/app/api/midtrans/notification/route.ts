@@ -1,45 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import crypto from 'crypto'
-
 import midtransClient from 'midtrans-client'
 
 /**
  * Midtrans Payment Notification Handler
- * Handles payment status updates from Midtrans
+ * Handles payment status updates from Midtrans webhook
+ * Reference: https://docs.midtrans.com/en/after-payment/http-notification
  */
 export async function POST(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
     const notification = await req.json()
 
-    // Initialize Midtrans API client
-    const apiClient = new midtransClient.Snap({
+    // Initialize Midtrans CoreApi client (not Snap) for transaction operations
+    // Reference: Official Midtrans example uses CoreApi for notifications
+    const core = new midtransClient.CoreApi({
       isProduction: false,
       serverKey: process.env.MIDTRANS_SERVER_KEY,
       clientKey: process.env.MIDTRANS_CLIENT_KEY,
     })
 
-    // Verify notification signature
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || ''
-    const orderId = notification.order_id
-    const statusCode = notification.status_code
-    const grossAmount = notification.gross_amount
-    const signatureKey = notification.signature_key
+    // Verify and get transaction status from Midtrans
+    // This method internally validates the signature
+    const transactionStatus = await core.transaction.notification(notification)
 
-    const hash = crypto
-      .createHash('sha512')
-      .update(`${orderId}${statusCode}${grossAmount}${serverKey}`)
-      .digest('hex')
-
-    if (hash !== signatureKey) {
-      console.error('Invalid signature for notification:', orderId)
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
-    }
-
-    // Get transaction status from Midtrans
-    const transactionStatus = await apiClient.transaction.notification(notification)
+    const orderId = transactionStatus.order_id
 
     // Find order by order number
     const orders = await payload.find({
@@ -53,13 +39,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (orders.docs.length === 0) {
-      console.error('Order not found:', orderId)
+      console.error('[Midtrans Notification] Order not found:', orderId)
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
     const order = orders.docs[0]
 
-    // Update order based on transaction status
+    // Map Midtrans transaction status to our order status
     let paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' = 'pending'
     let orderStatus = order.status
 
@@ -84,7 +70,34 @@ export async function POST(req: NextRequest) {
       paymentStatus = 'refunded'
     }
 
-    // Update order
+    // Map Midtrans payment_type to our paymentMethod enum
+    const mapPaymentMethod = (
+      midtransType: string,
+    ): 'bank_transfer' | 'credit_card' | 'e_wallet' | undefined => {
+      if (midtransType === 'credit_card' || midtransType === 'debit_card') {
+        return 'credit_card'
+      } else if (
+        midtransType === 'bank_transfer' ||
+        midtransType === 'echannel' ||
+        midtransType === 'bca_va' ||
+        midtransType === 'bni_va' ||
+        midtransType === 'permata_va' ||
+        midtransType === 'other_va'
+      ) {
+        return 'bank_transfer'
+      } else if (
+        midtransType === 'gopay' ||
+        midtransType === 'shopeepay' ||
+        midtransType === 'qris'
+      ) {
+        return 'e_wallet'
+      }
+      return undefined
+    }
+
+    const paymentMethod = mapPaymentMethod(transactionStatus.payment_type || '')
+
+    // Update order with payment status
     await payload.update({
       collection: 'orders',
       id: order.id,
@@ -94,13 +107,13 @@ export async function POST(req: NextRequest) {
           ...order.paymentInfo,
           paymentStatus,
           transactionId: transactionStatus.transaction_id,
-          paymentMethod: transactionStatus.payment_type,
+          ...(paymentMethod && { paymentMethod }), // Only include if we have a valid mapping
           paidAt: paymentStatus === 'paid' ? new Date().toISOString() : order.paymentInfo?.paidAt,
         },
       },
     })
 
-    console.log(`Order ${orderId} updated: ${paymentStatus}`)
+    console.log(`[Midtrans Notification] Order ${orderId} updated: ${paymentStatus}`)
 
     return NextResponse.json({
       success: true,
@@ -109,7 +122,7 @@ export async function POST(req: NextRequest) {
       orderStatus,
     })
   } catch (error) {
-    console.error('Error processing Midtrans notification:', error)
+    console.error('[Midtrans Notification] Error processing notification:', error)
     return NextResponse.json(
       {
         error: 'Failed to process notification',

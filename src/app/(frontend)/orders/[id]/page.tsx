@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams, useParams } from 'next/navigation'
 import {
   ArrowLeft,
   Package,
@@ -12,12 +13,14 @@ import {
   CreditCard,
   Send,
   Paperclip,
+  Loader2,
 } from 'lucide-react'
 import StatusBadge from '@/components/orders/StatusBadge'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
+import type { Order as PayloadOrder } from '@/payload-types'
 
-// Mock conversation data
+// Mock conversation data - keeping this for future implementation
 const mockConversations = [
   {
     id: '1',
@@ -57,11 +60,10 @@ const mockConversations = [
   },
 ]
 
-// Mock order data - will be replaced with real data from API
-const mockOrder = {
-  id: '1',
-  orderNumber: 'ORD-1737456123-001',
-  status: 'in-review' as
+interface OrderData {
+  id: string
+  orderNumber: string
+  status:
     | 'unpaid'
     | 'in-review'
     | 'needs-discussion'
@@ -70,79 +72,198 @@ const mockOrder = {
     | 'in-delivery'
     | 'delivered'
     | 'completed'
-    | 'canceled',
-  totalAmount: 145.5,
-  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  items: [
-    {
-      id: '1',
-      fileName: 'custom-phone-case.stl',
-      quantity: 2,
-      price: 35.0,
-      configuration: {
-        material: 'PLA',
-        color: 'Black',
-        layerHeight: '0.20',
-        infill: '20',
-        wallCount: '3',
-      },
-      statistics: {
-        printTime: 245,
-        filamentWeight: 45.2,
-      },
-    },
-    {
-      id: '2',
-      fileName: 'desk-organizer-v2.3mf',
-      quantity: 1,
-      price: 75.5,
-      configuration: {
-        material: 'PETG',
-        color: 'White',
-        layerHeight: '0.28',
-        infill: '15',
-        wallCount: '2',
-      },
-      statistics: {
-        printTime: 420,
-        filamentWeight: 125.8,
-      },
-    },
-  ],
+    | 'canceled'
+  subtotal: number
+  shippingCost: number
+  totalAmount: number
+  createdAt: string
+  items: Array<{
+    id: string
+    fileName: string
+    quantity: number
+    price: number
+    totalPrice: number
+    configuration: {
+      material: string
+      color: string
+      layerHeight: string
+      infill: string
+      wallCount: string
+    }
+    statistics?: {
+      printTime: number
+      filamentWeight: number
+    }
+  }>
   shippingAddress: {
-    fullName: 'John Doe',
-    addressLine1: '123 Main Street',
-    addressLine2: 'Apt 4B',
-    city: 'San Francisco',
-    state: 'CA',
-    postalCode: '94102',
-    country: 'United States',
-    phone: '+1 (555) 123-4567',
-  },
+    fullName: string
+    addressLine1: string
+    addressLine2?: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+    phone: string
+  }
   paymentInfo: {
-    method: 'Credit Card',
-    status: 'Paid',
-    transactionId: 'TXN-2024-789456',
-    paidAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-  },
-  trackingNumber: null,
-  customerNotes: 'Please ensure the phone case fits iPhone 14 Pro Max. Thank you!',
-  adminNotes: null,
-  statusHistory: [
-    {
-      status: 'unpaid',
-      changedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      status: 'in-review',
-      changedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-  conversations: mockConversations,
+    method: string
+    status: string
+    transactionId?: string
+    paidAt?: string
+  }
+  trackingNumber?: string | null
+  customerNotes?: string | null
+  adminNotes?: string | null
+  statusHistory: Array<{
+    status: string
+    changedAt: string
+  }>
+  conversations: typeof mockConversations
 }
 
 export default function OrderDetailsPage() {
   const [newMessage, setNewMessage] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [order, setOrder] = useState<OrderData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const params = useParams()
+  const orderId = params.id as string
+
+  // Fetch order data
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/orders/${orderId}`, {
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch order')
+        }
+
+        const payloadOrder: PayloadOrder = await response.json()
+
+        // Transform Payload order to component format
+        const transformedOrder: OrderData = {
+          id: payloadOrder.id,
+          orderNumber: payloadOrder.orderNumber || 'N/A',
+          status: payloadOrder.status,
+          subtotal: payloadOrder.summary.subtotal,
+          shippingCost: payloadOrder.summary.shippingCost,
+          totalAmount: payloadOrder.summary.totalAmount,
+          createdAt: payloadOrder.createdAt,
+          items: payloadOrder.items.map((item, index) => ({
+            id: item.id || `item-${index}`,
+            fileName: item.fileName,
+            quantity: item.quantity,
+            price: item.totalPrice / item.quantity, // Unit price = total / quantity
+            totalPrice: item.totalPrice,
+            configuration: {
+              material: item.configuration.material,
+              color: item.configuration.color,
+              layerHeight: item.configuration.layerHeight,
+              infill: item.configuration.infill,
+              wallCount: item.configuration.wallCount,
+            },
+            statistics: item.statistics
+              ? {
+                  printTime: item.statistics.printTime || 0,
+                  filamentWeight: item.statistics.filamentWeight || 0,
+                }
+              : undefined,
+          })),
+          shippingAddress: {
+            fullName: payloadOrder.shipping?.recipientName || 'N/A',
+            addressLine1: payloadOrder.shipping?.addressLine1 || 'N/A',
+            addressLine2: payloadOrder.shipping?.addressLine2 || undefined,
+            city: payloadOrder.shipping?.regencyName || 'N/A',
+            state: payloadOrder.shipping?.provinceName || 'N/A',
+            postalCode: payloadOrder.shipping?.postalCode || 'N/A',
+            country: 'Indonesia',
+            phone: payloadOrder.shipping?.phoneNumber || 'N/A',
+          },
+          paymentInfo: {
+            method: payloadOrder.paymentInfo?.paymentMethod || 'N/A',
+            status: payloadOrder.paymentInfo?.paymentStatus || 'pending',
+            transactionId: payloadOrder.paymentInfo?.transactionId || undefined,
+            paidAt: payloadOrder.paymentInfo?.paidAt || undefined,
+          },
+          trackingNumber: payloadOrder.shipping?.trackingNumber || null,
+          customerNotes: payloadOrder.customerNotes || null,
+          adminNotes: payloadOrder.adminNotes || null,
+          statusHistory: payloadOrder.statusHistory?.map((history) => ({
+            status: history.status,
+            changedAt: history.changedAt,
+          })) || [
+            {
+              status: payloadOrder.status,
+              changedAt: payloadOrder.createdAt,
+            },
+          ],
+          conversations: mockConversations, // Using mock data for now
+        }
+
+        setOrder(transformedOrder)
+      } catch (err) {
+        console.error('Error fetching order:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load order')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (orderId) {
+      fetchOrder()
+    }
+  }, [orderId])
+
+  // Verify payment status when user returns from Midtrans
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    const verificationKey = `payment_verified_${orderId}`
+
+    // Check if we already verified this order
+    const alreadyVerified = sessionStorage.getItem(verificationKey)
+
+    if (paymentStatus === 'success' && orderId && !isVerifying && !alreadyVerified) {
+      setIsVerifying(true)
+
+      // Mark as verified immediately to prevent duplicate calls
+      sessionStorage.setItem(verificationKey, 'true')
+
+      // Call backend to verify payment with Midtrans API
+      fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ orderId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('Payment verification result:', data)
+          if (data.success) {
+            // Reload page without query parameter to show updated order status
+            window.location.href = `/orders/${orderId}`
+          } else {
+            // If verification failed, remove the flag so it can be retried
+            sessionStorage.removeItem(verificationKey)
+          }
+        })
+        .catch((error) => {
+          console.error('Payment verification failed:', error)
+          // Remove flag on error so it can be retried
+          sessionStorage.removeItem(verificationKey)
+        })
+        .finally(() => {
+          setIsVerifying(false)
+        })
+    }
+  }, [searchParams, orderId, isVerifying])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -167,16 +288,66 @@ export default function OrderDetailsPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
   }
 
-  const formatMinutes = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}h ${mins}m`
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
+              <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                Loading order details...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/orders"
+            className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
+            style={{ fontFamily: 'var(--font-geist-sans)' }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Orders
+          </Link>
+          <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-12 text-center">
+            <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
+            <h2
+              className="text-xl font-semibold text-[#292929] mb-2"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              Order Not Found
+            </h2>
+            <p className="text-[#7C7C7C] mb-6" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              {error ||
+                'The order you are looking for does not exist or you do not have access to it.'}
+            </p>
+            <Link href="/my-order">
+              <Button className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]">
+                View All Orders
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -184,12 +355,12 @@ export default function OrderDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <Link
-          href="/orders"
+          href="/my-order"
           className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
           style={{ fontFamily: 'var(--font-geist-sans)' }}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Orders
+          Back to My Orders
         </Link>
 
         {/* Header */}
@@ -202,9 +373,9 @@ export default function OrderDetailsPage() {
                 className="text-2xl font-bold text-[#292929]"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
-                {mockOrder.orderNumber}
+                {order.orderNumber}
               </h1>
-              <StatusBadge status={mockOrder.status} />
+              <StatusBadge status={order.status} />
             </div>
             {/* Estimated Delivery Badge */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
@@ -215,7 +386,7 @@ export default function OrderDetailsPage() {
               >
                 Est. delivery:{' '}
                 {new Date(
-                  new Date(mockOrder.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000,
+                  new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000,
                 ).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -228,13 +399,13 @@ export default function OrderDetailsPage() {
           <div className="flex items-center gap-2 text-sm text-[#989898] mb-6">
             <Calendar className="h-4 w-4" />
             <span style={{ fontFamily: 'var(--font-geist-sans)' }}>
-              {formatDate(mockOrder.createdAt)}
+              {formatDate(order.createdAt)}
             </span>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {mockOrder.status === 'unpaid' && (
+            {order.status === 'unpaid' && (
               <Button className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pay Now
@@ -248,16 +419,16 @@ export default function OrderDetailsPage() {
               <MessageSquare className="h-4 w-4 mr-2" />
               Contact Support
             </Button>
-            {(mockOrder.status === 'delivered' || mockOrder.status === 'completed') && (
+            {(order.status === 'delivered' || order.status === 'completed') && (
               <Button className="bg-[#10B981] text-white hover:bg-[#059669]">
                 <Package className="h-4 w-4 mr-2" />
                 Buy Again
               </Button>
             )}
             {/* Cancel Order Button - Only show for certain statuses */}
-            {(mockOrder.status === 'unpaid' ||
-              mockOrder.status === 'in-review' ||
-              mockOrder.status === 'needs-discussion') && (
+            {(order.status === 'unpaid' ||
+              order.status === 'in-review' ||
+              order.status === 'needs-discussion') && (
               <Button
                 variant="secondary"
                 className="border border-red-200 text-red-600 hover:bg-red-50 ml-auto"
@@ -288,10 +459,9 @@ export default function OrderDetailsPage() {
               'completed',
             ].map((status, index, array) => {
               // Find if this status has been reached
-              const statusEntry = mockOrder.statusHistory.find((h) => h.status === status)
-              const isCompleted = !!statusEntry
-              const isCurrent = mockOrder.status === status
-              const isPast = mockOrder.statusHistory.some((h) => h.status === status)
+              const statusEntry = order.statusHistory.find((h) => h.status === status)
+              const isCurrent = order.status === status
+              const isPast = order.statusHistory.some((h) => h.status === status)
 
               return (
                 <React.Fragment key={status}>
@@ -312,7 +482,7 @@ export default function OrderDetailsPage() {
                     </div>
                     <div className="max-w-[100px]">
                       <StatusBadge
-                        status={status as any}
+                        status={status as OrderData['status']}
                         className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
                       />
                     </div>
@@ -351,10 +521,10 @@ export default function OrderDetailsPage() {
                 Order Items
               </h2>
               <div className="space-y-4">
-                {mockOrder.items.map((item, index) => (
+                {order.items.map((item, index) => (
                   <div
                     key={item.id}
-                    className={`pb-4 ${index < mockOrder.items.length - 1 ? 'border-b border-[#EFEFEF]' : ''}`}
+                    className={`pb-4 ${index < order.items.length - 1 ? 'border-b border-[#EFEFEF]' : ''}`}
                   >
                     <div className="flex items-start gap-4 mb-3">
                       {/* 3D Model Preview Placeholder */}
@@ -370,17 +540,15 @@ export default function OrderDetailsPage() {
                         >
                           {item.fileName}
                         </h3>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-[#989898]">Quantity:</span>
-                            <span className="ml-2 text-[#292929] font-medium">{item.quantity}</span>
-                          </div>
-                          <div>
-                            <span className="text-[#989898]">Price:</span>
-                            <span className="ml-2 text-[#292929] font-medium">
-                              {formatCurrency(item.price)}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-[#989898]">Quantity:</span>
+                          <span className="text-[#292929] font-medium">{item.quantity}</span>
+                          {item.quantity > 1 && (
+                            <>
+                              <span className="text-[#989898]">×</span>
+                              <span className="text-[#292929]">{formatCurrency(item.price)}</span>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -390,7 +558,7 @@ export default function OrderDetailsPage() {
                           className="text-lg font-bold text-[#292929]"
                           style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
-                          {formatCurrency(item.price * item.quantity)}
+                          {formatCurrency(item.totalPrice)}
                         </p>
                       </div>
                     </div>
@@ -434,27 +602,16 @@ export default function OrderDetailsPage() {
                             {item.configuration.wallCount}
                           </p>
                         </div>
-                      </div>
-
-                      {/* Print Statistics */}
-                      {item.statistics && (
-                        <div className="mt-3 pt-3 border-t border-[#DCDCDC]">
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <span className="text-[#7C7C7C]">Estimated Print Time:</span>
-                              <p className="text-[#292929] font-medium mt-0.5">
-                                {formatMinutes(item.statistics.printTime)}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#7C7C7C]">Filament Weight:</span>
-                              <p className="text-[#292929] font-medium mt-0.5">
-                                {item.statistics.filamentWeight}g
-                              </p>
-                            </div>
+                        {/* Filament Weight - moved from statistics */}
+                        {item.statistics && (
+                          <div>
+                            <span className="text-[#7C7C7C]">Filament Weight:</span>
+                            <p className="text-[#292929] font-medium mt-0.5">
+                              {item.statistics.filamentWeight}g
+                            </p>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     {/* Download Button */}
@@ -470,7 +627,7 @@ export default function OrderDetailsPage() {
             </div>
 
             {/* Customer Notes */}
-            {mockOrder.customerNotes && (
+            {order.customerNotes && (
               <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
                 <h2
                   className="text-lg font-semibold text-[#292929] mb-3"
@@ -482,13 +639,13 @@ export default function OrderDetailsPage() {
                   className="text-sm text-[#656565] leading-relaxed"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
-                  {mockOrder.customerNotes}
+                  {order.customerNotes}
                 </p>
               </div>
             )}
 
             {/* Admin Notes (if needs discussion) */}
-            {mockOrder.status === 'needs-discussion' && mockOrder.adminNotes && (
+            {order.status === 'needs-discussion' && order.adminNotes && (
               <div className="bg-purple-50 rounded-[20px] border border-purple-200 p-6">
                 <div className="flex items-start gap-3">
                   <MessageSquare className="h-5 w-5 text-purple-600 mt-0.5" />
@@ -503,7 +660,7 @@ export default function OrderDetailsPage() {
                       className="text-sm text-purple-800 leading-relaxed"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
-                      {mockOrder.adminNotes}
+                      {order.adminNotes}
                     </p>
                   </div>
                 </div>
@@ -513,8 +670,8 @@ export default function OrderDetailsPage() {
 
           {/* Sidebar - Right Side */}
           <div className="space-y-6">
-            {/* Order Discussion - Show for in-review and needs-discussion */}
-            {(mockOrder.status === 'in-review' || mockOrder.status === 'needs-discussion') && (
+            {/* Order Discussion - Only show for needs-discussion status */}
+            {order.status === 'needs-discussion' && (
               <div className="bg-blue-50 rounded-[20px] border-2 border-blue-200 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -528,7 +685,7 @@ export default function OrderDetailsPage() {
 
                 {/* Messages Container - Compact */}
                 <div className="space-y-3 mb-3 max-h-[400px] overflow-y-auto">
-                  {mockOrder.conversations?.map((conversation) => (
+                  {order.conversations?.map((conversation: (typeof mockConversations)[0]) => (
                     <div key={conversation.id}>
                       <div
                         className={`${
@@ -608,12 +765,14 @@ export default function OrderDetailsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-[#989898]">Subtotal</span>
                   <span className="text-[#292929] font-medium">
-                    {formatCurrency(mockOrder.totalAmount)}
+                    {formatCurrency(order.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-[#989898]">Shipping</span>
-                  <span className="text-[#292929] font-medium">Calculated at checkout</span>
+                  <span className="text-[#292929] font-medium">
+                    {formatCurrency(order.shippingCost)}
+                  </span>
                 </div>
                 <div className="pt-3 border-t border-[#EFEFEF]">
                   <div className="flex justify-between">
@@ -627,7 +786,7 @@ export default function OrderDetailsPage() {
                       className="text-xl font-bold text-[#292929]"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
-                      {formatCurrency(mockOrder.totalAmount)}
+                      {formatCurrency(order.totalAmount)}
                     </span>
                   </div>
                 </div>
@@ -646,26 +805,22 @@ export default function OrderDetailsPage() {
               <div className="space-y-3 text-sm">
                 <div>
                   <span className="text-[#989898]">Method:</span>
-                  <p className="text-[#292929] font-medium mt-0.5">
-                    {mockOrder.paymentInfo.method}
-                  </p>
+                  <p className="text-[#292929] font-medium mt-0.5">{order.paymentInfo.method}</p>
                 </div>
                 <div>
                   <span className="text-[#989898]">Status:</span>
-                  <p className="text-green-600 font-medium mt-0.5">
-                    {mockOrder.paymentInfo.status}
-                  </p>
+                  <p className="text-green-600 font-medium mt-0.5">{order.paymentInfo.status}</p>
                 </div>
                 <div>
                   <span className="text-[#989898]">Transaction ID:</span>
                   <p className="text-[#292929] font-mono text-xs mt-0.5">
-                    {mockOrder.paymentInfo.transactionId}
+                    {order.paymentInfo.transactionId}
                   </p>
                 </div>
                 <div>
                   <span className="text-[#989898]">Paid At:</span>
                   <p className="text-[#292929] font-medium mt-0.5">
-                    {formatDate(mockOrder.paymentInfo.paidAt)}
+                    {order.paymentInfo.paidAt && formatDate(order.paymentInfo.paidAt)}
                   </p>
                 </div>
               </div>
@@ -681,22 +836,20 @@ export default function OrderDetailsPage() {
                 Shipping Address
               </h2>
               <div className="text-sm text-[#656565] space-y-1">
-                <p className="font-semibold text-[#292929]">{mockOrder.shippingAddress.fullName}</p>
-                <p>{mockOrder.shippingAddress.addressLine1}</p>
-                {mockOrder.shippingAddress.addressLine2 && (
-                  <p>{mockOrder.shippingAddress.addressLine2}</p>
-                )}
+                <p className="font-semibold text-[#292929]">{order.shippingAddress.fullName}</p>
+                <p>{order.shippingAddress.addressLine1}</p>
+                {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
                 <p>
-                  {mockOrder.shippingAddress.city}, {mockOrder.shippingAddress.state}{' '}
-                  {mockOrder.shippingAddress.postalCode}
+                  {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
+                  {order.shippingAddress.postalCode}
                 </p>
-                <p>{mockOrder.shippingAddress.country}</p>
-                <p className="pt-2 text-[#292929] font-medium">{mockOrder.shippingAddress.phone}</p>
+                <p>{order.shippingAddress.country}</p>
+                <p className="pt-2 text-[#292929] font-medium">{order.shippingAddress.phone}</p>
               </div>
             </div>
 
             {/* Tracking Information */}
-            {mockOrder.trackingNumber && (
+            {order.trackingNumber && (
               <div className="bg-blue-50 rounded-[20px] border border-blue-200 p-6">
                 <h2
                   className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2"
@@ -709,7 +862,7 @@ export default function OrderDetailsPage() {
                   <div>
                     <span className="text-sm text-blue-700">Tracking Number:</span>
                     <p className="text-blue-900 font-mono text-sm font-semibold mt-1">
-                      {mockOrder.trackingNumber}
+                      {order.trackingNumber}
                     </p>
                   </div>
                   <Button className="w-full bg-blue-600 text-white hover:bg-blue-700">

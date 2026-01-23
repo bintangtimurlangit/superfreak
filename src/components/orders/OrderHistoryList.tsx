@@ -6,11 +6,25 @@ import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
 import { useSession } from '@/lib/auth/client'
+import type { Order as PayloadOrder } from '@/payload-types'
 
 type DateFilter = 'all' | '7days' | '30days' | '90days' | 'custom'
 
 interface OrderHistoryListProps {
   className?: string
+}
+
+interface PayloadOrdersResponse {
+  docs: PayloadOrder[]
+  totalDocs: number
+  limit: number
+  totalPages: number
+  page: number
+  pagingCounter: number
+  hasPrevPage: boolean
+  hasNextPage: boolean
+  prevPage: number | null
+  nextPage: number | null
 }
 
 function OrderHistoryListSkeleton() {
@@ -62,160 +76,53 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const [currentPage, setCurrentPage] = useState(1)
   const ordersPerPage = 5
 
-  // Mock data for testing - replace with real API call later
+  // Fetch orders from API
   useEffect(() => {
-    if (!sessionLoading) {
-      // Simulate loading delay
-      setLoading(true)
-      setTimeout(() => {
-        if (isAuthenticated) {
-          // Hardcoded mock orders with all statuses
-          const mockOrders: Order[] = [
-            {
-              id: '1',
-              orderNumber: 'ORD-1737456123-001',
-              status: 'in-review',
-              totalAmount: 145.5,
-              createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-              items: [
-                {
-                  fileName: 'custom-phone-case.stl',
-                  quantity: 2,
-                  price: 35.0,
-                },
-                {
-                  fileName: 'desk-organizer-v2.3mf',
-                  quantity: 1,
-                  price: 75.5,
-                },
-              ],
-            },
-            {
-              id: '2',
-              orderNumber: 'ORD-1737369723-002',
-              status: 'needs-discussion',
-              totalAmount: 289.99,
-              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-              items: [
-                {
-                  fileName: 'complex-mechanical-part.step',
-                  quantity: 1,
-                  price: 289.99,
-                },
-              ],
-            },
-            {
-              id: '3',
-              orderNumber: 'ORD-1737283323-003',
-              status: 'printing',
-              totalAmount: 67.25,
-              createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-              items: [
-                {
-                  fileName: 'miniature-figurine.stl',
-                  quantity: 5,
-                  price: 13.45,
-                },
-              ],
-            },
-            {
-              id: '4',
-              orderNumber: 'ORD-1737196923-004',
-              status: 'shipping',
-              totalAmount: 425.0,
-              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-              items: [
-                {
-                  fileName: 'prototype-housing.stl',
-                  quantity: 3,
-                  price: 125.0,
-                },
-                {
-                  fileName: 'mounting-bracket.3mf',
-                  quantity: 4,
-                  price: 18.75,
-                },
-              ],
-              trackingNumber: 'TRK-US-2024-789456',
-            },
-            {
-              id: '5',
-              orderNumber: 'ORD-1737110523-005',
-              status: 'in-delivery',
-              totalAmount: 156.8,
-              createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-              items: [
-                {
-                  fileName: 'custom-keycaps-set.stl',
-                  quantity: 1,
-                  price: 156.8,
-                },
-              ],
-              trackingNumber: 'TRK-US-2024-654321',
-            },
-            {
-              id: '6',
-              orderNumber: 'ORD-1736937723-006',
-              status: 'delivered',
-              totalAmount: 89.5,
-              createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-              items: [
-                {
-                  fileName: 'wall-mount-holder.stl',
-                  quantity: 2,
-                  price: 44.75,
-                },
-              ],
-              trackingNumber: 'TRK-US-2024-123789',
-            },
-            {
-              id: '7',
-              orderNumber: 'ORD-1736505723-007',
-              status: 'completed',
-              totalAmount: 234.0,
-              createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 days ago
-              items: [
-                {
-                  fileName: 'drone-frame-parts.3mf',
-                  quantity: 1,
-                  price: 234.0,
-                },
-              ],
-              trackingNumber: 'TRK-US-2024-987654',
-            },
-            {
-              id: '8',
-              orderNumber: 'ORD-1736332923-008',
-              status: 'unpaid',
-              totalAmount: 52.3,
-              createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-              items: [
-                {
-                  fileName: 'cable-clip-v3.stl',
-                  quantity: 10,
-                  price: 5.23,
-                },
-              ],
-            },
-            {
-              id: '9',
-              orderNumber: 'ORD-1735900923-009',
-              status: 'canceled',
-              totalAmount: 178.9,
-              createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-              items: [
-                {
-                  fileName: 'large-prototype.step',
-                  quantity: 1,
-                  price: 178.9,
-                },
-              ],
-            },
-          ]
-          setOrders(mockOrders)
-        }
+    const fetchOrders = async () => {
+      if (!isAuthenticated) {
+        setOrders([])
         setLoading(false)
-      }, 500)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const response = await fetch('/api/orders', {
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders')
+        }
+
+        const data: PayloadOrdersResponse = await response.json()
+
+        // Transform Payload Order type to OrderCard Order interface
+        const transformedOrders: Order[] = data.docs.map((order: PayloadOrder) => ({
+          id: order.id,
+          orderNumber: order.orderNumber || 'N/A',
+          status: order.status,
+          totalAmount: order.summary.totalAmount,
+          createdAt: order.createdAt,
+          items: order.items.map((item) => ({
+            fileName: item.fileName,
+            quantity: item.quantity,
+            price: item.totalPrice / item.quantity, // Unit price = total / quantity
+          })),
+          trackingNumber: order.shipping?.trackingNumber || undefined,
+        }))
+
+        setOrders(transformedOrders)
+      } catch (error) {
+        console.error('Error fetching orders:', error)
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!sessionLoading) {
+      fetchOrders()
     }
   }, [isAuthenticated, sessionLoading])
 

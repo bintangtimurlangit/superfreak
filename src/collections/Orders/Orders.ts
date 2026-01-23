@@ -203,71 +203,15 @@ export const Orders: CollectionConfig = {
           name: 'pricing',
           type: 'group',
           admin: {
-            description: 'Pricing breakdown snapshot (frozen at order creation)',
+            description: 'Pricing snapshot at order creation',
           },
           fields: [
             {
-              name: 'filamentCostPerGram',
+              name: 'pricePerGram',
               type: 'number',
               required: true,
               admin: {
-                description: 'Cost per gram at time of order (IDR)',
-              },
-            },
-            {
-              name: 'filamentTotalCost',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Total filament cost (weight × cost per gram)',
-              },
-            },
-            {
-              name: 'printTimeCostPerHour',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Cost per hour at time of order (IDR)',
-              },
-            },
-            {
-              name: 'printTimeTotalCost',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Total print time cost ((time/60) × cost per hour)',
-              },
-            },
-            {
-              name: 'basePrice',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Base price (filament + print time)',
-              },
-            },
-            {
-              name: 'markupPercentage',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Markup percentage at time of order',
-              },
-            },
-            {
-              name: 'markupAmount',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Markup amount (basePrice × markup%)',
-              },
-            },
-            {
-              name: 'subtotalPerUnit',
-              type: 'number',
-              required: true,
-              admin: {
-                description: 'Subtotal per unit (basePrice + markup)',
+                description: 'Price per gram at time of order (IDR) - based on layer height',
               },
             },
           ],
