@@ -1,67 +1,138 @@
-# Payload Blank Template
+# Superfreak Studio Main App
 
-This template comes configured with the bare minimum to get started on anything you need.
+## Description
 
-## Quick start
+This is the main application for Superfreak Studio, hosting the landing page and service pages for 3D printing services.
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+## Architecture
 
-## Quick Start - local setup
+The application consists of three main components:
 
-To spin up this template locally, follow these steps:
+1. **Main App** - Payload CMS with Next.js frontend
+2. **Redis** - Session storage and caching
+3. **MongoDB** - Primary database
 
-### Clone
+## Tech Stack
 
-After you click the `Deploy` button above, you'll want to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+- **Framework**: Next.js 15.4 with React 19
+- **CMS**: Payload CMS 3.69
+- **Database**: MongoDB
+- **Cache**: Redis (ioredis)
+- **Storage**: Cloudflare R2 (S3-compatible)
+- **Email**: Resend
+- **Authentication**: Better Auth with passkey support
+- **Payment**: Midtrans
+- **Styling**: Tailwind CSS 4.1
+- **3D Graphics**: Three.js with React Three Fiber
 
-### Development
+## Prerequisites
 
-1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URL` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+- Node.js 18.20.2 or >= 20.9.0
+- pnpm 9 or 10
+- MongoDB instance
+- Redis instance
 
-3. `pnpm install && pnpm dev` to install dependencies and start the dev server
-4. open `http://localhost:3000` to open the app in your browser
+## Environment Variables
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+Copy `.env.example` to `.env` and configure the following:
 
-#### Docker (Optional)
+### Core
+- `PAYLOAD_AUTH_SECRET` - Payload authentication secret
+- `PAYLOAD_SECRET` - Payload encryption secret
+- `BETTER_AUTH_SECRET` - Better Auth secret
+- `DATABASE_URL` - MongoDB connection string
+- `REDIS_URL` - Redis connection string
+- `NEXT_PUBLIC_SERVER_URL` - Application URL
 
-If you prefer to use Docker for local development instead of a local MongoDB instance, the provided docker-compose.yml file can be used.
+### Authentication
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 
-To do so, follow these steps:
+### Email
+- `RESEND_API_KEY` - Resend API key
+- `RESEND_FROM_EMAIL` - Sender email address
+- `RESEND_FROM_NAME` - Sender name
 
-- Modify the `MONGODB_URL` in your `.env` file to `mongodb://127.0.0.1/<dbname>`
-- Modify the `docker-compose.yml` file's `MONGODB_URL` to match the above `<dbname>`
-- Run `docker-compose up` to start the database, optionally pass `-d` to run in the background.
+### Storage
+- `R2_ACCOUNT_ID` - Cloudflare account ID
+- `R2_ACCESS_KEY` - R2 access key
+- `R2_SECRET_ACCESS_KEY` - R2 secret key
+- `R2_BUCKET_NAME` - R2 bucket name
 
-## How it works
+### Payment
+- `MIDTRANS_CLIENT_KEY` - Midtrans client key
+- `MIDTRANS_SERVER_KEY` - Midtrans server key
+- `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` - Midtrans public client key
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+### Shipping
+- `RAJAONGKIR_SHIPPING_COST_API` - RajaOngkir cost API key
+- `RAJAONGKIR_SHIPPING_DELIVERY_API` - RajaOngkir delivery API key
 
-### Collections
+## Installation
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+```bash
+pnpm install
+```
 
-- #### Users (Authentication)
+## Development
 
-  Users are auth-enabled collections that have access to the admin panel.
+```bash
+# Start development server
+pnpm dev
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/main/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+# Clean start (removes .next cache)
+pnpm devsafe
+```
 
-- #### Media
+The application will be available at `http://localhost:3000`.
 
-  This is the uploads enabled collection. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+## Build
 
-### Docker
+```bash
+pnpm build
+```
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
+## Production
 
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
+```bash
+pnpm start
+```
 
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
+## Scripts
 
-## Questions
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm test` - Run all tests
+- `pnpm test:int` - Run integration tests (Vitest)
+- `pnpm test:e2e` - Run end-to-end tests (Playwright)
+- `pnpm generate:types` - Generate TypeScript types from Payload schema
+- `pnpm generate:importmap` - Generate import map for Payload admin
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+## Docker
+
+A `docker-compose.yml` file is provided for local development with MongoDB.
+
+```bash
+docker-compose up -d
+```
+
+Update `DATABASE_URL` in `.env` to match the Docker MongoDB instance.
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js app directory
+├── collections/      # Payload collections
+├── globals/          # Payload globals
+├── components/       # React components
+├── hooks/            # Custom hooks
+├── access/           # Access control functions
+└── payload.config.ts # Payload configuration
+```
+
+## License
+
+UNLICENSED - Proprietary software owned by Superfreak Studio

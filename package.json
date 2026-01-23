@@ -1,8 +1,8 @@
 {
   "name": "superfreak",
   "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
-  "license": "MIT",
+  "description": "Main application for Superfreak Studio",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
