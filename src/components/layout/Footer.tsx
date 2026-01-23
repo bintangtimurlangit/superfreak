@@ -52,17 +52,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Process
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Materials
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Pricing
+                    Materials & Pricing
                   </a>
                 </li>
                 <li>

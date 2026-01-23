@@ -179,15 +179,15 @@ const Navbar = () => {
               </Link>
               <Link
                 href="#"
-                className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap flex items-center gap-1 m-0 p-0"
+                className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Materials
+                Materials & Pricing
               </Link>
               <Link
                 href="#"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Pricing
+                Collaborations
               </Link>
               <Link
                 href="/blog"
@@ -376,14 +376,14 @@ const Navbar = () => {
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Materials
+                Materials & Pricing
               </Link>
               <Link
                 href="#"
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Pricing
+                Collaborations
               </Link>
               <Link
                 href="/blog"
