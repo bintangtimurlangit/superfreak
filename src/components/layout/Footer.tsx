@@ -85,7 +85,10 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
+                  <a
+                    href="/file-guidelines"
+                    className="hover:underline hover:text-[#292929] transition-colors"
+                  >
                     File Guidelines
                   </a>
                 </li>
