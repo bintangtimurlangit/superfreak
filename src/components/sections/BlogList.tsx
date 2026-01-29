@@ -7,78 +7,16 @@ import { Calendar, Clock, ArrowRight, ChevronLeft, ChevronRight, Search, X } fro
 import Button from '@/components/ui/Button'
 
 interface BlogPost {
-  id: number
+  id: string
   title: string
+  slug: string
   excerpt: string
   author: string
   date: string
   readTime: string
-  category: string
+  categories: string[]
   image?: string
 }
-
-const blogPosts: BlogPost[] = [
-  {
-    id: 1,
-    title: 'Understanding PLA vs PETG: Which Material is Right for Your Project?',
-    excerpt:
-      'Explore the key differences between PLA and PETG materials, their strengths, weaknesses, and ideal use cases for your 3D printing projects.',
-    author: 'Superfreak Team',
-    date: '2025-01-08',
-    readTime: '5 min read',
-    category: 'Materials',
-  },
-  {
-    id: 2,
-    title: 'Top 5 Design Tips for Better 3D Printing Results',
-    excerpt:
-      'Learn essential design principles that will help you create models that print successfully every time, with fewer supports and better surface quality.',
-    author: 'Superfreak Team',
-    date: '2025-01-05',
-    readTime: '7 min read',
-    category: 'Design',
-  },
-  {
-    id: 3,
-    title: 'The Future of 3D Printing: Trends to Watch in 2025',
-    excerpt:
-      'Discover the latest trends and innovations shaping the 3D printing industry, from new materials to advanced manufacturing techniques.',
-    author: 'Superfreak Team',
-    date: '2025-01-02',
-    readTime: '6 min read',
-    category: 'Industry News',
-  },
-  {
-    id: 4,
-    title: 'Post-Processing Techniques for Professional 3D Prints',
-    excerpt:
-      'Master the art of post-processing to transform your raw prints into professional-quality products with sanding, painting, and finishing techniques.',
-    author: 'Superfreak Team',
-    date: '2024-12-28',
-    readTime: '8 min read',
-    category: 'Tutorials',
-  },
-  {
-    id: 5,
-    title: 'How to Optimize Your 3D Models for Cost-Effective Printing',
-    excerpt:
-      'Practical tips and tricks to reduce material usage and printing time while maintaining quality, helping you save on your next project.',
-    author: 'Superfreak Team',
-    date: '2024-12-25',
-    readTime: '5 min read',
-    category: 'Tips & Tricks',
-  },
-  {
-    id: 6,
-    title: '3D Printing for Small Businesses: A Complete Guide',
-    excerpt:
-      'Learn how small businesses can leverage 3D printing for prototyping, custom products, and rapid iteration to stay competitive.',
-    author: 'Superfreak Team',
-    date: '2024-12-22',
-    readTime: '10 min read',
-    category: 'Business',
-  },
-]
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -89,13 +27,55 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const allCategories = ['All', ...Array.from(new Set(blogPosts.map((post) => post.category)))]
+// Format category for display
+const formatCategory = (category: string) => {
+  return category
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
 
 export default function BlogList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [allCategories, setAllCategories] = useState<string[]>(['All'])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const postsPerPage = 6
+
+  // Fetch blog posts from API
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch('/api/blog?limit=100') // Fetch all posts for client-side filtering
+        const data = await response.json()
+
+        if (data.success && data.data.posts) {
+          setBlogPosts(data.data.posts)
+
+          // Extract unique categories
+          const categories = new Set<string>()
+          data.data.posts.forEach((post: BlogPost) => {
+            post.categories.forEach((cat) => categories.add(cat))
+          })
+          setAllCategories(['All', ...Array.from(categories)])
+        } else {
+          setError('Failed to load blog posts')
+        }
+      } catch (err) {
+        console.error('Error fetching blog posts:', err)
+        setError('Failed to load blog posts')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPosts()
+  }, [])
 
   // Filter posts based on search and category
   const filteredPosts = useMemo(() => {
@@ -104,13 +84,14 @@ export default function BlogList() {
         searchQuery === '' ||
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.category.toLowerCase().includes(searchQuery.toLowerCase())
+        post.categories.some((cat) => cat.toLowerCase().includes(searchQuery.toLowerCase()))
 
-      const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory
+      const matchesCategory =
+        selectedCategory === 'All' || post.categories.includes(selectedCategory)
 
       return matchesSearch && matchesCategory
     })
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, blogPosts])
 
   // Reset to page 1 when filters change
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage)
@@ -222,29 +203,56 @@ export default function BlogList() {
         </div>
 
         {/* Blog Posts Grid */}
-        {currentPosts.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p
+              className="text-base text-[#7C7C7C]"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              Loading articles...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p
+              className="text-base text-[#FF0000]"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              {error}
+            </p>
+          </div>
+        ) : currentPosts.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {currentPosts.map((post) => (
               <Link
                 key={post.id}
-                href={`/blog/${post.id}`}
+                href={`/blog/${post.slug}`}
                 className="group bg-white rounded-[20px] border border-[#EFEFEF] overflow-hidden hover:border-[#DCDCDC] hover:shadow-lg transition-all duration-200"
               >
-                {/* Image Placeholder */}
-                <div className="w-full h-48 bg-gradient-to-br from-[#F8F8F8] to-[#EFEFEF] relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                </div>
+                {/* Image */}
+                {post.image ? (
+                  <div className="w-full h-48 relative overflow-hidden">
+                    <Image src={post.image} alt={post.title} fill className="object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-[#F8F8F8] to-[#EFEFEF] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="p-6">
-                  {/* Category Badge */}
-                  <div className="mb-3">
-                    <span
-                      className="inline-block px-3 py-1 rounded-full bg-[#1D0DF3] text-white text-xs font-medium"
-                      style={{ fontFamily: 'var(--font-geist-mono)' }}
-                    >
-                      {post.category}
-                    </span>
+                  {/* Category Badges */}
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {post.categories.slice(0, 2).map((category) => (
+                      <span
+                        key={category}
+                        className="inline-block px-3 py-1 rounded-full bg-[#1D0DF3] text-white text-xs font-medium"
+                        style={{ fontFamily: 'var(--font-geist-mono)' }}
+                      >
+                        {formatCategory(category)}
+                      </span>
+                    ))}
                   </div>
 
                   {/* Meta Info */}
@@ -300,13 +308,58 @@ export default function BlogList() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p
-              className="text-base text-[#7C7C7C]"
+          <div className="text-center py-16 px-6">
+            {/* Empty State Icon */}
+            <div className="mb-6 flex justify-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1D0DF3]/10 to-[#1D0DF3]/5 flex items-center justify-center">
+                <svg
+                  className="w-12 h-12 text-[#1D0DF3]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Empty State Text */}
+            <h3
+              className="text-[20px] md:text-[24px] font-semibold text-[#292929] mb-3"
               style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
-              No articles found. Try adjusting your search or filters.
+              {searchQuery || selectedCategory !== 'All' ? 'No articles found' : 'No articles yet'}
+            </h3>
+            <p
+              className="text-[14px] md:text-[16px] text-[#7C7C7C] mb-6 max-w-md mx-auto"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              {searchQuery || selectedCategory !== 'All'
+                ? "Try adjusting your search terms or filters to find what you're looking for."
+                : "Stay tuned! We'll be publishing articles about 3D printing, materials, design tips, and industry news soon."}
             </p>
+
+            {/* Action Button */}
+            {(searchQuery || selectedCategory !== 'All') && (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  setSearchQuery('')
+                  setSelectedCategory('All')
+                  setCurrentPage(1)
+                }}
+                className="mx-auto"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         )}
 

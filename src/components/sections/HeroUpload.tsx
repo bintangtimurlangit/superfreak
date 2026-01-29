@@ -97,7 +97,7 @@ export default function HeroUpload() {
     }
   }
   return (
-    <section className="relative min-h-[800px] flex flex-col justify-center bg-white">
+    <section className="relative min-h-[840px] flex flex-col justify-center bg-white">
       {/* Checkerboard pattern background */}
       <div
         className="absolute inset-0"

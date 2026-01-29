@@ -15,6 +15,7 @@ import { FilamentTypes } from './collections/Printing/FilamentTypes'
 import { PrintingPricing } from './collections/Printing/PrintingPricing'
 import { PrintingOptions } from './collections/Printing/PrintingOptions'
 import { Orders } from './collections/Orders/Orders'
+import { BlogPosts } from './collections/Blog/BlogPosts'
 import { plugins } from './payload/plugins'
 
 import { CourierSettings } from './collections/Globals/CourierSettings'
@@ -43,6 +44,7 @@ export default buildConfig({
     PrintingPricing,
     PrintingOptions,
     Orders,
+    BlogPosts,
   ],
   globals: [CourierSettings],
   editor: lexicalEditor(),
