@@ -8,6 +8,27 @@ import config from '@payload-config'
  * GET /api/blog/[slug]
  */
 
+// Helper function to extract text from Lexical content
+function extractTextFromLexical(content: any): string {
+  if (!content || !content.root || !content.root.children) {
+    return ''
+  }
+
+  const extractFromNode = (node: any): string => {
+    if (node.type === 'text') {
+      return node.text || ''
+    }
+
+    if (node.children && Array.isArray(node.children)) {
+      return node.children.map(extractFromNode).join('')
+    }
+
+    return ''
+  }
+
+  return content.root.children.map(extractFromNode).join('\n\n')
+}
+
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
     const { slug } = params
@@ -36,13 +57,16 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
     const post = result.docs[0]
 
+    // Extract plain text from Lexical content
+    const contentText = extractTextFromLexical(post.content)
+
     return NextResponse.json({
       success: true,
       data: {
         id: post.id,
         title: post.title,
         slug: post.slug,
-        content: post.content,
+        content: contentText,
         excerpt: post.excerpt,
         author: post.author,
         date: post.publishedAt || post.createdAt,

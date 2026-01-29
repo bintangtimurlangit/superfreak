@@ -29,9 +29,10 @@ const formatDate = (dateString: string) => {
 
 // Format category for display
 const formatCategory = (category: string) => {
+  // Handle both hyphenated and single-word categories
   return category
     .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ')
 }
 
@@ -184,7 +185,7 @@ export default function BlogList() {
                 }`}
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
               >
-                {category}
+                {formatCategory(category)}
               </button>
             ))}
           </div>

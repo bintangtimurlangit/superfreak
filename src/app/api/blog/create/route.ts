@@ -3,23 +3,6 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import crypto from 'crypto'
 
-/**
- * Secure Blog Post Creation API
- *
- * This endpoint allows external systems to create blog posts via API.
- * Authentication is done via API key in the Authorization header.
- *
- * Usage:
- * POST /api/blog/create
- * Headers:
- *   Authorization: Bearer YOUR_BLOG_API_KEY
- *   Content-Type: multipart/form-data
- *
- * Body (multipart/form-data):
- *   - data: JSON string with { title, text, categories, source? }
- *   - image: File (WebP, JPEG, or PNG)
- */
-
 // Verify API key with constant-time comparison to prevent timing attacks
 function verifyApiKey(providedKey: string | null): boolean {
   const validKey = process.env.BLOG_API_KEY
@@ -43,11 +26,64 @@ function verifyApiKey(providedKey: string | null): boolean {
   }
 }
 
+// Download image from URL and upload to R2
+async function downloadAndUploadImage(
+  imageUrl: string,
+  title: string,
+  payload: Awaited<ReturnType<typeof getPayload>>,
+): Promise<string> {
+  try {
+    // Download image
+    const response = await fetch(imageUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.statusText}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // Get content type
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+
+    // Validate image type
+    const allowedTypes = ['image/webp', 'image/jpeg', 'image/png', 'image/jpg']
+    if (!allowedTypes.includes(contentType)) {
+      throw new Error(`Invalid image type: ${contentType}`)
+    }
+
+    // Generate filename from URL
+    const urlParts = imageUrl.split('/')
+    const originalFilename = urlParts[urlParts.length - 1] || 'image.jpg'
+    const filename = originalFilename.split('?')[0] // Remove query params
+
+    // Upload to Media collection (which will upload to R2)
+    const mediaDoc = await payload.create({
+      collection: 'media',
+      data: {
+        alt: title,
+      },
+      file: {
+        data: buffer,
+        mimetype: contentType,
+        name: filename,
+        size: buffer.length,
+      },
+    })
+
+    return mediaDoc.id
+  } catch (error) {
+    console.error('Image download/upload error:', error)
+    throw new Error(
+      `Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Extract and verify API key from Authorization header
     const authHeader = request.headers.get('authorization')
-    const apiKey = authHeader?.replace('Bearer ', '')
+    const apiKey = authHeader?.replace('Bearer ', '') ?? null
 
     if (!verifyApiKey(apiKey)) {
       return NextResponse.json(
@@ -59,36 +95,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse multipart form data
-    const formData = await request.formData()
-    const dataString = formData.get('data') as string
-    const imageFile = formData.get('image') as File | null
-
-    if (!dataString) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing required field: data',
-        },
-        { status: 400 },
-      )
-    }
-
-    // Parse JSON data
+    const contentType = request.headers.get('content-type') || ''
     let postData: {
       title: string
       text: string
       categories: string[]
+      image?: string
       source?: string
     }
+    let imageFile: File | null = null
 
-    try {
-      postData = JSON.parse(dataString)
-    } catch (error) {
+    // Handle JSON payload (with image URL)
+    if (contentType.includes('application/json')) {
+      try {
+        postData = await request.json()
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid JSON payload',
+          },
+          { status: 400 },
+        )
+      }
+    }
+    // Handle multipart form data (with file upload)
+    else if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const dataString = formData.get('data') as string
+      imageFile = formData.get('image') as File | null
+
+      if (!dataString) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Missing required field: data',
+          },
+          { status: 400 },
+        )
+      }
+
+      try {
+        postData = JSON.parse(dataString)
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid JSON in data field',
+          },
+          { status: 400 },
+        )
+      }
+    } else {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid JSON in data field',
+          error: 'Content-Type must be application/json or multipart/form-data',
         },
         { status: 400 },
       )
@@ -118,10 +180,26 @@ export async function POST(request: NextRequest) {
     // Get Payload instance
     const payload = await getPayload({ config })
 
-    // Upload image if provided
+    // Handle image upload
     let featuredImageId: string | undefined
 
-    if (imageFile) {
+    // Option 1: Image URL provided (download and upload to R2)
+    if (postData.image) {
+      try {
+        featuredImageId = await downloadAndUploadImage(postData.image, postData.title, payload)
+      } catch (error) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to download and upload image',
+            details: error instanceof Error ? error.message : 'Unknown error',
+          },
+          { status: 400 },
+        )
+      }
+    }
+    // Option 2: Image file provided via multipart
+    else if (imageFile) {
       // Validate file type
       const allowedTypes = ['image/webp', 'image/jpeg', 'image/png']
       if (!allowedTypes.includes(imageFile.type)) {
@@ -168,24 +246,45 @@ export async function POST(request: NextRequest) {
       collection: 'blog-posts',
       data: {
         title: postData.title,
-        content: postData.text,
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: postData.text,
+                    version: 1,
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        } as any,
         excerpt,
-        categories: normalizedCategories,
+        categories: normalizedCategories as any,
         featuredImage: featuredImageId,
         source: postData.source,
         author: 'Superfreak Team',
         _status: 'published', // Auto-publish
       },
-    })
+    } as any)
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          id: blogPost.id,
-          slug: blogPost.slug,
-          title: blogPost.title,
-          url: `${process.env.NEXT_PUBLIC_SERVER_URL}/blog/${blogPost.slug}`,
+          id: (blogPost as any).id,
+          slug: (blogPost as any).slug,
+          title: (blogPost as any).title,
+          url: `${process.env.NEXT_PUBLIC_SERVER_URL}/blog/${(blogPost as any).slug}`,
         },
       },
       { status: 201 },
