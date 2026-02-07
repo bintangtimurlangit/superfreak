@@ -160,8 +160,8 @@ export default function SeamlessProcess() {
                     Upload 3D Models
                   </p>
                   <p className="text-[12px] text-[#666666] group-hover:opacity-30 transition-opacity duration-200">
-                    Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf,
-                    .zip (Max: 500 MB per file)
+                    Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .zip
+                    (Max: 500 MB per file)
                   </p>
                 </div>
 

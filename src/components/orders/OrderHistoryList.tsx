@@ -7,6 +7,7 @@ import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
 import { useSession } from '@/lib/auth/client'
 import type { Order as PayloadOrder } from '@/payload-types'
+import PaymentSelectionModal from './PaymentSelectionModal'
 
 type DateFilter = 'all' | '7days' | '30days' | '90days' | 'custom'
 
@@ -74,6 +75,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null)
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [paymentModalOrder, setPaymentModalOrder] = useState<Order | null>(null)
   const ordersPerPage = 5
 
   // Fetch orders from API
@@ -357,7 +359,11 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
         <>
           <div className="space-y-4">
             {paginatedOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard
+                key={order.id}
+                order={order}
+                onPayNow={(order) => setPaymentModalOrder(order)}
+              />
             ))}
           </div>
 
@@ -426,6 +432,16 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
             </div>
           )}
         </>
+      )}
+
+      {paymentModalOrder && (
+        <PaymentSelectionModal
+          isOpen={!!paymentModalOrder}
+          onClose={() => setPaymentModalOrder(null)}
+          orderId={paymentModalOrder.id}
+          orderNumber={paymentModalOrder.orderNumber}
+          totalAmount={paymentModalOrder.totalAmount}
+        />
       )}
     </div>
   )

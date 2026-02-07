@@ -194,18 +194,13 @@ export default function AddressForm() {
   }
 
   const formatAddress = (address: SavedAddress) => {
-    const province = provinces.find((p) => p.code === address.provinceCode)
-    const regency = regencies.find((r) => r.code === address.regencyCode)
-    const district = districts.find((d) => d.code === address.districtCode)
-    const village = villages.find((v) => v.code === address.villageCode)
-
     const parts = [
       address.addressLine1,
       address.addressLine2,
-      village?.name,
-      district?.name,
-      regency?.name,
-      province?.name,
+      address.rajaOngkirSubdistrictName || address.villageName,
+      address.rajaOngkirDistrictName || address.districtName,
+      address.rajaOngkirCityName || address.regencyName,
+      address.rajaOngkirProvinceName || address.provinceName,
       address.postalCode,
     ].filter(Boolean)
 

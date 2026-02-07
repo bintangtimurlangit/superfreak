@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, ChevronDown } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import Button from '@/components/ui/Button'
 
 export default function ContactForm() {
@@ -16,6 +17,21 @@ export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false)
   const subjectDropdownRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
+
+  // Initialize form data from query parameters
+  useEffect(() => {
+    const subjectParam = searchParams.get('subject')
+    const messageParam = searchParams.get('message')
+
+    if (subjectParam || messageParam) {
+      setFormData((prev) => ({
+        ...prev,
+        subject: subjectParam || prev.subject,
+        message: messageParam ? decodeURIComponent(messageParam) : prev.message,
+      }))
+    }
+  }, [searchParams])
 
   const subjects = [
     { value: 'general', label: 'General Inquiry' },

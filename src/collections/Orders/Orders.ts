@@ -237,8 +237,15 @@ export const Orders: CollectionConfig = {
           options: [
             { label: 'Bank Transfer', value: 'bank_transfer' },
             { label: 'Credit Card', value: 'credit_card' },
-            { label: 'E-Wallet', value: 'e_wallet' },
+            { label: 'E-Wallet & QRIS', value: 'e_wallet' },
           ],
+        },
+        {
+          name: 'specificPaymentMethod',
+          type: 'text',
+          admin: {
+            description: 'The specific Midtrans payment type used (e.g., bca_va, gopay)',
+          },
         },
         {
           name: 'paymentStatus',

@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
 
     // Verify with Midtrans API using CoreApi (server-side verification)
     const core = getMidtransCore()
-    const transactionStatus = await core.transaction.status(order.orderNumber!)
+    const midtransOrderId = order.paymentInfo?.midtransOrderId || order.orderNumber!
+    const transactionStatus = await core.transaction.status(midtransOrderId)
 
     // Update order based on verified transaction status from Midtrans
     let paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' = 'pending'

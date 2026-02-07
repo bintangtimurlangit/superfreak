@@ -282,12 +282,6 @@ export default function FileGuidelinesPage() {
             </div>
 
             <div className="bg-white border-2 border-[#EFEFEF] rounded-xl p-6 hover:border-[#1D0DF3] hover:shadow-lg transition-all duration-300">
-              <h3
-                className="text-[20px] font-bold text-[#292929] mb-1"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
-                .3MF
-              </h3>
               <p
                 className="text-[14px] text-[#7C7C7C] mb-2"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}

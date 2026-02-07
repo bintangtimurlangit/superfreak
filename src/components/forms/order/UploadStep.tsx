@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Box, Trash2, ChevronRight, ArrowUp, Shield, Minus, Plus, AlertCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import Link from 'next/link'
 import { parseConfigurationValues } from '@/lib/validations/order'
 import ModelViewer from '@/components/3d/ModelViewer'
 
@@ -29,6 +30,7 @@ export interface UploadedFile {
   configuration?: ModelConfiguration
   file?: File // Store the actual File object for API upload
   tempFileId?: string // ID from temporary storage upload
+  error?: string // Error message from slicing API
   statistics?: {
     print_time_minutes: number
     print_time_formatted: string
@@ -78,7 +80,6 @@ export default function UploadStep({
       '.iges',
       '.igs',
       '.sldprt',
-      '.3mf',
       '.amf',
       '.ply',
       '.dae',
@@ -93,7 +94,7 @@ export default function UploadStep({
 
     if (validFiles.length === 0) {
       alert(
-        'Please select a valid 3D file format (.stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf, .ply, .dae, .fbx, .gltf, .glb)',
+        'Please select a valid 3D file format (.stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .amf, .ply, .dae, .fbx, .gltf, .glb)',
       )
       return
     }
@@ -156,7 +157,7 @@ export default function UploadStep({
     const extension = '.' + fileObject.name.split('.').pop()?.toLowerCase()
     console.log(`[SuperSlice] File extension: ${extension}`)
 
-    if (!['.stl', '.3mf'].includes(extension)) {
+    if (!['.stl'].includes(extension)) {
       // For other file types, mark as completed without API call
       console.log(`[SuperSlice] File ${fileObject.name} is not STL/3MF, skipping API call`)
       setUploadedFiles((prev) =>
@@ -253,7 +254,8 @@ export default function UploadStep({
         ),
       )
     } catch (error) {
-      console.error(`[SuperSlice] Error processing ${fileObject.name}:`, error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`[SuperSlice] Error processing ${fileObject.name}:`, errorMessage)
       setUploadedFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
@@ -261,10 +263,13 @@ export default function UploadStep({
                 ...f,
                 status: 'error' as const,
                 progress: 0,
+                error: errorMessage,
               }
             : f,
         ),
       )
+      // Re-throw the error so that callers (like processAllFiles) know it failed
+      throw error
     }
   }
 
@@ -598,15 +603,15 @@ export default function UploadStep({
                   className="text-xs text-[#6b7280]"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
-                  Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf,
-                  .amf, .ply, .dae, .fbx, .gltf, .glb (Max: {formatFileSize(maxFileSize)} per file)
+                  Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .amf,
+                  .ply, .dae, .fbx, .gltf, .glb (Max: {formatFileSize(maxFileSize)} per file)
                 </div>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.3mf,.amf,.ply,.dae,.fbx,.gltf,.glb"
+                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.amf,.ply,.dae,.fbx,.gltf,.glb"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -635,8 +640,8 @@ export default function UploadStep({
                 className="text-sm text-[#6b7280] mb-4"
                 style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
-                Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf,
-                .ply, .dae, .fbx, .gltf, .glb
+                Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .amf, .ply,
+                .dae, .fbx, .gltf, .glb
                 <br />
                 (Max: {formatFileSize(maxFileSize)} per file)
               </div>
@@ -644,7 +649,7 @@ export default function UploadStep({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.3mf,.amf,.ply,.dae,.fbx,.gltf,.glb"
+                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.amf,.ply,.dae,.fbx,.gltf,.glb"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -789,7 +794,22 @@ export default function UploadStep({
                           className="mt-2 text-xs text-red-600"
                           style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
-                          Upload failed. Please remove this file and try uploading again.
+                          {file.error?.toLowerCase().includes('slicing failed') ||
+                          file.error?.toLowerCase().includes('printable') ||
+                          file.error?.toLowerCase().includes('empty') ? (
+                            <span>
+                              This 3D model can not be sliced, please{' '}
+                              <Link
+                                href={`/contact?subject=support&message=${encodeURIComponent(`I'm having trouble slicing my 3D model: ${file.name}. It seems the print is empty or not printable with my current settings.`)}`}
+                                className="underline cursor-pointer hover:text-red-700 transition-colors"
+                              >
+                                contact us
+                              </Link>{' '}
+                              for priority support.
+                            </span>
+                          ) : (
+                            'Upload failed. Please remove this file and try uploading again.'
+                          )}
                         </div>
                       )}
                       {(file.status === 'completed' || file.status === 'pending') &&

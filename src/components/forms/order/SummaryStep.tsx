@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
 import { useSession } from '@/lib/auth/client'
 import type { UploadedFile } from './UploadStep'
+import AddressSelectionModal from '@/components/orders/AddressSelectionModal'
+import { SavedAddress } from '@/lib/types'
 
 interface Province {
   code: string
@@ -44,6 +46,10 @@ interface Address {
   districtName?: string
   villageName?: string
   rajaOngkirDestinationId?: number
+  rajaOngkirProvinceName?: string
+  rajaOngkirCityName?: string
+  rajaOngkirDistrictName?: string
+  rajaOngkirSubdistrictName?: string
 }
 
 interface PrintingPricing {
@@ -106,6 +112,7 @@ export default function SummaryStep({
   const [shippingServices, setShippingServices] = useState<any[]>([])
   const [loadingShipping, setLoadingShipping] = useState(false)
   const [isCourierDropdownOpen, setIsCourierDropdownOpen] = useState(false)
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const courierDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close courier dropdown when clicking outside
@@ -347,10 +354,10 @@ export default function SummaryStep({
     const parts = [
       address.addressLine1,
       address.addressLine2,
-      address.villageName,
-      address.districtName,
-      address.regencyName,
-      address.provinceName,
+      address.rajaOngkirSubdistrictName || address.villageName,
+      address.rajaOngkirDistrictName || address.districtName,
+      address.rajaOngkirCityName || address.regencyName,
+      address.rajaOngkirProvinceName || address.provinceName,
       address.postalCode,
     ].filter(Boolean)
     return parts.join(', ')
@@ -448,7 +455,25 @@ export default function SummaryStep({
     } finally {
       setLoading(false)
     }
-  }, [user?.id, provinces, formatAddress])
+  }, [user?.id, provinces, onAddressUpdate])
+
+  const handleAddressSelect = (address: SavedAddress) => {
+    // Cast SavedAddress to local Address interface
+    const formattedAddress = {
+      ...address,
+    } as unknown as Address
+
+    setDefaultAddress(formattedAddress)
+    setIsAddressModalOpen(false)
+
+    // Reset shipping method when address changes
+    setSelectedService('')
+    setShippingCost(0)
+
+    if (onAddressUpdate) {
+      onAddressUpdate(formattedAddress)
+    }
+  }
 
   useEffect(() => {
     if (user?.id && provinces.length > 0) {
@@ -619,7 +644,7 @@ export default function SummaryStep({
                 </div>
                 <button
                   type="button"
-                  onClick={() => router.push('/profile/address')}
+                  onClick={() => setIsAddressModalOpen(true)}
                   className="text-sm font-medium text-[#1D0DF3] hover:underline ml-4"
                   style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
@@ -886,6 +911,13 @@ export default function SummaryStep({
           </div>
         </div>
       </div>
+
+      <AddressSelectionModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSelect={handleAddressSelect}
+        selectedAddressId={defaultAddress?.id}
+      />
     </div>
   )
 }

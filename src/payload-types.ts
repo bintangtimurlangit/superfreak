@@ -611,6 +611,10 @@ export interface Order {
   }[];
   paymentInfo?: {
     paymentMethod?: ('bank_transfer' | 'credit_card' | 'e_wallet') | null;
+    /**
+     * The specific Midtrans payment type used (e.g., bca_va, gopay)
+     */
+    specificPaymentMethod?: string | null;
     paymentStatus?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
     transactionId?: string | null;
     paidAt?: string | null;
@@ -1262,6 +1266,7 @@ export interface OrdersSelect<T extends boolean = true> {
     | T
     | {
         paymentMethod?: T;
+        specificPaymentMethod?: T;
         paymentStatus?: T;
         transactionId?: T;
         paidAt?: T;

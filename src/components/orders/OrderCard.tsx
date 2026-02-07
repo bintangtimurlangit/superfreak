@@ -20,9 +20,10 @@ export interface Order {
 
 interface OrderCardProps {
   order: Order
+  onPayNow?: (order: Order) => void
 }
 
-export default function OrderCard({ order }: OrderCardProps) {
+export default function OrderCard({ order, onPayNow }: OrderCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('en-US', {
@@ -153,6 +154,7 @@ export default function OrderCard({ order }: OrderCardProps) {
         {order.status === 'unpaid' ? (
           <>
             <button
+              onClick={() => onPayNow?.(order)}
               className="flex-1 px-4 py-2.5 bg-[#1D0DF3] text-white rounded-lg text-sm font-medium hover:bg-[#1a0cd9] transition-colors"
               style={{ fontFamily: 'var(--font-geist-sans)' }}
             >

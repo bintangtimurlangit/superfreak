@@ -27,6 +27,7 @@ export type OrderStatus =
 interface StatusBadgeProps {
   status: OrderStatus
   className?: string
+  showIcon?: boolean
 }
 
 const statusConfig: Record<
@@ -94,7 +95,7 @@ const statusConfig: Record<
   },
 }
 
-export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
+export default function StatusBadge({ status, className = '', showIcon = true }: StatusBadgeProps) {
   const config = statusConfig[status]
   const Icon = config.icon
 
@@ -103,7 +104,7 @@ export default function StatusBadge({ status, className = '' }: StatusBadgeProps
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${config.bgColor} ${config.textColor} ${className}`}
       style={{ fontFamily: 'var(--font-geist-sans)' }}
     >
-      <Icon className="h-3.5 w-3.5" />
+      {showIcon && <Icon className="h-3.5 w-3.5" />}
       {config.label}
     </span>
   )

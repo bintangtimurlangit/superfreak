@@ -21,7 +21,6 @@ export default function HeroUpload() {
       '.iges',
       '.igs',
       '.sldprt',
-      '.3mf',
       '.amf',
       '.ply',
       '.dae',
@@ -37,7 +36,7 @@ export default function HeroUpload() {
 
     if (validFiles.length === 0) {
       alert(
-        'Please select a valid 3D file format (.stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf, .ply, .dae, .fbx, .gltf, .glb)',
+        'Please select a valid 3D file format (.stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .amf, .ply, .dae, .fbx, .gltf, .glb)',
       )
       return
     }
@@ -230,8 +229,8 @@ export default function HeroUpload() {
             </div>
             <div className="mb-1 text-lg font-semibold text-[#292929]">Upload 3D Models</div>
             <div className="text-sm text-[#6b7280]">
-              Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .3mf, .amf,
-              .ply, .dae, .fbx, .gltf, .glb
+              Supported formats: .stl, .obj, .step, .stp, .x_t, .iges, .igs, .sldprt, .amf, .ply,
+              .dae, .fbx, .gltf, .glb
               <br />
               Max: 500 MB per file
             </div>
@@ -240,7 +239,7 @@ export default function HeroUpload() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.3mf,.amf,.ply,.dae,.fbx,.gltf,.glb"
+                accept=".stl,.obj,.step,.stp,.x_t,.iges,.igs,.sldprt,.amf,.ply,.dae,.fbx,.gltf,.glb"
                 onChange={handleFileSelect}
                 className="hidden"
               />

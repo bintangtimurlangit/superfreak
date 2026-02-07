@@ -14,11 +14,17 @@ import {
   Send,
   Paperclip,
   Loader2,
+  Search,
+  MessageCircle,
+  Printer,
+  CheckCircle2,
+  PackageCheck,
 } from 'lucide-react'
 import StatusBadge from '@/components/orders/StatusBadge'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import type { Order as PayloadOrder } from '@/payload-types'
+import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
 
 // Mock conversation data - keeping this for future implementation
 const mockConversations = [
@@ -127,6 +133,7 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const searchParams = useSearchParams()
   const params = useParams()
   const orderId = params.id as string
@@ -296,6 +303,38 @@ export default function OrderDetailsPage() {
     }).format(amount)
   }
 
+  const getPaymentMethodLabel = (method: string) => {
+    const labels: Record<string, string> = {
+      bank_transfer: 'Bank Transfer',
+      credit_card: 'Credit Card',
+      e_wallet: 'QRIS & E-Wallet',
+    }
+    return labels[method] || method
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'unpaid':
+        return CreditCard
+      case 'in-review':
+        return Search
+      case 'needs-discussion':
+        return MessageCircle
+      case 'printing':
+        return Printer
+      case 'shipping':
+        return Package
+      case 'in-delivery':
+        return Truck
+      case 'delivered':
+        return PackageCheck
+      case 'completed':
+        return CheckCircle2
+      default:
+        return Package
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -406,7 +445,10 @@ export default function OrderDetailsPage() {
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             {order.status === 'unpaid' && (
-              <Button className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]">
+              <Button
+                onClick={() => setIsPaymentModalOpen(true)}
+                className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]"
+              >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pay Now
               </Button>
@@ -466,23 +508,26 @@ export default function OrderDetailsPage() {
               return (
                 <React.Fragment key={status}>
                   <div className="flex flex-col items-center">
-                    {/* Dot with centered connecting line */}
                     <div className="relative flex items-center justify-center mb-2">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                           isCurrent ? 'bg-[#1D0DF3]' : isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'
                         }`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            isPast || isCurrent ? 'bg-white' : 'bg-[#C8C8C8]'
-                          }`}
-                        />
+                        {(() => {
+                          const Icon = getStatusIcon(status)
+                          return (
+                            <Icon
+                              className={`h-4 w-4 ${isPast || isCurrent ? 'text-white' : 'text-[#C8C8C8]'}`}
+                            />
+                          )
+                        })()}
                       </div>
                     </div>
                     <div className="max-w-[100px]">
                       <StatusBadge
                         status={status as OrderData['status']}
+                        showIcon={false}
                         className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
                       />
                     </div>
@@ -499,7 +544,7 @@ export default function OrderDetailsPage() {
                     </p>
                   </div>
                   {index < array.length - 1 && (
-                    <div className="flex-1 flex items-center" style={{ marginTop: '-60px' }}>
+                    <div className="flex-1 flex items-center" style={{ marginTop: '-65px' }}>
                       <div className={`flex-1 h-0.5 ${isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'}`} />
                     </div>
                   )}
@@ -805,7 +850,9 @@ export default function OrderDetailsPage() {
               <div className="space-y-3 text-sm">
                 <div>
                   <span className="text-[#989898]">Method:</span>
-                  <p className="text-[#292929] font-medium mt-0.5">{order.paymentInfo.method}</p>
+                  <p className="text-[#292929] font-medium mt-0.5">
+                    {getPaymentMethodLabel(order.paymentInfo.method)}
+                  </p>
                 </div>
                 <div>
                   <span className="text-[#989898]">Status:</span>
@@ -875,6 +922,14 @@ export default function OrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      <PaymentSelectionModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        totalAmount={order.totalAmount}
+      />
     </div>
   )
 }
