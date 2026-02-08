@@ -134,6 +134,8 @@ export default function OrderDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [isCanceling, setIsCanceling] = useState(false)
   const searchParams = useSearchParams()
   const params = useParams()
   const orderId = params.id as string
@@ -335,6 +337,27 @@ export default function OrderDetailsPage() {
     }
   }
 
+  const handleCancelOrder = async () => {
+    setIsCanceling(true)
+    try {
+      // TODO: Implement API call to cancel order
+      // const response = await fetch(`/api/orders/${orderId}/cancel`, {
+      //   method: 'POST',
+      //   credentials: 'include',
+      // })
+      // if (!response.ok) throw new Error('Failed to cancel order')
+
+      // For now, just show a placeholder alert
+      alert('Cancel order functionality will be implemented in the backend')
+      setIsCancelModalOpen(false)
+    } catch (error) {
+      console.error('Error canceling order:', error)
+      alert('Failed to cancel order. Please try again.')
+    } finally {
+      setIsCanceling(false)
+    }
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -472,6 +495,7 @@ export default function OrderDetailsPage() {
               order.status === 'in-review' ||
               order.status === 'needs-discussion') && (
               <Button
+                onClick={() => setIsCancelModalOpen(true)}
                 variant="secondary"
                 className="border border-red-200 text-red-600 hover:bg-red-50 ml-auto"
               >
@@ -500,10 +524,16 @@ export default function OrderDetailsPage() {
               'delivered',
               'completed',
             ].map((status, index, array) => {
-              // Find if this status has been reached
-              const statusEntry = order.statusHistory.find((h) => h.status === status)
+              // Find the index of the current status in the array
+              const currentStatusIndex = array.indexOf(order.status)
+              const thisStatusIndex = index
+
+              // A status is "past" if it comes before the current status in the sequence
+              const isPast = thisStatusIndex < currentStatusIndex
               const isCurrent = order.status === status
-              const isPast = order.statusHistory.some((h) => h.status === status)
+
+              // Find if this specific status has a history entry (for showing the date)
+              const statusEntry = order.statusHistory.find((h) => h.status === status)
 
               return (
                 <React.Fragment key={status}>
@@ -930,6 +960,61 @@ export default function OrderDetailsPage() {
         orderNumber={order.orderNumber}
         totalAmount={order.totalAmount}
       />
+
+      {/* Cancel Order Confirmation Modal */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[20px] max-w-md w-full p-6 shadow-xl">
+            <h2
+              className="text-xl font-bold text-[#292929] mb-3"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
+            >
+              Cancel Order?
+            </h2>
+            <p className="text-[#656565] mb-6" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              Are you sure you want to cancel order <strong>{order.orderNumber}</strong>? This
+              action cannot be undone.
+            </p>
+
+            {order.status === 'unpaid' && order.paymentInfo.status === 'paid' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p
+                  className="text-sm text-yellow-800"
+                  style={{ fontFamily: 'var(--font-geist-sans)' }}
+                >
+                  <strong>Note:</strong> You have already paid for this order. Canceling will
+                  initiate a refund process.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setIsCancelModalOpen(false)}
+                variant="secondary"
+                className="flex-1 border border-[#DCDCDC]"
+                disabled={isCanceling}
+              >
+                Keep Order
+              </Button>
+              <Button
+                onClick={handleCancelOrder}
+                className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                disabled={isCanceling}
+              >
+                {isCanceling ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Canceling...
+                  </>
+                ) : (
+                  'Yes, Cancel Order'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -85,3 +85,60 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const payload = await getPayload()
+    const requestHeaders = await headers()
+
+    const { user } = await payload.auth({ headers: requestHeaders })
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Parse the query parameters to get the where clause
+    const url = new URL(request.url)
+    const searchParams = url.searchParams
+
+    // Extract all id parameters from query string
+    // The admin panel sends: where[and][0][id][in][0]=id1&where[and][0][id][in][1]=id2...
+    const ids: string[] = []
+    searchParams.forEach((value, key) => {
+      if (key.includes('[id][in]')) {
+        ids.push(value)
+      }
+    })
+
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'No order IDs provided' }, { status: 400 })
+    }
+
+    // Delete orders using Payload's Local API
+    const result = await payload.delete({
+      collection: 'orders',
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+      req: {
+        user,
+        payload,
+        headers: requestHeaders,
+      } as any,
+      overrideAccess: false, // Enforce access control (admin only can delete)
+    })
+
+    return NextResponse.json(result)
+  } catch (error: any) {
+    console.error('Error deleting orders:', error)
+    return NextResponse.json(
+      {
+        error: 'Failed to delete orders',
+        details: error.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}

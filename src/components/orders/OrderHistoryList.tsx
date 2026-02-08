@@ -31,31 +31,61 @@ interface PayloadOrdersResponse {
 function OrderHistoryListSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Filters Skeleton */}
-      <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
-        <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-4" />
-        <div className="flex flex-wrap gap-2 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-9 w-24 bg-gray-200 rounded-lg animate-pulse" />
-          ))}
+      {/* Header + Filters Skeleton */}
+      <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+        {/* Header Skeleton */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-gray-200 rounded-[12px] animate-pulse flex-shrink-0" />
+          <div className="h-7 w-40 bg-gray-200 rounded animate-pulse" />
         </div>
-        <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-4" />
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-            <div key={i} className="h-9 w-20 bg-gray-200 rounded-lg animate-pulse" />
+
+        {/* Divider */}
+        <div className="border-t border-[#EFEFEF] -mx-4 md:-mx-5 mb-6"></div>
+
+        {/* Search and Date Picker Row Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="h-[42px] bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-[42px] bg-gray-200 rounded-lg animate-pulse" />
+        </div>
+
+        {/* Status Filter Skeleton */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse mr-2" />
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+            <div key={i} className="h-9 w-20 bg-gray-200 rounded-full animate-pulse" />
           ))}
         </div>
       </div>
 
+      {/* Results Count Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+      </div>
+
       {/* Order Cards Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
             <div className="space-y-4">
-              <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-              <div className="h-20 bg-gray-200 rounded animate-pulse" />
-              <div className="h-10 bg-gray-200 rounded animate-pulse" />
+              {/* Order number and date */}
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                </div>
+                <div className="h-7 w-24 bg-gray-200 rounded-full animate-pulse" />
+              </div>
+
+              {/* Items section */}
+              <div className="space-y-2">
+                <div className="h-16 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+
+              {/* Total and button */}
+              <div className="flex items-center justify-between pt-4 border-t border-[#EFEFEF]">
+                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
             </div>
           </div>
         ))}

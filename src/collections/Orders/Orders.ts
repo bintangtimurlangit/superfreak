@@ -1,6 +1,11 @@
 import type { CollectionConfig } from 'payload'
-import { hasRole } from '@/access/hasRoles'
 import { finalizeOrderFiles } from './hooks/finalizeOrderFiles'
+
+// Helper to check if user has admin role
+const isAdmin = (user: { role?: string | string[] | null } | null | undefined): boolean => {
+  if (!user || !user.role) return false
+  return Array.isArray(user.role) ? user.role.includes('admin') : user.role === 'admin'
+}
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -12,7 +17,8 @@ export const Orders: CollectionConfig = {
     read: async ({ req }) => {
       const { user } = req
       if (!user) return false
-      if (await hasRole(['admin'])({ req })) return true
+      // Check if user has admin role directly from req.user
+      if (isAdmin(user)) return true
       return {
         user: {
           equals: user.id,
@@ -20,8 +26,16 @@ export const Orders: CollectionConfig = {
       }
     },
     create: ({ req: { user } }) => Boolean(user),
-    update: hasRole(['admin']),
-    delete: hasRole(['admin']),
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      // Check if user has admin role directly from req.user
+      return isAdmin(user)
+    },
+    delete: ({ req: { user } }) => {
+      if (!user) return false
+      // Check if user has admin role directly from req.user
+      return isAdmin(user)
+    },
   },
   fields: [
     {
