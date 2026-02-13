@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Check,
   XCircle,
+  type LucideIcon,
 } from 'lucide-react'
 
 export type OrderStatus =
@@ -36,7 +37,7 @@ const statusConfig: Record<
     label: string
     bgColor: string
     textColor: string
-    icon: React.ComponentType<{ className?: string }>
+    icon: LucideIcon
   }
 > = {
   unpaid: {

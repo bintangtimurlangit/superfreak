@@ -29,9 +29,9 @@ function extractTextFromLexical(content: any): string {
   return content.root.children.map(extractFromNode).join('\n\n')
 }
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const { slug } = params
+    const { slug } = await params
 
     const payload = await getPayload({ config })
 

@@ -10,12 +10,30 @@ services:
     depends_on:
       - mongo
       - redis
+      - superslice
     env_file:
       - .env
     environment:
       - NODE_ENV=production
       - DATABASE_URL=mongodb://mongo:27017/superfreak
       - REDIS_URL=redis://redis:6379
+      - NEXT_PUBLIC_SUPERSLICE_API_URL=http://localhost:8000
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  superslice:
+    image: ghcr.io/bintangtimurlangit/superslice:latest
+    container_name: superslice
+    ports:
+      - '8000:8000'
+    environment:
+      - SLICE_TIMEOUT=120
+      - MAX_FILE_SIZE=104857600
+      - CORS_ORIGINS=*
+    volumes:
+      - superslice_uploads:/app/uploads
+      - superslice_output:/app/output
     restart: unless-stopped
     networks:
       - app-network
@@ -46,6 +64,8 @@ services:
 volumes:
   mongo_data:
   redis_data:
+  superslice_uploads:
+  superslice_output:
 
 networks:
   app-network:

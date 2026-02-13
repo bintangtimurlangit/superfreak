@@ -14,7 +14,7 @@ type UserContextType = {
 const BetterAuthContext = createContext<UserContextType | null>(null)
 
 export function useBetterAuth(): UserContextType {
-  let context = useContext(BetterAuthContext)
+  const context = useContext(BetterAuthContext)
   if (context === null) {
     throw new Error('useBetterAuth must be used within a BetterAuthProvider')
   }
@@ -26,7 +26,7 @@ export function BetterAuthProvider({
   sessionPromise,
   userAccountsPromise,
   deviceSessionsPromise,
-  currentUserPromise
+  currentUserPromise,
 }: {
   children: ReactNode
   sessionPromise: Promise<Session | null>
@@ -35,7 +35,9 @@ export function BetterAuthProvider({
   currentUserPromise: Promise<TypedUser | null>
 }) {
   return (
-    <BetterAuthContext.Provider value={{ sessionPromise, userAccountsPromise, deviceSessionsPromise, currentUserPromise }}>
+    <BetterAuthContext.Provider
+      value={{ sessionPromise, userAccountsPromise, deviceSessionsPromise, currentUserPromise }}
+    >
       {children}
     </BetterAuthContext.Provider>
   )

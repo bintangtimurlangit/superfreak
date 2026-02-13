@@ -1,7 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, Loader2, CreditCard, Smartphone, Building2 } from 'lucide-react'
+import {
+  ChevronRight,
+  Loader2,
+  CreditCard,
+  Smartphone,
+  Building2,
+  type LucideIcon,
+} from 'lucide-react'
 import Button from '@/components/ui/Button'
 import type { UploadedFile } from './UploadStep'
 import Script from 'next/script'
@@ -18,7 +25,7 @@ interface PaymentMethodOption {
   id: PaymentMethod
   title: string
   description: string
-  icon: React.ElementType
+  icon: LucideIcon
 }
 
 const paymentMethods: PaymentMethodOption[] = [

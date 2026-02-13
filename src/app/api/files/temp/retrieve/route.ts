@@ -24,11 +24,12 @@ export async function POST(request: NextRequest) {
         })
 
         if (tempFile && tempFile.data) {
+          const data = tempFile.data as any
           files.push({
             id: fileId,
-            fileData: tempFile.data.fileData,
-            fileName: tempFile.data.fileName,
-            fileSize: tempFile.data.fileSize,
+            fileData: data.fileData,
+            fileName: data.fileName,
+            fileSize: data.fileSize,
           })
         }
       } catch (error) {

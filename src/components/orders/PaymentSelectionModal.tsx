@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CreditCard, Smartphone, Building2, X, Loader2 } from 'lucide-react'
+import { CreditCard, Smartphone, Building2, X, Loader2, type LucideIcon } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Script from 'next/script'
 
@@ -19,7 +19,7 @@ interface PaymentMethodOption {
   id: PaymentMethod
   title: string
   description: string
-  icon: React.ElementType
+  icon: LucideIcon
 }
 
 const paymentMethods: PaymentMethodOption[] = [
