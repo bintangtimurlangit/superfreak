@@ -40,18 +40,18 @@ async function getResponseBody(response: Response): Promise<unknown> {
 /** Context for dynamic routes (e.g. { params: Promise<{ slug: string }> }) */
 export type ApiRouteContext = { params: Promise<Record<string, string | string[] | undefined>> }
 
-/** Request type for route handlers (NextRequest or Request) */
+/** Request type for route handlers - Next.js App Router always passes NextRequest */
 export type ApiRequest = NextRequest | Request
 
 type RouteHandlerWithContext = (
-  request: ApiRequest,
+  request: NextRequest,
   context: ApiRouteContext,
 ) => Promise<Response | NextResponse>
-type RouteHandlerNoContext = (request: ApiRequest) => Promise<Response | NextResponse>
+type RouteHandlerNoContext = (request: NextRequest) => Promise<Response | NextResponse>
 
 export function withApiLogger<C extends ApiRouteContext>(
-  handler: (request: ApiRequest, context: C) => Promise<Response | NextResponse>,
-): (request: ApiRequest, context: C) => Promise<Response | NextResponse>
+  handler: (request: NextRequest, context: C) => Promise<Response | NextResponse>,
+): (request: NextRequest, context: C) => Promise<Response | NextResponse>
 export function withApiLogger(
   handler: RouteHandlerNoContext,
 ): RouteHandlerNoContext
@@ -68,7 +68,9 @@ export function withApiLogger(
     const method = request.method
 
     try {
-      const response = await handler(request, context as ApiRouteContext)
+      const response = await (
+        handler as (req: ApiRequest, ctx?: ApiRouteContext) => Promise<Response | NextResponse>
+      )(request, context as ApiRouteContext)
       const durationMs = Date.now() - start
       const status = response.status
       const responseBody = response.body ? await getResponseBody(response) : undefined
