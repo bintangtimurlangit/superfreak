@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function uploadProfileImage(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -86,4 +87,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

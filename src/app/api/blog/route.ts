@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Public Blog Posts API
@@ -14,7 +15,7 @@ import config from '@payload-config'
  *   - search: Search in title and content
  */
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogger(async function getBlogPosts(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
@@ -84,4 +85,4 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

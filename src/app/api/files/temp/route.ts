@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
+import { withApiLogger } from '@/lib/api-logger'
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB
 const TEMP_EXPIRY_HOURS = 24
@@ -16,7 +17,7 @@ interface TempFileResponse {
  * Uploads files to Payload's user-files collection via REST API
  * Files are stored with temp prefix and can be finalized later
  */
-export async function POST(req: NextRequest) {
+export const POST = withApiLogger(async function uploadTempFiles(req: NextRequest) {
   try {
     const formData = await req.formData()
     const files = formData.getAll('files') as File[]
@@ -96,4 +97,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

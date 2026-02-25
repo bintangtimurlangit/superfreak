@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+export const DELETE = withApiLogger(async function deleteUserAddress(
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> },
+) {
   const params = await props.params
 
   try {
@@ -45,4 +49,4 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ id
       { status: 500 },
     )
   }
-}
+})

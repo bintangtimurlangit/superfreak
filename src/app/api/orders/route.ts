@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
 import { NextRequest } from 'next/server'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function GET() {
+export const GET = withApiLogger(async function getOrders() {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -42,9 +43,9 @@ export async function GET() {
       { status: 500 },
     )
   }
-}
+})
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function createOrder(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -84,9 +85,9 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withApiLogger(async function deleteOrders(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -141,4 +142,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

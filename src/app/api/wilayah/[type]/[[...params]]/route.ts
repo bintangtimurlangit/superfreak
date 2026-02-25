@@ -1,6 +1,7 @@
 import { cacheGet, cacheSet } from '@/lib/redis'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function GET(
+export const GET = withApiLogger(async function getWilayah(
   request: Request,
   props: { params: Promise<{ type: string; params?: string[] }> },
 ) {
@@ -59,4 +60,4 @@ export async function GET(
     console.error(`Error fetching ${type}:`, error)
     return Response.json({ error: `Failed to fetch ${type}` }, { status: 500 })
   }
-}
+})

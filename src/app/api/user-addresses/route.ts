@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function GET(request: NextRequest) {
+export const GET = withApiLogger(async function getUserAddresses(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -33,9 +34,9 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching addresses:', error)
     return NextResponse.json({ error: 'Failed to fetch addresses' }, { status: 500 })
   }
-}
+})
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function createUserAddress(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -70,4 +71,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

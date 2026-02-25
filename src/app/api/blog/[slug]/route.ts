@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Get Single Blog Post by Slug
@@ -29,7 +30,10 @@ function extractTextFromLexical(content: any): string {
   return content.root.children.map(extractFromNode).join('\n\n')
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+export const GET = withApiLogger(async function getBlogPostBySlug(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
   try {
     const { slug } = await params
 
@@ -86,4 +90,4 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       { status: 500 },
     )
   }
-}
+})

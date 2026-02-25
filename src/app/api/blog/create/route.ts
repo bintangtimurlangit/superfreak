@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import crypto from 'crypto'
+import { withApiLogger } from '@/lib/api-logger'
 
 // Verify API key with constant-time comparison to prevent timing attacks
 function verifyApiKey(providedKey: string | null): boolean {
@@ -79,7 +80,7 @@ async function downloadAndUploadImage(
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function createBlogPost(request: NextRequest) {
   try {
     // Extract and verify API key from Authorization header
     const authHeader = request.headers.get('authorization')
@@ -300,4 +301,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import midtransClient from 'midtrans-client'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Midtrans Payment Notification Handler
  * Handles payment status updates from Midtrans webhook
  * Reference: https://docs.midtrans.com/en/after-payment/http-notification
  */
-export async function POST(req: NextRequest) {
+export const POST = withApiLogger(async function midtransNotification(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
     const notification = await req.json()
@@ -131,4 +132,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

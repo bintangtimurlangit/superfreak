@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withApiLogger(async function getOrder(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -42,9 +46,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       { status: 500 },
     )
   }
-}
+})
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withApiLogger(async function updateOrder(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -112,9 +119,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 500 },
     )
   }
-}
+})
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = withApiLogger(async function deleteOrder(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -150,4 +160,4 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
       { status: 500 },
     )
   }
-}
+})

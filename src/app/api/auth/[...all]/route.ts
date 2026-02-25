@@ -1,5 +1,6 @@
 import { toNextJsHandler } from 'better-auth/next-js'
 import { getPayload } from '@/lib/payload'
+import { withApiLogger } from '@/lib/api-logger'
 
 let authHandler: ReturnType<typeof toNextJsHandler> | null = null
 
@@ -32,7 +33,7 @@ async function initAuthHandler() {
 
 const handlerPromise = initAuthHandler()
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   try {
     const handler = await handlerPromise
     return handler.POST(request)
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   try {
     const handler = await handlerPromise
     return handler.GET(request)
@@ -57,3 +58,6 @@ export async function GET(request: Request) {
     })
   }
 }
+
+export const POST = withApiLogger(postHandler)
+export const GET = withApiLogger(getHandler)

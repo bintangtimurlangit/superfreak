@@ -1,4 +1,6 @@
-export async function GET(request: Request) {
+import { withApiLogger } from '@/lib/api-logger'
+
+export const GET = withApiLogger(async function searchDestination(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query')
   const limit = searchParams.get('limit') || '20'
@@ -65,4 +67,4 @@ export async function GET(request: Request) {
       { status: 500 },
     )
   }
-}
+})

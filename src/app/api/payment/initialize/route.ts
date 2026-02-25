@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import midtransClient from 'midtrans-client'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function POST(req: NextRequest) {
+export const POST = withApiLogger(async function initializePayment(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
     const { orderId, paymentMethod } = await req.json()
@@ -120,4 +121,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

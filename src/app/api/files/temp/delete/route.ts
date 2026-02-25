@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Delete temporary files after they've been converted to permanent user-files
  * Used by the finalizeOrderFiles hook
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function deleteTempFiles(request: NextRequest) {
   try {
     const payload = await getPayload()
     const { fileIds } = await request.json()
@@ -46,4 +47,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

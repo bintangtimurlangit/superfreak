@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Convert temporary uploaded files to permanent user-files records
  * POST /api/files/finalize
  */
-export async function POST(req: NextRequest) {
+export const POST = withApiLogger(async function finalizeFiles(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
     const { tempFiles } = await req.json()
@@ -57,4 +58,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

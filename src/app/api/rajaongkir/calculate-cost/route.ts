@@ -1,6 +1,7 @@
 import { getCachedShippingCost, setCachedShippingCost } from '@/lib/redis'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function POST(request: Request) {
+export const POST = withApiLogger(async function calculateShippingCost(request: Request) {
   try {
     const body = await request.json()
     const { destinationId, weight, courier } = body
@@ -127,4 +128,4 @@ export async function POST(request: Request) {
       { status: 500 },
     )
   }
-}
+})

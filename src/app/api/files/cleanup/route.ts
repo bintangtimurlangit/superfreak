@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
+import { withApiLogger } from '@/lib/api-logger'
 
-export async function GET(req: NextRequest) {
+export const GET = withApiLogger(async function cleanupFiles(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
@@ -59,4 +60,4 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     )
   }
-}
+})

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { headers } from 'next/headers'
 import { getMidtransCore } from '@/lib/midtrans'
+import { withApiLogger } from '@/lib/api-logger'
 
 /**
  * Verify payment status with Midtrans after user returns from payment
  * This is a secure backend check - only called when user returns from Midtrans
  * The actual payment status is verified with Midtrans API, not from client
  */
-export async function POST(request: NextRequest) {
+export const POST = withApiLogger(async function verifyPayment(request: NextRequest) {
   try {
     const payload = await getPayload()
     const requestHeaders = await headers()
@@ -136,4 +137,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-}
+})
