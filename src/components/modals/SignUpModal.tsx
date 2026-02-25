@@ -83,7 +83,6 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
           password: password,
           name: name.trim(),
           callbackURL: '/',
-          role: 'user',
           phoneNumber: '',
           image: '',
         },
