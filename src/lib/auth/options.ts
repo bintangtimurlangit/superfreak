@@ -55,11 +55,17 @@ export const betterAuthOptions = {
     autoSignInAfterVerification: true,
     async sendVerificationEmail({ user, url }: { user: any; url: string }) {
       const { sendVerificationEmail } = await import('@/lib/email/send')
-      await sendVerificationEmail({
+      const result = await sendVerificationEmail({
         to: user.email,
         url,
         userName: user.name,
       })
+      if (!result.success) {
+        console.error('[Auth] Verification email failed:', result.error)
+        throw new Error(
+          result.error instanceof Error ? result.error.message : 'Failed to send verification email',
+        )
+      }
     },
   },
   plugins: betterAuthPlugins,
