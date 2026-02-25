@@ -37,16 +37,30 @@ async function getResponseBody(response: Response): Promise<unknown> {
   }
 }
 
-export type ApiRouteContext = { params?: Promise<Record<string, string | undefined>> }
+/** Context for dynamic routes (e.g. { params: Promise<{ slug: string }> }) */
+export type ApiRouteContext = { params: Promise<Record<string, string | string[] | undefined>> }
 
 /** Request type for route handlers (NextRequest or Request) */
 export type ApiRequest = NextRequest | Request
 
-export function withApiLogger<
-  C extends ApiRouteContext,
-  H extends (request: ApiRequest, context?: C) => Promise<Response | NextResponse>,
->(handler: H): H {
-  return (async (request: ApiRequest, context?: C) => {
+type RouteHandlerWithContext = (
+  request: ApiRequest,
+  context: ApiRouteContext,
+) => Promise<Response | NextResponse>
+type RouteHandlerNoContext = (request: ApiRequest) => Promise<Response | NextResponse>
+
+export function withApiLogger<C extends ApiRouteContext>(
+  handler: (request: ApiRequest, context: C) => Promise<Response | NextResponse>,
+): (request: ApiRequest, context: C) => Promise<Response | NextResponse>
+export function withApiLogger(
+  handler: RouteHandlerNoContext,
+): RouteHandlerNoContext
+export function withApiLogger(
+  handler:
+    | RouteHandlerWithContext
+    | RouteHandlerNoContext,
+): RouteHandlerWithContext | RouteHandlerNoContext {
+  return (async (request: ApiRequest, context?: ApiRouteContext) => {
     const start = Date.now()
     const url = 'url' in request ? request.url : (request as Request).url
     const urlObj = new URL(url)
@@ -54,7 +68,7 @@ export function withApiLogger<
     const method = request.method
 
     try {
-      const response = await handler(request, context)
+      const response = await handler(request, context as ApiRouteContext)
       const durationMs = Date.now() - start
       const status = response.status
       const responseBody = response.body ? await getResponseBody(response) : undefined
@@ -87,5 +101,5 @@ export function withApiLogger<
 
       throw error
     }
-  }) as H
+  }) as RouteHandlerWithContext | RouteHandlerNoContext
 }
