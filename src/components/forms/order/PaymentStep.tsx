@@ -122,7 +122,7 @@ export default function PaymentStep({ onBack, orderId }: PaymentStepProps) {
   return (
     <>
       <Script
-        src={`https://app.${process.env.NODE_ENV === 'production' ? '' : 'sandbox.'}midtrans.com/snap/snap.js`}
+        src={`https://app.${process.env.NEXT_PUBLIC_MIDTRANS_USE_SANDBOX === 'true' || process.env.NODE_ENV !== 'production' ? 'sandbox.' : ''}midtrans.com/snap/snap.js`}
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
         strategy="lazyOnload"
       />

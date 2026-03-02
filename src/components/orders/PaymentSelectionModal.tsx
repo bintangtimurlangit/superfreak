@@ -127,7 +127,7 @@ export default function PaymentSelectionModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <Script
-        src={`https://app.${process.env.NODE_ENV === 'production' ? '' : 'sandbox.'}midtrans.com/snap/snap.js`}
+        src={`https://app.${process.env.NEXT_PUBLIC_MIDTRANS_USE_SANDBOX === 'true' || process.env.NODE_ENV !== 'production' ? 'sandbox.' : ''}midtrans.com/snap/snap.js`}
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
         strategy="afterInteractive"
       />
