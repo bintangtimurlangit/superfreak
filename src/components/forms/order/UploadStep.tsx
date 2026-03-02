@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Box, Trash2, ChevronRight, ArrowUp, Shield, Minus, Plus, AlertCircle } from 'lucide-react'
+import { Box, Trash2, ChevronRight, ArrowUp, Shield, Minus, Plus, AlertCircle, X } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Link from 'next/link'
 import { parseConfigurationValues } from '@/lib/validations/order'
@@ -842,6 +842,20 @@ export default function UploadStep({
                         </div>
                       )}
                     </div>
+
+                    {/* Right: Remove button for failed uploads */}
+                    {file.status === 'error' && (
+                      <div className="flex items-center flex-shrink-0">
+                        <button
+                          onClick={() => removeFile(file.id)}
+                          className="p-2 rounded-full text-[#7C7C7C] hover:bg-red-100 hover:text-red-600 transition-colors"
+                          aria-label="Remove file"
+                          title="Remove file"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Right: Controls */}
                     {(file.status === 'completed' || file.status === 'pending') && (
