@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronRight, ChevronDown, MapPin, AlertCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button'
 import { useSession } from '@/lib/auth/client'
 import type { UploadedFile } from './UploadStep'
 import AddressSelectionModal from '@/components/orders/AddressSelectionModal'
+import AddAddressModal, { type AddressForOrder } from '@/components/orders/AddAddressModal'
 import { SavedAddress } from '@/lib/types'
 
 interface Province {
@@ -95,7 +95,6 @@ export default function SummaryStep({
   onFilePricesUpdate,
   isCreatingOrder = false,
 }: SummaryStepProps) {
-  const router = useRouter()
   const { data: sessionData, isPending: sessionLoading } = useSession()
   const user = sessionData?.user || null
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
@@ -113,6 +112,7 @@ export default function SummaryStep({
   const [loadingShipping, setLoadingShipping] = useState(false)
   const [isCourierDropdownOpen, setIsCourierDropdownOpen] = useState(false)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
+  const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false)
   const courierDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close courier dropdown when clicking outside
@@ -475,6 +475,17 @@ export default function SummaryStep({
     }
   }
 
+  const handleAddAddressSuccess = (address: AddressForOrder) => {
+    const formattedAddress = { ...address } as unknown as Address
+    setDefaultAddress(formattedAddress)
+    setIsAddAddressModalOpen(false)
+    setSelectedService('')
+    setShippingCost(0)
+    if (onAddressUpdate) {
+      onAddressUpdate(formattedAddress)
+    }
+  }
+
   useEffect(() => {
     if (user?.id && provinces.length > 0) {
       fetchDefaultAddress()
@@ -664,11 +675,11 @@ export default function SummaryStep({
                     </p>
                     <button
                       type="button"
-                      onClick={() => router.push('/profile/address')}
+                      onClick={() => setIsAddAddressModalOpen(true)}
                       className="text-sm font-medium text-[#1D0DF3] hover:underline"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
-                      Go to Address Information →
+                      Add shipping address
                     </button>
                   </div>
                 </div>
@@ -917,6 +928,12 @@ export default function SummaryStep({
         onClose={() => setIsAddressModalOpen(false)}
         onSelect={handleAddressSelect}
         selectedAddressId={defaultAddress?.id}
+      />
+
+      <AddAddressModal
+        isOpen={isAddAddressModalOpen}
+        onClose={() => setIsAddAddressModalOpen(false)}
+        onSuccess={handleAddAddressSuccess}
       />
     </div>
   )
