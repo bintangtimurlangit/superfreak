@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   payload:
     build:
@@ -72,3 +70,13 @@ services:
       - mongo
     networks:
       - app-network
+
+volumes:
+  mongo_data:
+  redis_data:
+  superslice_uploads:
+  superslice_output:
+
+networks:
+  app-network:
+    driver: bridge
