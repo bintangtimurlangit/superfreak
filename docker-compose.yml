@@ -17,7 +17,8 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=mongodb://mongo:27017/superfreak
       - REDIS_URL=redis://redis:6379
-      - NEXT_PUBLIC_SUPERSLICE_API_URL=http://localhost:8000
+      # Server-side only: Next.js API /api/slice proxies to this URL (not exposed to browser)
+      - SUPERSLICE_API_URL=http://superslice:8000
     restart: unless-stopped
     networks:
       - app-network
@@ -25,8 +26,6 @@ services:
   superslice:
     image: ghcr.io/bintangtimurlangit/superslice:latest
     container_name: superslice
-    ports:
-      - '8000:8000'
     environment:
       - SLICE_TIMEOUT=120
       - MAX_FILE_SIZE=104857600
@@ -40,8 +39,6 @@ services:
 
   mongo:
     image: mongo:latest
-    ports:
-      - '27017:27017'
     command:
       - --storageEngine=wiredTiger
     volumes:
@@ -52,8 +49,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - '6379:6379'
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -61,12 +56,19 @@ services:
     networks:
       - app-network
 
-volumes:
-  mongo_data:
-  redis_data:
-  superslice_uploads:
-  superslice_output:
-
-networks:
-  app-network:
-    driver: bridge
+  # Mongo Express: DB admin UI. Do NOT expose 8081 to the public (0.0.0.0).
+  # - Local dev: use "ports: - '127.0.0.1:8081:8081'" then open http://localhost:8081
+  # - Production: use 127.0.0.1:8081:8081 and access via SSH tunnel (ssh -L 8081:127.0.0.1:8081 user@server), or put behind Cloudflare Zero Trust with auth
+  mongo-express:
+    image: mongo-express
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: supersecret123
+    ports:
+      - "127.0.0.1:8081:8081"  # bind to localhost only; use SSH tunnel or Zero Trust to access remotely
+    depends_on:
+      - mongo
+    networks:
+      - app-network

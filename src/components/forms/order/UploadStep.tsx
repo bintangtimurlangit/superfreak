@@ -136,7 +136,8 @@ export default function UploadStep({
     file: File | string,
     config: ModelConfiguration,
   ) => {
-    const apiUrl = process.env.NEXT_PUBLIC_SUPERSLICE_API_URL || 'http://localhost:8000'
+    // Call Next.js API route (server-side proxies to SuperSlice; no NEXT_PUBLIC_ needed)
+    const sliceApiUrl = '/api/slice'
 
     // Convert data URL to File if needed
     let fileObject: File
@@ -151,7 +152,6 @@ export default function UploadStep({
     }
 
     console.log(`[SuperSlice] uploadToBackend called for ${fileObject.name}`)
-    console.log(`[SuperSlice] API URL: ${apiUrl}`)
 
     // Only process STL and 3MF files for now (backend limitation)
     const extension = '.' + fileObject.name.split('.').pop()?.toLowerCase()
@@ -200,7 +200,7 @@ export default function UploadStep({
       formData.append('wall_count', wallCount.toString())
       formData.append('filament_type', filamentType)
 
-      console.log(`[SuperSlice] Sending request to ${apiUrl}/slice`)
+      console.log(`[SuperSlice] Sending request to ${sliceApiUrl}`)
       console.log(`[SuperSlice] Parameters:`, {
         layer_height: layerHeight,
         infill_density: infillDensity,
@@ -216,8 +216,8 @@ export default function UploadStep({
         ),
       )
 
-      // Call the backend API
-      const response = await fetch(`${apiUrl}/slice`, {
+      // Call Next.js API route (server proxies to SuperSlice internally)
+      const response = await fetch(sliceApiUrl, {
         method: 'POST',
         body: formData,
       })
