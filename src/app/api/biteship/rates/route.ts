@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
 import { withApiLogger } from '@/lib/api-logger'
 
 const BITESHIP_API_URL = 'https://api.biteship.com/v1/rates/couriers'
+
+interface BiteshipPricingItem {
+  courier_name?: string
+  courier_code?: string
+  courier_service_name?: string
+  courier_service_code?: string
+  description?: string
+  price?: number
+  shipping_fee?: number
+  duration?: string
+  shipment_duration_range?: string
+  shipment_duration_unit?: string
+}
 
 export const POST = withApiLogger(async function biteshipRates(req: NextRequest) {
   try {
@@ -28,10 +40,11 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
       )
     }
 
-    const payload = await getPayload({ config: config.default })
+    const payload = await getPayload()
     const courierSettings = await payload.findGlobal({ slug: 'courier-settings' })
+    const settings = courierSettings as { warehousePostalCode?: string } | null
     const originPostalCode =
-      (courierSettings as any)?.warehousePostalCode || process.env.BITESHIP_ORIGIN_POSTAL_CODE || '12440'
+      settings?.warehousePostalCode || process.env.BITESHIP_ORIGIN_POSTAL_CODE || '12440'
 
     const adjustedWeight = weight < 300 ? weight + 300 : weight
 
@@ -78,7 +91,7 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
       )
     }
 
-    const dataFormatted = data.pricing.map((p: any) => {
+    const dataFormatted = (data.pricing as BiteshipPricingItem[]).map((p) => {
       const etd =
         p.duration ||
         (p.shipment_duration_range
