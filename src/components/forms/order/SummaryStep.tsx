@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronRight, ChevronDown, MapPin, AlertCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { useSession } from '@/lib/auth/client'
@@ -108,12 +108,21 @@ export default function SummaryStep({
   const [selectedCourier, setSelectedCourier] = useState<string>('')
   const [selectedService, setSelectedService] = useState<string>('')
   const [availableCouriers, setAvailableCouriers] = useState<string[]>([])
-  const [shippingServices, setShippingServices] = useState<any[]>([])
+  const [allShippingServices, setAllShippingServices] = useState<Array<{ courierCode?: string; service: string; cost: number; etd: string; code: string }>>([])
   const [loadingShipping, setLoadingShipping] = useState(false)
   const [isCourierDropdownOpen, setIsCourierDropdownOpen] = useState(false)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false)
   const courierDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Services for the currently selected courier (no extra API call when changing courier)
+  const shippingServices = useMemo(
+    () =>
+      allShippingServices.filter(
+        (s) => (s.courierCode || '').toLowerCase() === selectedCourier.toLowerCase(),
+      ),
+    [allShippingServices, selectedCourier],
+  )
 
   // Close courier dropdown when clicking outside
   useEffect(() => {
@@ -264,71 +273,50 @@ export default function SummaryStep({
     fetchCourierSettings()
   }, [selectedCourier])
 
-  // Calculate shipping cost when address, weight, and courier are available
+  // Fetch shipping rates once for all enabled couriers (by origin + destination + weight)
   useEffect(() => {
     const calculateShipping = async () => {
-      if (!defaultAddress || !totalWeight || !selectedCourier) {
-        setShippingServices([])
+      if (!defaultAddress || !totalWeight || availableCouriers.length === 0) {
+        setAllShippingServices([])
         setShippingCost(0)
         return
       }
 
-      // Use postal code for Biteship shipping calculation
       const postalCode = defaultAddress.postalCode
       if (!postalCode || String(postalCode).replace(/\D/g, '').length !== 5) {
-        console.warn('Address must have a valid 5-digit postal code for shipping')
+        setAllShippingServices([])
         return
       }
 
       setLoadingShipping(true)
       try {
         const { calculateShippingCost, calculateShippingWeight } = await import('@/lib/biteship')
-
-        // Calculate adjusted weight (add 300g if < 300g)
         const adjustedWeight = calculateShippingWeight(totalWeight)
 
+        // One API call returns all services for all couriers (JNE, JNT, SICEPAT, etc.)
         const result = await calculateShippingCost(
           String(postalCode).replace(/\D/g, '').slice(0, 5),
           adjustedWeight,
-          selectedCourier,
+          availableCouriers,
         )
 
-        console.log('Frontend received result:', result)
-        console.log('Result.data:', result.data)
-
         if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-          // Filter out heavy cargo services for shipments under 10kg
           const heavyCargoServices = ['JTR', 'GOKIL']
-          const filteredServices =
+          const filtered =
             adjustedWeight < 10000
               ? result.data.filter((service) => {
-                  // Check if service code contains any heavy cargo keywords
-                  const serviceCode = service.service.toUpperCase()
+                  const serviceCode = (service.service || '').toUpperCase()
                   return !heavyCargoServices.some((keyword) => serviceCode.includes(keyword))
                 })
               : result.data
 
-          setShippingServices(filteredServices)
-          // Auto-select first service if none selected
-          const firstService = filteredServices[0]
-          if (!selectedService && firstService) {
-            setSelectedService(firstService.service)
-            setShippingCost(firstService.cost)
-            // Notify parent of auto-selected shipping
-            if (onShippingUpdate) {
-              onShippingUpdate({
-                courier: selectedCourier,
-                service: firstService.service,
-                estimatedDelivery: firstService.etd,
-              })
-            }
-          }
+          setAllShippingServices(filtered)
         } else {
-          console.warn('⚠️ No services data in response:', result)
+          setAllShippingServices([])
         }
       } catch (error) {
         console.error('Error calculating shipping cost:', error)
-        setShippingServices([])
+        setAllShippingServices([])
         setShippingCost(0)
       } finally {
         setLoadingShipping(false)
@@ -336,7 +324,26 @@ export default function SummaryStep({
     }
 
     calculateShipping()
-  }, [defaultAddress, totalWeight, selectedCourier, selectedService])
+  }, [defaultAddress, totalWeight, availableCouriers])
+
+  // When user changes courier in dropdown, pick first service for that courier (no API call)
+  useEffect(() => {
+    if (allShippingServices.length === 0 || !selectedCourier) return
+    const forCourier = allShippingServices.filter(
+      (s) => (s.courierCode || '').toLowerCase() === selectedCourier.toLowerCase(),
+    )
+    const first = forCourier[0]
+    const currentValid = forCourier.some((s) => s.service === selectedService)
+    if (first && (!selectedService || !currentValid)) {
+      setSelectedService(first.service)
+      setShippingCost(first.cost)
+      onShippingUpdate?.({
+        courier: selectedCourier,
+        service: first.service,
+        estimatedDelivery: first.etd,
+      })
+    }
+  }, [selectedCourier, allShippingServices])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
+import { getCachedShippingCost, setCachedShippingCost } from '@/lib/redis'
 import { withApiLogger } from '@/lib/api-logger'
 
 const BITESHIP_API_URL = 'https://api.biteship.com/v1/rates/couriers'
@@ -20,17 +21,26 @@ interface BiteshipPricingItem {
 export const POST = withApiLogger(async function biteshipRates(req: NextRequest) {
   try {
     const body = await req.json()
-    const { destinationPostalCode, weight, courier } = body
+    const { destinationPostalCode, weight, courier, couriers: couriersBody } = body
 
-    if (!destinationPostalCode || !weight || !courier) {
+    // Support single courier or multiple (Biteship accepts comma-separated list)
+    const couriersList: string[] = Array.isArray(couriersBody)
+      ? couriersBody.map((c: string) => String(c).trim().toLowerCase()).filter(Boolean)
+      : courier
+        ? [String(courier).trim().toLowerCase()]
+        : []
+
+    if (!destinationPostalCode || !weight || couriersList.length === 0) {
       return NextResponse.json(
         {
           error: 'Missing required fields',
-          details: 'destinationPostalCode, weight, and courier are required',
+          details: 'destinationPostalCode, weight, and courier or couriers (array) are required',
         },
         { status: 400 },
       )
     }
+
+    const couriersParam = [...new Set(couriersList)].sort().join(',')
 
     const apiKey = process.env.BITESHIP_API_KEY
     if (!apiKey) {
@@ -44,9 +54,15 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
     const courierSettings = await payload.findGlobal({ slug: 'courier-settings' })
     const settings = courierSettings as { warehousePostalCode?: string } | null
     const originPostalCode =
-      settings?.warehousePostalCode || process.env.BITESHIP_ORIGIN_POSTAL_CODE || '12440'
-
+      String(settings?.warehousePostalCode || process.env.BITESHIP_ORIGIN_POSTAL_CODE || '12440').replace(/\D/g, '') || '12440'
+    const destPostal = String(destinationPostalCode).replace(/\D/g, '').slice(0, 5)
     const adjustedWeight = weight < 300 ? weight + 300 : weight
+
+    // Cache key: origin + destination + weight + couriers (e.g. "jne,jnt,sicepat")
+    const cached = await getCachedShippingCost(originPostalCode, destPostal, adjustedWeight, couriersParam)
+    if (cached && typeof cached === 'object' && Array.isArray((cached as { data?: unknown }).data)) {
+      return NextResponse.json(cached)
+    }
 
     const response = await fetch(BITESHIP_API_URL, {
       method: 'POST',
@@ -55,9 +71,9 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        origin_postal_code: Number(String(originPostalCode).replace(/\D/g, '')) || 12440,
-        destination_postal_code: Number(String(destinationPostalCode).replace(/\D/g, '')),
-        couriers: courier,
+        origin_postal_code: Number(originPostalCode) || 12440,
+        destination_postal_code: Number(destPostal),
+        couriers: couriersParam,
         items: [
           {
             name: 'Order',
@@ -98,6 +114,7 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
           ? `${p.shipment_duration_range} ${p.shipment_duration_unit || 'days'}`
           : '')
       return {
+        courierCode: (p.courier_code || '').toLowerCase(),
         name: p.courier_name || p.courier_code || '',
         code: p.courier_service_code || p.courier_code || '',
         service: p.courier_service_name || p.courier_service_code || p.courier_code || '',
@@ -107,10 +124,14 @@ export const POST = withApiLogger(async function biteshipRates(req: NextRequest)
       }
     })
 
-    return NextResponse.json({
+    const responsePayload = {
       meta: { message: 'Success', code: 200, status: 'success' },
       data: dataFormatted,
-    })
+    }
+
+    await setCachedShippingCost(originPostalCode, destPostal, adjustedWeight, couriersParam, responsePayload, 86400) // 24h
+
+    return NextResponse.json(responsePayload)
   } catch (error) {
     console.error('Biteship rates error:', error)
     return NextResponse.json(

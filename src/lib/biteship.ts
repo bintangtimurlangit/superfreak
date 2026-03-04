@@ -4,6 +4,7 @@
  */
 
 export interface ShippingService {
+  courierCode?: string
   name: string
   code: string
   service: string
@@ -22,24 +23,31 @@ export interface ShippingCostResponse {
 }
 
 /**
- * Calculate shipping cost via Biteship (origin/destination by postal code).
+ * Calculate shipping cost via Biteship for one or more couriers (by origin/destination postal code).
+ * One request returns all services for all requested couriers.
  * @param destinationPostalCode - 5-digit destination postal code (from address)
  * @param weight - Total weight in grams
- * @param courier - Courier code (jne, jnt, sicepat, etc.)
+ * @param couriers - One courier code or array (e.g. ["jne", "jnt", "sicepat"])
  */
 export async function calculateShippingCost(
   destinationPostalCode: string,
   weight: number,
-  courier: string,
+  couriers: string | string[],
 ): Promise<ShippingCostResponse> {
+  const body: { destinationPostalCode: string; weight: number; courier?: string; couriers?: string[] } = {
+    destinationPostalCode: String(destinationPostalCode).replace(/\D/g, '').slice(0, 5),
+    weight,
+  }
+  if (Array.isArray(couriers)) {
+    body.couriers = couriers.map((c) => String(c).trim().toLowerCase()).filter(Boolean)
+  } else {
+    body.courier = String(couriers).trim().toLowerCase()
+  }
+
   const response = await fetch('/api/biteship/rates', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      destinationPostalCode: String(destinationPostalCode).replace(/\D/g, '').slice(0, 5),
-      weight,
-      courier,
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
