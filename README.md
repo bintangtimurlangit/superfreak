@@ -63,6 +63,8 @@ Copy `.env.example` to `.env` and configure the following:
 - `MIDTRANS_CLIENT_KEY` - Midtrans client key
 - `MIDTRANS_SERVER_KEY` - Midtrans server key
 - `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` - Midtrans public client key
+- `MIDTRANS_USE_SANDBOX` - Set to `true` on staging/VPS when using Midtrans sandbox (fake pay). Ensures verify, notification, and initialize all use sandbox API; omit or `false` for production.
+- `NEXT_PUBLIC_MIDTRANS_USE_SANDBOX` - Set to `true` so the frontend loads the sandbox Snap script (must match backend).
 
 ### Shipping
 - `RAJAONGKIR_SHIPPING_COST_API` - RajaOngkir cost API key

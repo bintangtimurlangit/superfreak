@@ -1,8 +1,13 @@
 import midtransClient from 'midtrans-client'
 
+/** Use sandbox when MIDTRANS_USE_SANDBOX=true (e.g. staging). Production when unset or false. */
+function isMidtransProduction(): boolean {
+  return process.env.MIDTRANS_USE_SANDBOX !== 'true'
+}
+
 export function getMidtransSnap() {
   return new midtransClient.Snap({
-    isProduction: process.env.NODE_ENV === 'production',
+    isProduction: isMidtransProduction(),
     serverKey: process.env.MIDTRANS_SERVER_KEY,
     clientKey: process.env.MIDTRANS_CLIENT_KEY,
   })
@@ -10,7 +15,7 @@ export function getMidtransSnap() {
 
 export function getMidtransCore() {
   return new midtransClient.CoreApi({
-    isProduction: process.env.NODE_ENV === 'production',
+    isProduction: isMidtransProduction(),
     serverKey: process.env.MIDTRANS_SERVER_KEY,
     clientKey: process.env.MIDTRANS_CLIENT_KEY,
   })
