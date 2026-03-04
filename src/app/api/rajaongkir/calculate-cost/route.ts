@@ -83,15 +83,29 @@ export const POST = withApiLogger(async function calculateShippingCost(request: 
 
     if (!response.ok) {
       const errorText = await response.text()
+      let details = errorText
+      try {
+        const errJson = JSON.parse(errorText)
+        if (errJson.meta?.message) details = errJson.meta.message
+      } catch {
+        // keep errorText as details
+      }
       console.error('RajaOngkir Cost API Error:', {
         status: response.status,
         error: errorText,
+        origin: warehouseId,
+        destination: destinationId,
+        courier,
       })
       return Response.json(
         {
           error: 'RajaOngkir API request failed',
-          details: errorText,
+          details,
           status: response.status,
+          hint:
+            response.status === 400
+              ? 'Check: RAJAONGKIR_SHIPPING_COST_API key, Courier Settings warehouseId (origin), and address rajaOngkirDestinationId (from Komerce search).'
+              : undefined,
         },
         { status: response.status },
       )

@@ -273,21 +273,25 @@ export default function SummaryStep({
         return
       }
 
-      // Check if address has RajaOngkir destination ID
-      const rajaOngkirId = (defaultAddress as any).rajaOngkirDestinationId
-      if (!rajaOngkirId) {
-        console.warn('Address does not have RajaOngkir destination ID')
+      // Use postal code for Biteship shipping calculation
+      const postalCode = defaultAddress.postalCode
+      if (!postalCode || String(postalCode).replace(/\D/g, '').length !== 5) {
+        console.warn('Address must have a valid 5-digit postal code for shipping')
         return
       }
 
       setLoadingShipping(true)
       try {
-        const { calculateShippingCost, calculateShippingWeight } = await import('@/lib/rajaongkir')
+        const { calculateShippingCost, calculateShippingWeight } = await import('@/lib/biteship')
 
         // Calculate adjusted weight (add 300g if < 300g)
         const adjustedWeight = calculateShippingWeight(totalWeight)
 
-        const result = await calculateShippingCost(rajaOngkirId, adjustedWeight, selectedCourier)
+        const result = await calculateShippingCost(
+          String(postalCode).replace(/\D/g, '').slice(0, 5),
+          adjustedWeight,
+          selectedCourier,
+        )
 
         console.log('Frontend received result:', result)
         console.log('Result.data:', result.data)
@@ -825,8 +829,8 @@ export default function SummaryStep({
                   </div>
                 ) : selectedCourier ? (
                   <div className="text-sm text-orange-600 py-2">
-                    Shipping cost unavailable. Please ensure your address has complete location
-                    data.
+                    Shipping cost unavailable. Please ensure your address has a valid 5-digit postal
+                    code.
                   </div>
                 ) : (
                   <div className="text-sm text-[#7C7C7C] py-2">

@@ -186,8 +186,11 @@ export async function calculateShippingCost(
   })
 
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to calculate shipping cost')
+    const error = await response.json().catch(() => ({ error: 'Unknown error', details: null, hint: null }))
+    const parts = [error.error || 'Failed to calculate shipping cost']
+    if (error.details) parts.push(String(error.details))
+    if (error.hint) parts.push(String(error.hint))
+    throw new Error(parts.join(' — '))
   }
 
   return response.json()

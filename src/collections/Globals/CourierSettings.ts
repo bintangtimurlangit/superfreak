@@ -5,7 +5,7 @@ export const CourierSettings: GlobalConfig = {
   label: 'Courier Settings',
   admin: {
     group: 'Settings',
-    description: 'Configure shipping couriers and warehouse settings for RajaOngkir',
+    description: 'Configure shipping couriers and warehouse (Biteship)',
   },
   access: {
     read: () => true,
@@ -22,14 +22,25 @@ export const CourierSettings: GlobalConfig = {
           description: 'Configure your warehouse location for shipping calculations',
           fields: [
             {
-              name: 'warehouseId',
-              type: 'number',
-              label: 'Warehouse RajaOngkir ID',
-              required: true,
-              defaultValue: 73633,
+              name: 'warehousePostalCode',
+              type: 'text',
+              label: 'Warehouse Postal Code (Biteship)',
               admin: {
                 description:
-                  'Your warehouse location ID from RajaOngkir (origin for shipping calculations)',
+                  'Origin postal code for Biteship (e.g. 12440). If empty, BITESHIP_ORIGIN_POSTAL_CODE env is used.',
+                placeholder: '12440',
+              },
+              validate: (val) => {
+                if (val && String(val).replace(/\D/g, '').length !== 5) return 'Must be 5 digits'
+                return true
+              },
+            },
+            {
+              name: 'warehouseId',
+              type: 'number',
+              label: 'Warehouse RajaOngkir ID (legacy)',
+              admin: {
+                description: 'Kept for reference; Biteship uses warehouse postal code above.',
                 placeholder: '73633',
               },
             },
