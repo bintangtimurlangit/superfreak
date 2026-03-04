@@ -40,6 +40,11 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Optional: scripts + node_modules for one-off tools (e.g. test-midtrans-verify)
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+
 USER nextjs
 
 EXPOSE 3000
