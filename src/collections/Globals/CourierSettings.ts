@@ -30,7 +30,7 @@ export const CourierSettings: GlobalConfig = {
                   'Origin postal code for Biteship (e.g. 12440). If empty, BITESHIP_ORIGIN_POSTAL_CODE env is used.',
                 placeholder: '12440',
               },
-              validate: (val) => {
+              validate: (val: string | null | undefined) => {
                 if (val && String(val).replace(/\D/g, '').length !== 5) return 'Must be 5 digits'
                 return true
               },
