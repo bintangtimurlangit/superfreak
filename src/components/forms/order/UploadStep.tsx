@@ -625,7 +625,7 @@ export default function UploadStep({
           ) : (
             // Full layout when no files uploaded yet
             <div
-              className={`rounded-[12px] border border-dashed p-8 flex flex-col items-center justify-center text-center transition-colors min-h-[480px] ${
+              className={`cursor-pointer rounded-[12px] border border-dashed p-8 flex flex-col items-center justify-center text-center transition-colors min-h-[480px] ${
                 isDragging ? 'border-[#1D0DF3] bg-[#1D0DF3]/5' : 'border-[#DCDCDC] bg-[#F8F8F8]'
               }`}
               onDragOver={handleDragOver}
@@ -939,7 +939,7 @@ export default function UploadStep({
                 </>
               ) : (
                 <>
-                  Proceed to Order Summary
+                  Review Model
                   <ChevronRight className="h-4 w-4" />
                 </>
               )}

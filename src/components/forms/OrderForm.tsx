@@ -3,16 +3,19 @@
 import { useState, useEffect } from 'react'
 import StepsProgress from '@/components/ui/StepsProgress'
 import UploadStep, { type UploadedFile, type ModelConfiguration } from './order/UploadStep'
+import ReviewStep from './order/ReviewStep'
 import SummaryStep, { type FilePrice } from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
 import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
 import { useSession } from '@/lib/auth/client'
+import { sliceFile } from '@/lib/slice'
 
 const steps = [
   { id: 1, name: 'Upload Model' },
-  { id: 2, name: 'Order Summary' },
-  { id: 3, name: 'Payment' },
+  { id: 2, name: 'Review Model' },
+  { id: 3, name: 'Order Summary' },
+  { id: 4, name: 'Payment' },
 ]
 
 export default function OrderForm() {
@@ -87,34 +90,64 @@ export default function OrderForm() {
     setConfigureModalOpen(true)
   }
 
-  const handleSaveConfiguration = (fileId: string, configuration: ModelConfiguration) => {
-    setUploadedFiles((prev) =>
-      prev.map((file) => {
-        if (file.id === fileId) {
-          const configChanged =
-            file.configuration?.material !== configuration.material ||
-            file.configuration?.layerHeight !== configuration.layerHeight ||
-            file.configuration?.infill !== configuration.infill ||
-            file.configuration?.wallCount !== configuration.wallCount
+  const handleReSliceFile = (fileId: string, fileObject: File, configuration: ModelConfiguration) => {
+    sliceFile(fileObject, {
+      material: configuration.material,
+      layerHeight: configuration.layerHeight,
+      infill: configuration.infill,
+      wallCount: configuration.wallCount,
+    })
+      .then((statistics) => {
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, statistics, status: 'completed' as const } : f,
+          ),
+        )
+      })
+      .catch((err) => {
+        console.error('Re-slice failed:', err)
+        alert(
+          'Failed to re-calculate weight. You can go back to Upload step to change settings and process again.',
+        )
+      })
+  }
 
+  const handleSaveConfiguration = (fileId: string, configuration: ModelConfiguration) => {
+    const file = uploadedFiles.find((f) => f.id === fileId)
+    const configChanged =
+      file &&
+      (file.configuration?.material !== configuration.material ||
+        file.configuration?.layerHeight !== configuration.layerHeight ||
+        file.configuration?.infill !== configuration.infill ||
+        file.configuration?.wallCount !== configuration.wallCount)
+
+    setUploadedFiles((prev) =>
+      prev.map((f) => {
+        if (f.id === fileId) {
           return {
-            ...file,
+            ...f,
             configuration: {
-              ...file.configuration,
+              ...f.configuration,
               ...configuration,
             },
-            statistics: configChanged ? undefined : file.statistics,
+            statistics: configChanged ? undefined : f.statistics,
           }
         }
-        return file
+        return f
       }),
     )
     setConfigureModalOpen(false)
     setSelectedFileId(null)
+
+    // Re-slice from Review step when config affecting weight changed and we have the file
+    if (currentStep === 2 && configChanged && file?.file) {
+      handleReSliceFile(fileId, file.file, configuration)
+    }
   }
 
   const handleNext = async () => {
-    if (currentStep === 1 && !isAuthenticated && !sessionLoading) {
+    // Sign-in gate: require login before Order Summary (step 3), not before Review (step 2)
+    if (currentStep === 2 && !isAuthenticated && !sessionLoading) {
       const orderState = {
         files: uploadedFiles,
         currentStep: currentStep,
@@ -126,7 +159,7 @@ export default function OrderForm() {
       return
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       setIsCreatingOrder(true)
       try {
         if (!pricingSummary) {
@@ -314,6 +347,15 @@ export default function OrderForm() {
           )}
 
           {currentStep === 2 && (
+            <ReviewStep
+              uploadedFiles={uploadedFiles}
+              onBack={handleBack}
+              onNext={handleNext}
+              onConfigure={handleConfigure}
+            />
+          )}
+
+          {currentStep === 3 && (
             <SummaryStep
               uploadedFiles={uploadedFiles}
               onBack={handleBack}
@@ -326,7 +368,7 @@ export default function OrderForm() {
             />
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <PaymentStep
               uploadedFiles={uploadedFiles}
               onBack={handleBack}

@@ -24,7 +24,7 @@ import StatusBadge from '@/components/orders/StatusBadge'
 import Button from '@/components/ui/Button'
 import type { Order as PayloadOrder } from '@/payload-types'
 import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 
 // Mock conversation data - keeping this for future implementation
 const mockConversations = [
@@ -130,6 +130,7 @@ interface OrderData {
 export default function OrderDetailsPage() {
   const [newMessage, setNewMessage] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
+  const [verifyCompleted, setVerifyCompleted] = useState(false)
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -138,7 +139,10 @@ export default function OrderDetailsPage() {
   const [isCanceling, setIsCanceling] = useState(false)
   const searchParams = useSearchParams()
   const params = useParams()
+  const router = useRouter()
   const orderId = params.id as string
+  const isPaymentReturn = searchParams.get('payment') === 'success'
+  const confirmingPayment = isPaymentReturn && !verifyCompleted
 
   // Fetch order data
   useEffect(() => {
@@ -230,50 +234,50 @@ export default function OrderDetailsPage() {
     }
   }, [orderId])
 
-  // Verify payment status when user returns from Midtrans
+  // Verify payment status when user returns from Midtrans (no full reload; update state so we show Paid immediately)
   useEffect(() => {
-    const paymentStatus = searchParams.get('payment')
     const verificationKey = `payment_verified_${orderId}`
-
-    // Check if we already verified this order
     const alreadyVerified = sessionStorage.getItem(verificationKey)
 
-    if (paymentStatus === 'success' && orderId && !isVerifying && !alreadyVerified) {
+    if (isPaymentReturn && orderId && !isVerifying && !alreadyVerified) {
       setIsVerifying(true)
-
-      // Mark as verified immediately to prevent duplicate calls
       sessionStorage.setItem(verificationKey, 'true')
 
-      // Call backend to verify payment with Midtrans API
       fetch('/api/payment/verify', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ orderId }),
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log('Payment verification result:', data)
           if (data.success) {
-            // Reload page without query parameter to show updated order status
-            window.location.href = `/orders/${orderId}`
+            setOrder((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: data.orderStatus ?? prev.status,
+                    paymentInfo: {
+                      ...prev.paymentInfo,
+                      status: data.paymentStatus ?? prev.paymentInfo.status,
+                    },
+                  }
+                : null,
+            )
+            router.replace(`/orders/${orderId}`, { scroll: false })
           } else {
-            // If verification failed, remove the flag so it can be retried
             sessionStorage.removeItem(verificationKey)
           }
         })
-        .catch((error) => {
-          console.error('Payment verification failed:', error)
-          // Remove flag on error so it can be retried
-          sessionStorage.removeItem(verificationKey)
-        })
+        .catch(() => sessionStorage.removeItem(verificationKey))
         .finally(() => {
           setIsVerifying(false)
+          setVerifyCompleted(true)
         })
+    } else if (isPaymentReturn && alreadyVerified) {
+      setVerifyCompleted(true)
     }
-  }, [searchParams, orderId, isVerifying])
+  }, [isPaymentReturn, orderId, isVerifying, router])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -369,6 +373,24 @@ export default function OrderDetailsPage() {
               <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
               <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                 Loading order details...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // After payment return: show "Confirming payment..." until verify completes, then show order as Paid (no flash of Unpaid)
+  if (confirmingPayment) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
+              <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                Confirming your payment...
               </p>
             </div>
           </div>

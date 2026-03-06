@@ -217,7 +217,7 @@ export default function HeroUpload() {
       <div className="relative z-10 mx-auto mt-6 sm:mt-8 w-full max-w-3xl px-6 pb-4 lg:w-[644px]">
         <div className="rounded-[20px] border border-[#EFEFEF] bg-gradient-to-b from-white to-[#F8F8F8] p-3 shadow-[0_4px_20px_0_rgba(119,119,119,0.10)] flex flex-col gap-3">
           <div
-            className={`rounded-[12px] border border-dashed p-8 flex flex-col items-center text-center transition-colors ${
+            className={`cursor-pointer rounded-[12px] border border-dashed p-8 flex flex-col items-center text-center transition-colors ${
               isDragging ? 'border-[#1D0DF3] bg-[#1D0DF3]/5' : 'border-[#DCDCDC] bg-transparent'
             }`}
             onDragOver={handleDragOver}
