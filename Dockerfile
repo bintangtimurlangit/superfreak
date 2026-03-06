@@ -5,11 +5,11 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-# Prefer pnpm when pnpm-lock.yaml exists (repo lockfile is in sync). Use npm only when no pnpm.
+# Prefer pnpm when pnpm-lock.yaml exists. Else npm: use install (not ci) so build works when lock is out of sync.
 RUN \
   if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
   elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f package-lock.json ]; then npm install; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
