@@ -440,6 +440,9 @@ export default function OrderForm() {
         }}
         file={uploadedFiles.find((f) => f.id === selectedFileId) || null}
         onSave={handleSaveConfiguration}
+        submitButtonLabel={
+          pendingDuplicateId && selectedFileId === pendingDuplicateId ? 'Add model' : 'Save Configuration'
+        }
       />
 
       <SignInModal

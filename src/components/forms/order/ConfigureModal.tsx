@@ -17,6 +17,8 @@ interface ConfigureModalProps {
   onClose: () => void
   file: UploadedFile | null
   onSave: (fileId: string, configuration: ModelConfigurationFormData) => void
+  /** Optional label for the submit button (e.g. "Add model" when adding a duplicate) */
+  submitButtonLabel?: string
 }
 
 interface PrintingOptionsData {
@@ -66,7 +68,13 @@ function InfoTooltip({ content }: { content: string }) {
   )
 }
 
-export default function ConfigureModal({ isOpen, onClose, file, onSave }: ConfigureModalProps) {
+export default function ConfigureModal({
+  isOpen,
+  onClose,
+  file,
+  onSave,
+  submitButtonLabel = 'Save Configuration',
+}: ConfigureModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
 
@@ -283,7 +291,8 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
   const onSubmit: SubmitHandler<ModelConfigurationFormData> = (data) => {
     const colorHex = printingOptions?.colorNameToHex?.[data.color]
     onSave(file.id, { ...data, colorHex } as ModelConfigurationFormData & { colorHex?: string })
-    onClose()
+    // Don't call onClose() here – parent closes the modal and clears pendingDuplicateId in onSave.
+    // Calling onClose() would run before state updates and would remove a newly added duplicate.
   }
 
   const handleWallCountChange = (value: string) => {
@@ -693,7 +702,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
                 disabled={!isValid}
                 className="h-11 px-6 gap-2 rounded-[12px] border border-[#1D0DF3] !bg-[#1D0DF3] text-white hover:!bg-[#1a0bd4] text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
               >
-                Save Configuration
+                {submitButtonLabel}
               </Button>
             )}
           </div>
