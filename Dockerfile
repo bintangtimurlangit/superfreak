@@ -41,6 +41,9 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# next-intl loads messages from src/messages at runtime (dynamic import in request.ts)
+COPY --from=builder /app/src/messages ./src/messages
+
 # Optional: scripts + node_modules for one-off tools (e.g. test-midtrans-verify)
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/package.json ./package.json

@@ -1,17 +1,7 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 import createNextIntlPlugin from 'next-intl/plugin'
 
-const withNextIntl = createNextIntlPlugin({
-  requestConfig: './src/i18n/request.ts',
-  // So message JSONs are included in standalone build (Docker); otherwise dynamic import fails at runtime
-  experimental: {
-    messages: {
-      path: './src/messages',
-      locales: ['en', 'id'],
-      format: 'json',
-    },
-  },
-})
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
