@@ -719,6 +719,7 @@ export default function UploadStep({
                               file={file.file}
                               className="w-full h-full"
                               showControls={false}
+                              color={file.configuration?.colorHex as string | undefined}
                             />
                           ) : (
                             <div className="w-full h-full bg-[#F8F8F8] flex items-center justify-center">

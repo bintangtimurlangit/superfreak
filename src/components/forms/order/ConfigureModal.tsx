@@ -25,6 +25,8 @@ interface PrintingOptionsData {
   layerHeights: string[]
   infill: Array<{ label: string; value: string }>
   maxWallCount: number
+  /** Map color name -> hex for 3D preview (e.g. Black -> "#1a1a1a") */
+  colorNameToHex: Record<string, string>
 }
 
 interface PayloadResponse<T> {
@@ -105,13 +107,34 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
       const materials = (filamentTypes.docs?.map((doc) => doc.name).filter(Boolean) ||
         []) as string[]
 
-      // Get all colors from all filament types
+      // Get all colors from all filament types and build name -> hex map for preview
       const allColors = new Set<string>()
+      const colorNameToHex: Record<string, string> = {}
+      const fallbackHex: Record<string, string> = {
+        Black: '#1a1a1a',
+        White: '#f5f5f5',
+        Red: '#c0392b',
+        Blue: '#2980b9',
+        Green: '#27ae60',
+        Yellow: '#f1c40f',
+        Gray: '#7f8c8d',
+        Grey: '#7f8c8d',
+        Orange: '#e67e22',
+        Purple: '#9b59b6',
+        Pink: '#e91e8c',
+        Brown: '#795548',
+      }
       filamentTypes.docs?.forEach((doc) => {
         if (doc.colors && Array.isArray(doc.colors)) {
-          doc.colors.forEach((color) => {
+          doc.colors.forEach((color: { name?: string; hexCode?: string }) => {
             if (color.name) {
               allColors.add(color.name)
+              const hex = color.hexCode?.trim()
+              if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
+                colorNameToHex[color.name] = hex
+              } else if (fallbackHex[color.name]) {
+                colorNameToHex[color.name] = fallbackHex[color.name]
+              }
             }
           })
         }
@@ -142,6 +165,7 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
           .map((h) => h.toFixed(2)),
         infill: optionsByType.infill || [],
         maxWallCount,
+        colorNameToHex,
       }
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -257,7 +281,8 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
   if (!isOpen || !file) return null
 
   const onSubmit: SubmitHandler<ModelConfigurationFormData> = (data) => {
-    onSave(file.id, data)
+    const colorHex = printingOptions?.colorNameToHex?.[data.color]
+    onSave(file.id, { ...data, colorHex } as ModelConfigurationFormData & { colorHex?: string })
     onClose()
   }
 
@@ -325,7 +350,11 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
           <div className="flex gap-8 h-full items-start">
             <div className="hidden md:flex w-[480px] h-[480px] rounded-[16px] border border-[#DCDCDC] bg-white flex-shrink-0 items-center justify-center sticky top-0 overflow-hidden">
               {file?.file ? (
-                <ModelViewer file={file.file} className="w-full h-full" />
+                <ModelViewer
+                  file={file.file}
+                  className="w-full h-full"
+                  color={printingOptions?.colorNameToHex?.[formData.color]}
+                />
               ) : (
                 <span
                   className="text-xs text-[#7C7C7C] text-center leading-tight"

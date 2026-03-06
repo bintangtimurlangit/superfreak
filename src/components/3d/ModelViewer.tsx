@@ -18,13 +18,18 @@ interface ModelViewerProps {
   file?: File | string // Can be File object or base64 data URL
   className?: string
   showControls?: boolean
+  /** Hex color for the model material (e.g. "#000000"). Uses brand purple if not set. */
+  color?: string
 }
 
-function STLModel({ url }: { url: string }) {
+const DEFAULT_MODEL_COLOR = '#1D0DF3'
+
+function STLModel({ url, color }: { url: string; color?: string }) {
   const meshRef = useRef<Mesh>(null)
   const bounds = useBounds()
   // useLoader needs a stable URL - blob URLs work fine
   const geometry = useLoader(STLLoader, url)
+  const materialColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : DEFAULT_MODEL_COLOR
 
   useEffect(() => {
     if (geometry) {
@@ -51,7 +56,11 @@ function STLModel({ url }: { url: string }) {
 
   return (
     <mesh ref={meshRef} geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}>
-      <meshStandardMaterial color="#1D0DF3" metalness={0.3} roughness={0.4} />
+      <meshStandardMaterial
+        color={materialColor}
+        metalness={0.3}
+        roughness={0.4}
+      />
     </mesh>
   )
 }
@@ -76,7 +85,15 @@ function GLTFModel({ url }: { url: string }) {
   return <primitive ref={sceneRef} object={scene} />
 }
 
-function Model({ url, file }: { url?: string; file?: File | string }) {
+function Model({
+  url,
+  file,
+  color,
+}: {
+  url?: string
+  file?: File | string
+  color?: string
+}) {
   // Extract filename from File object or data URL
   let fileName = ''
   if (file) {
@@ -96,13 +113,13 @@ function Model({ url, file }: { url?: string; file?: File | string }) {
 
   // Model component only renders Three.js objects - no HTML elements
   if (fileExtension === 'stl' || fileExtension === '3mf') {
-    return <STLModel url={url!} />
+    return <STLModel url={url!} color={color} />
   } else if (fileExtension === 'gltf' || fileExtension === 'glb') {
     return <GLTFModel url={url!} />
   } else {
     // Default to STL for other formats
     console.log('[ModelViewer] Unknown extension, defaulting to STL')
-    return <STLModel url={url!} />
+    return <STLModel url={url!} color={color} />
   }
 }
 
@@ -111,6 +128,7 @@ export default function ModelViewer({
   file,
   className = '',
   showControls = true,
+  color,
 }: ModelViewerProps) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -207,7 +225,7 @@ export default function ModelViewer({
           <pointLight position={[0, 0, 10]} intensity={0.5} />
           <Bounds fit clip observe margin={1.5}>
             <Center>
-              <Model url={objectUrl} file={file} />
+              <Model url={objectUrl} file={file} color={color} />
             </Center>
           </Bounds>
           {showControls && (

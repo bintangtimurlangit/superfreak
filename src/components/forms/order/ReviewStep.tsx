@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, Pencil } from 'lucide-react'
+import { ChevronRight, Pencil, Box, Plus, Minus, CopyPlus } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import ModelViewer from '@/components/3d/ModelViewer'
 import type { UploadedFile } from './UploadStep'
 import type { FilePrice } from './SummaryStep'
 
@@ -21,6 +22,8 @@ interface ReviewStepProps {
   onBack: () => void
   onNext: () => void
   onConfigure: (fileId: string) => void
+  onQuantityChange?: (fileId: string, quantity: number) => void
+  onDuplicateFile?: (fileId: string) => void
 }
 
 export default function ReviewStep({
@@ -28,6 +31,8 @@ export default function ReviewStep({
   onBack,
   onNext,
   onConfigure,
+  onQuantityChange,
+  onDuplicateFile,
 }: ReviewStepProps) {
   const [pricingData, setPricingData] = useState<PrintingPricing[]>([])
   const [filePrices, setFilePrices] = useState<FilePrice[]>([])
@@ -141,8 +146,24 @@ export default function ReviewStep({
                 key={file.id}
                 className="border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-4">
+                  {/* 3D model preview - left side */}
+                  <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 bg-white rounded-[10px] border border-[#EFEFEF] overflow-hidden">
+                    {file.file ? (
+                      <ModelViewer
+                        file={file.file}
+                        className="w-full h-full"
+                        showControls={false}
+                        color={(file.configuration as { colorHex?: string })?.colorHex}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#F8F8F8]">
+                        <Box className="h-10 w-10 text-[#DCDCDC]" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="min-w-0">
                     <h3
                       className="text-base font-semibold text-[#292929] mb-1"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
@@ -162,12 +183,59 @@ export default function ReviewStep({
                       >
                         Color: {file.configuration?.color || 'Not selected'}
                       </p>
-                      <p
-                        className="text-xs text-[#7C7C7C]"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Quantity: {file.configuration?.quantity || 1} pcs
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Quantity:
+                        </span>
+                        {onQuantityChange ? (
+                          <div className="flex items-center gap-0.5 border border-[#DCDCDC] rounded-[8px] bg-white">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onQuantityChange(
+                                  file.id,
+                                  (file.configuration?.quantity || 1) - 1,
+                                )
+                              }
+                              className="p-1.5 hover:bg-[#F8F8F8] rounded-l-[6px] transition-colors disabled:opacity-50"
+                              aria-label="Decrease quantity"
+                              disabled={(file.configuration?.quantity || 1) <= 1}
+                            >
+                              <Minus className="h-3.5 w-3.5 text-[#292929]" />
+                            </button>
+                            <span
+                              className="text-xs font-medium text-[#292929] min-w-[1.75rem] text-center"
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {file.configuration?.quantity || 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onQuantityChange(
+                                  file.id,
+                                  (file.configuration?.quantity || 1) + 1,
+                                )
+                              }
+                              className="p-1.5 hover:bg-[#F8F8F8] rounded-r-[6px] transition-colors disabled:opacity-50"
+                              aria-label="Increase quantity"
+                              disabled={(file.configuration?.quantity || 1) >= 999}
+                            >
+                              <Plus className="h-3.5 w-3.5 text-[#292929]" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            className="text-xs text-[#7C7C7C]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {file.configuration?.quantity || 1} pcs
+                          </span>
+                        )}
+                      </div>
                       {file.statistics && (
                         <>
                           <p
@@ -198,7 +266,7 @@ export default function ReviewStep({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 flex-shrink-0">
+                  <div className="flex items-start gap-3 flex-shrink-0 sm:pt-0">
                     <div className="text-right">
                       {(() => {
                         const filePrice = filePrices.find((fp) => fp.fileId === file.id)
@@ -235,15 +303,29 @@ export default function ReviewStep({
                         )
                       })()}
                     </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="h-9 px-3 gap-1.5 rounded-[10px] text-xs"
-                      onClick={() => onConfigure(file.id)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="h-9 px-3 gap-1.5 rounded-[10px] text-xs"
+                        onClick={() => onConfigure(file.id)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      {onDuplicateFile && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="h-9 px-3 gap-1.5 rounded-[10px] text-xs border border-[#DCDCDC] bg-white hover:bg-[#F8F8F8]"
+                          onClick={() => onDuplicateFile(file.id)}
+                        >
+                          <CopyPlus className="h-3.5 w-3.5" />
+                          Add with different settings
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                   </div>
                 </div>
               </div>

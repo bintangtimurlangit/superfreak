@@ -332,6 +332,34 @@ export default function OrderForm() {
     }
   }
 
+  const handleQuantityChange = (fileId: string, quantity: number) => {
+    const qty = Math.max(1, Math.min(999, quantity))
+    setUploadedFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, configuration: { ...f.configuration, quantity: qty } }
+          : f,
+      ),
+    )
+  }
+
+  const handleDuplicateFile = (fileId: string) => {
+    const file = uploadedFiles.find((f) => f.id === fileId)
+    if (!file) return
+    const newId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2, 11)
+    const duplicate: UploadedFile = {
+      ...file,
+      id: newId,
+      name: file.name,
+      configuration: file.configuration ? { ...file.configuration } : undefined,
+      statistics: file.statistics ? { ...file.statistics } : undefined,
+      tempFileId: file.tempFileId,
+    }
+    setUploadedFiles((prev) => [...prev, duplicate])
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F8F8]">
       <StepsProgress steps={steps} currentStep={currentStep} />
@@ -352,6 +380,8 @@ export default function OrderForm() {
               onBack={handleBack}
               onNext={handleNext}
               onConfigure={handleConfigure}
+              onQuantityChange={handleQuantityChange}
+              onDuplicateFile={handleDuplicateFile}
             />
           )}
 
