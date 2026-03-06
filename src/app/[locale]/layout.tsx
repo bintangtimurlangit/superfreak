@@ -25,6 +25,9 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+// Avoid prerendering at build time (no MongoDB in Docker builder); render at runtime only
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   description: 'Where Quality Meets Scale',
   title: 'Superfreak Studio',
