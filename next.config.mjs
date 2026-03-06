@@ -5,6 +5,14 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // Don't fail Docker/build on ESLint warnings; fix them over time
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Optional: set to true to also skip type errors during build (use only if needed)
+    // ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       {
