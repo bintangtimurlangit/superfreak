@@ -1,0 +1,36 @@
+{
+  "Navbar": {
+    "whyUs": "Kenapa Kami",
+    "materialsPricing": "Material & Harga",
+    "collaborations": "Kolaborasi",
+    "blog": "Blog",
+    "contactUs": "Hubungi Kami",
+    "myCart": "Keranjang",
+    "myOrder": "Pesanan Saya",
+    "profile": "Profil",
+    "logOut": "Keluar",
+    "signIn": "Masuk",
+    "english": "English",
+    "bahasaIndonesia": "Bahasa Indonesia"
+  },
+  "Footer": {
+    "tagline": "Di Mana Kualitas Bertemu Skala",
+    "menu": "Menu",
+    "whyUs": "Kenapa Kami",
+    "materialsPricing": "Material & Harga",
+    "collaborations": "Kolaborasi",
+    "support": "Dukungan",
+    "faq": "FAQ",
+    "helpCenter": "Pusat Bantuan",
+    "fileGuidelines": "Panduan File",
+    "social": "Sosial",
+    "instagram": "Instagram ↗",
+    "tiktok": "TikTok ↗",
+    "privacyPolicy": "Kebijakan Privasi",
+    "termOfUse": "Syarat Penggunaan",
+    "allRightsReserved": "Hak Cipta Dilindungi"
+  },
+  "Common": {
+    "home": "Beranda"
+  }
+}

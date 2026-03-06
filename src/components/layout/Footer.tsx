@@ -1,6 +1,10 @@
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 export default function Footer() {
+  const t = useTranslations('Footer')
+
   return (
     <footer className="bg-white border-t border-[#EFEFEF]">
       <div className="mx-auto max-w-7xl px-6 md:px-10 py-16 md:py-20">
@@ -13,7 +17,7 @@ export default function Footer() {
             className="text-[16px] font-normal text-[#7C7C7C] leading-[140%] tracking-[0px]"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
-            Where Quality Meets Scale
+            {t('tagline')}
           </p>
           {/* Divider */}
           <div
@@ -36,28 +40,25 @@ export default function Footer() {
                 className="font-semibold text-[#292929] mb-4 text-base"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
               >
-                Menu
+                {t('menu')}
               </div>
               <ul
                 className="space-y-3 text-[#6b7280]"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
               >
                 <li>
-                  <a
-                    href="/why-us"
-                    className="hover:underline hover:text-[#292929] transition-colors"
-                  >
-                    Why Us
+                  <Link href="/why-us" className="hover:underline hover:text-[#292929] transition-colors">
+                    {t('whyUs')}
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
+                    {t('materialsPricing')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Materials & Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Collaborations
+                    {t('collaborations')}
                   </a>
                 </li>
               </ul>
@@ -68,7 +69,7 @@ export default function Footer() {
                 className="font-semibold text-[#292929] mb-4 text-base"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
               >
-                Support
+                {t('support')}
               </div>
               <ul
                 className="space-y-3 text-[#6b7280]"
@@ -76,21 +77,21 @@ export default function Footer() {
               >
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    FAQ
+                    {t('faq')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Help Center
+                    {t('helpCenter')}
                   </a>
                 </li>
                 <li>
-                  <a
+                  <Link
                     href="/file-guidelines"
                     className="hover:underline hover:text-[#292929] transition-colors"
                   >
-                    File Guidelines
-                  </a>
+                    {t('fileGuidelines')}
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -100,7 +101,7 @@ export default function Footer() {
                 className="font-semibold text-[#292929] mb-4 text-base"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
               >
-                Social
+                {t('social')}
               </div>
               <ul
                 className="space-y-3 text-[#6b7280]"
@@ -108,12 +109,12 @@ export default function Footer() {
               >
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    Instagram ↗
+                    {t('instagram')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:underline hover:text-[#292929] transition-colors">
-                    TikTok ↗
+                    {t('tiktok')}
                   </a>
                 </li>
               </ul>
@@ -140,14 +141,14 @@ export default function Footer() {
               href="#"
               className="text-[14px] text-[#6b7280] hover:underline hover:text-[#292929] transition-colors"
             >
-              Privacy Policy
+              {t('privacyPolicy')}
             </a>
             <div className="w-px h-4 bg-[#DCDCDC]"></div>
             <a
               href="#"
               className="text-[14px] text-[#6b7280] hover:underline hover:text-[#292929] transition-colors"
             >
-              Term of Use
+              {t('termOfUse')}
             </a>
           </div>
           {/* Copyright */}
@@ -157,7 +158,7 @@ export default function Footer() {
           >
             © 2025 PT Orang Aneh Super
             <br />
-            All Rights Reserved
+            {t('allRightsReserved')}
           </div>
         </div>
       </div>

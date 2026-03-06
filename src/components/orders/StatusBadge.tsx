@@ -16,6 +16,7 @@ import {
 
 export type OrderStatus =
   | 'unpaid'
+  | 'paid'
   | 'in-review'
   | 'needs-discussion'
   | 'printing'
@@ -44,6 +45,12 @@ const statusConfig: Record<
     label: 'Unpaid',
     bgColor: 'bg-red-50',
     textColor: 'text-red-700',
+    icon: CreditCard,
+  },
+  paid: {
+    label: 'Paid',
+    bgColor: 'bg-green-50',
+    textColor: 'text-green-700',
     icon: CreditCard,
   },
   'in-review': {

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { useLocale } from 'next-intl'
 
 const faqData = [
   {
@@ -37,6 +39,7 @@ const faqData = [
 
 export default function FAQ() {
   const [openId, setOpenId] = useState<number | null>(null)
+  const locale = useLocale()
 
   const toggleFAQ = (id: number) => {
     setOpenId(openId === id ? null : id)
@@ -119,8 +122,8 @@ export default function FAQ() {
                 </h3>
                 <p className="text-[#656565] text-sm md:text-base">Fast, friendly answers</p>
               </div>
-              <a
-                href="/contact"
+              <Link
+                href={`/${locale}/contact`}
                 className="flex items-center text-sm md:text-base gap-2 bg-[#1D0DF3] hover:bg-[#1a0bd4] text-white px-4 md:px-6 py-3 md:py-2 rounded-[12px] font-medium transition-colors shadow-sm"
               >
                 Contact Us
@@ -132,7 +135,7 @@ export default function FAQ() {
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

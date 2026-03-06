@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
 import { Calendar, Clock, ArrowLeft, ExternalLink } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
 
 interface BlogPost {
   id: string
@@ -167,3 +167,4 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     </div>
   )
 }
+

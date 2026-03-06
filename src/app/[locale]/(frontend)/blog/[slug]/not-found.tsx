@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { FileQuestion, ArrowLeft } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
 
 export default function NotFound() {
   return (
@@ -41,3 +41,4 @@ export default function NotFound() {
     </div>
   )
 }
+

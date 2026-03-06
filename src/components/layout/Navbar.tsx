@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
@@ -10,7 +9,8 @@ import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
 import { signOut } from '@/lib/auth/client'
 import { useBetterAuth } from '@/lib/auth/context'
 import { use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { Link, usePathname, useRouter } from '@/i18n/navigation'
 import {
   ChevronDown,
   MessageSquareText,
@@ -43,6 +43,9 @@ function MobileUserProfileSkeleton() {
 
 const Navbar = () => {
   const router = useRouter()
+  const pathname = usePathname()
+  const locale = useLocale()
+  const t = useTranslations('Navbar')
   const { currentUserPromise } = useBetterAuth()
   const user = use(currentUserPromise)
   const isAuthenticated = !!user
@@ -70,12 +73,12 @@ const Navbar = () => {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState('English')
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false)
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false)
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
-  const languageDropdownRef = useRef<HTMLDivElement>(null)
+  const languageDropdownDesktopRef = useRef<HTMLDivElement>(null)
+  const languageDropdownMobileRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdowns when clicking outside
@@ -88,8 +91,10 @@ const Navbar = () => {
         return
       }
 
-      // Check if click is outside language dropdown
-      if (languageDropdownRef.current && !languageDropdownRef.current.contains(target)) {
+      // Check if click is outside language dropdown (desktop or mobile)
+      const insideDesktop = languageDropdownDesktopRef.current?.contains(target)
+      const insideMobile = languageDropdownMobileRef.current?.contains(target)
+      if (!insideDesktop && !insideMobile) {
         setIsLanguageDropdownOpen(false)
       }
 
@@ -113,11 +118,18 @@ const Navbar = () => {
     }
   }, [isLanguageDropdownOpen, isUserDropdownOpen])
 
-  const languages = ['English', 'Bahasa Indonesia']
+  const languages = [
+    { locale: 'en' as const, label: t('english'), flagSrc: '/flags/us.svg' },
+    { locale: 'id' as const, label: t('bahasaIndonesia'), flagSrc: '/flags/id.svg' },
+  ]
 
-  const handleLanguageSelect = (language: string) => {
-    setSelectedLanguage(language)
+  const currentLanguage = languages.find((l) => l.locale === locale) ?? languages[0]
+
+  const handleLanguageSelect = (nextLocale: (typeof languages)[number]['locale']) => {
     setIsLanguageDropdownOpen(false)
+    // Force full navigation so [locale] segment and messages update reliably
+    const path = pathname === '/' ? '' : pathname
+    window.location.href = `/${nextLocale}${path}`
   }
 
   const handleLogout = async (e: React.MouseEvent) => {
@@ -175,38 +187,47 @@ const Navbar = () => {
                 href="/why-us"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Why Us
+                {t('whyUs')}
               </Link>
               <Link
                 href="#"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Materials & Pricing
+                {t('materialsPricing')}
               </Link>
               <Link
                 href="#"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Collaborations
+                {t('collaborations')}
               </Link>
               <Link
                 href="/blog"
                 className="hover:underline underline-offset-4 text-[#292929] dark:text-foreground whitespace-nowrap m-0 p-0"
               >
-                Blog
+                {t('blog')}
               </Link>
             </nav>
           </div>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <div className="relative hidden lg:block" ref={languageDropdownRef}>
+            <div className="relative hidden lg:block" ref={languageDropdownDesktopRef}>
               <Button
                 variant="secondary"
                 className="text-sm"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
               >
-                <span className="mr-1">{selectedLanguage}</span>
+                <span className="mr-1 inline-flex items-center gap-2">
+                  <Image
+                    src={currentLanguage.flagSrc}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="rounded-sm"
+                  />
+                  {currentLanguage.label}
+                </span>
                 <ChevronDown
                   className={`h-4 w-4 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
                   aria-hidden
@@ -216,15 +237,24 @@ const Navbar = () => {
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
                   {languages.map((language) => (
                     <button
-                      key={language}
-                      onClick={() => handleLanguageSelect(language)}
+                      key={language.locale}
+                      onClick={() => handleLanguageSelect(language.locale)}
                       className={`w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors ${
-                        selectedLanguage === language
+                        currentLanguage.locale === language.locale
                           ? 'bg-[#f5f5f5] dark:bg-white/10 font-medium'
                           : 'text-[#292929] dark:text-foreground'
                       }`}
                     >
-                      {language}
+                      <span className="inline-flex items-center gap-2">
+                        <Image
+                          src={language.flagSrc}
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="rounded-sm"
+                        />
+                        {language.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -234,13 +264,13 @@ const Navbar = () => {
             <Link href="/contact">
               <Button variant="secondary" className="hidden lg:flex text-sm">
                 <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
-                Contact Us
+                {t('contactUs')}
               </Button>
             </Link>
 
             <Button variant="secondary" className="hidden lg:flex text-sm">
               <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
-              My Cart
+              {t('myCart')}
             </Button>
 
             {isAuthenticated && user ? (
@@ -285,7 +315,7 @@ const Navbar = () => {
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
                       <Package className="h-4 w-4 mr-2" aria-hidden />
-                      My Order
+                      {t('myOrder')}
                     </Link>
                     <Link
                       href="/profile"
@@ -293,7 +323,7 @@ const Navbar = () => {
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
                       <User className="h-4 w-4 mr-2" aria-hidden />
-                      Profile
+                      {t('profile')}
                     </Link>
                     <div
                       data-logout-button="true"
@@ -303,7 +333,7 @@ const Navbar = () => {
                       tabIndex={0}
                     >
                       <LogOut className="h-4 w-4 mr-2" aria-hidden />
-                      Log Out
+                      {t('logOut')}
                     </div>
                   </div>
                 )}
@@ -315,7 +345,7 @@ const Navbar = () => {
                 onClick={() => setIsSignInModalOpen(true)}
               >
                 <LogIn className="h-4 w-4" aria-hidden />
-                Sign In
+                {t('signIn')}
               </Button>
             )}
           </div>
@@ -369,39 +399,48 @@ const Navbar = () => {
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Why Us
+                {t('whyUs')}
               </Link>
               <Link
                 href="#"
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Materials & Pricing
+                {t('materialsPricing')}
               </Link>
               <Link
                 href="#"
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Collaborations
+                {t('collaborations')}
               </Link>
               <Link
                 href="/blog"
                 className="text-base text-[#292929] dark:text-foreground hover:underline underline-offset-4 py-2 text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Blog
+                {t('blog')}
               </Link>
             </nav>
 
             <div className="flex flex-col gap-3 pt-4 mt-4 border-t border-[#EFEFEF] dark:border-white/10">
-              <div className="relative" ref={languageDropdownRef}>
+              <div className="relative" ref={languageDropdownMobileRef}>
                 <Button
                   variant="secondary"
                   className="w-full justify-center text-sm"
                   onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                 >
-                  <span className="mr-2">{selectedLanguage}</span>
+                  <span className="mr-2 inline-flex items-center gap-2">
+                    <Image
+                      src={currentLanguage.flagSrc}
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="rounded-sm"
+                    />
+                    {currentLanguage.label}
+                  </span>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
                     aria-hidden
@@ -411,15 +450,24 @@ const Navbar = () => {
                   <div className="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
                     {languages.map((language) => (
                       <button
-                        key={language}
-                        onClick={() => handleLanguageSelect(language)}
+                        key={language.locale}
+                        onClick={() => handleLanguageSelect(language.locale)}
                         className={`w-full text-center px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors ${
-                          selectedLanguage === language
+                          currentLanguage.locale === language.locale
                             ? 'bg-[#f5f5f5] dark:bg-white/10 font-medium'
                             : 'text-[#292929] dark:text-foreground'
                         }`}
                       >
-                        {language}
+                        <span className="inline-flex items-center gap-2">
+                          <Image
+                            src={language.flagSrc}
+                            alt=""
+                            width={16}
+                            height={16}
+                            className="rounded-sm"
+                          />
+                          {language.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -429,13 +477,13 @@ const Navbar = () => {
               <Link href="/contact" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button variant="secondary" className="w-full justify-center text-sm">
                   <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
-                  Contact Us
+                  {t('contactUs')}
                 </Button>
               </Link>
 
               <Button variant="secondary" className="w-full justify-center text-sm">
                 <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
-                My Cart
+                {t('myCart')}
               </Button>
 
               {!user ? (
@@ -484,7 +532,7 @@ const Navbar = () => {
                         }}
                       >
                         <Package className="h-4 w-4 mr-2" aria-hidden />
-                        My Order
+                        {t('myOrder')}
                       </Link>
                       <Link
                         href="/profile"
@@ -495,7 +543,7 @@ const Navbar = () => {
                         }}
                       >
                         <User className="h-4 w-4 mr-2" aria-hidden />
-                        Profile
+                        {t('profile')}
                       </Link>
                       <div
                         data-logout-button="true"
@@ -509,7 +557,7 @@ const Navbar = () => {
                         tabIndex={0}
                       >
                         <LogOut className="h-4 w-4 mr-2" aria-hidden />
-                        Log Out
+                        {t('logOut')}
                       </div>
                     </div>
                   )}
@@ -524,7 +572,7 @@ const Navbar = () => {
                   }}
                 >
                   <LogIn className="h-4 w-4" aria-hidden />
-                  Sign In
+                  {t('signIn')}
                 </Button>
               )}
             </div>

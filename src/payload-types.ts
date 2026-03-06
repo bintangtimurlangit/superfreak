@@ -1410,7 +1410,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
- * Configure shipping couriers and warehouse settings for RajaOngkir
+ * Configure shipping couriers and warehouse (Biteship)
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "courier-settings".
@@ -1418,9 +1418,13 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface CourierSetting {
   id: string;
   /**
-   * Your warehouse location ID from RajaOngkir (origin for shipping calculations)
+   * Origin postal code for Biteship (e.g. 12440). If empty, BITESHIP_ORIGIN_POSTAL_CODE env is used.
    */
-  warehouseId: number;
+  warehousePostalCode?: string | null;
+  /**
+   * Kept for reference; Biteship uses warehouse postal code above.
+   */
+  warehouseId?: number | null;
   /**
    * Name/label for your warehouse location (for reference)
    */
@@ -1515,6 +1519,7 @@ export interface CourierSetting {
  * via the `definition` "courier-settings_select".
  */
 export interface CourierSettingsSelect<T extends boolean = true> {
+  warehousePostalCode?: T;
   warehouseId?: T;
   warehouseName?: T;
   warehouseAddress?: T;

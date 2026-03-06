@@ -1,0 +1,36 @@
+{
+  "Navbar": {
+    "whyUs": "Why Us",
+    "materialsPricing": "Materials & Pricing",
+    "collaborations": "Collaborations",
+    "blog": "Blog",
+    "contactUs": "Contact Us",
+    "myCart": "My Cart",
+    "myOrder": "My Order",
+    "profile": "Profile",
+    "logOut": "Log Out",
+    "signIn": "Sign In",
+    "english": "English",
+    "bahasaIndonesia": "Bahasa Indonesia"
+  },
+  "Footer": {
+    "tagline": "Where Quality Meets Scale",
+    "menu": "Menu",
+    "whyUs": "Why Us",
+    "materialsPricing": "Materials & Pricing",
+    "collaborations": "Collaborations",
+    "support": "Support",
+    "faq": "FAQ",
+    "helpCenter": "Help Center",
+    "fileGuidelines": "File Guidelines",
+    "social": "Social",
+    "instagram": "Instagram ↗",
+    "tiktok": "TikTok ↗",
+    "privacyPolicy": "Privacy Policy",
+    "termOfUse": "Term of Use",
+    "allRightsReserved": "All Rights Reserved"
+  },
+  "Common": {
+    "home": "Home"
+  }
+}

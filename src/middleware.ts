@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import createMiddleware from 'next-intl/middleware'
+import { routing } from '@/i18n/routing'
 
 const LOG_PREFIX = '[API]'
+
+const intlMiddleware = createMiddleware(routing)
 
 async function getRequestBody(request: NextRequest): Promise<unknown> {
   try {
@@ -21,7 +25,12 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (!pathname.startsWith('/api')) {
-    return NextResponse.next()
+    // Payload Admin should not be localized
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.next()
+    }
+
+    return intlMiddleware(request)
   }
 
   const url = request.nextUrl
@@ -42,5 +51,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/((?!api|admin|_next|_vercel|.*\\..*).*)'],
 }

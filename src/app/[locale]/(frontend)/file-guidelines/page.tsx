@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
+import { useLocale } from 'next-intl'
 import {
   AlertTriangle,
   FileCheck,
@@ -14,6 +16,7 @@ import {
 
 export default function FileGuidelinesPage() {
   const [openSection, setOpenSection] = useState<number | null>(null)
+  const locale = useLocale()
 
   const toggleSection = (id: number) => {
     setOpenSection(openSection === id ? null : id)
@@ -282,6 +285,12 @@ export default function FileGuidelinesPage() {
             </div>
 
             <div className="bg-white border-2 border-[#EFEFEF] rounded-xl p-6 hover:border-[#1D0DF3] hover:shadow-lg transition-all duration-300">
+              <h3
+                className="text-[20px] font-bold text-[#292929] mb-1"
+                style={{ fontFamily: 'var(--font-geist-sans)' }}
+              >
+                .3MF
+              </h3>
               <p
                 className="text-[14px] text-[#7C7C7C] mb-2"
                 style={{ fontFamily: 'var(--font-geist-mono)' }}
@@ -707,8 +716,8 @@ export default function FileGuidelinesPage() {
             If you&apos;re unsure whether your file meets our requirements, don&apos;t worry! Our
             team will review your file after upload and contact you if any issues are found.
           </p>
-          <a
-            href="/contact"
+          <Link
+            href={`/${locale}/contact`}
             className="inline-flex items-center gap-2 bg-white text-[#1D0DF3] px-8 py-4 rounded-xl font-semibold text-[16px] hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl"
             style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
@@ -721,9 +730,10 @@ export default function FileGuidelinesPage() {
                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </section>
     </div>
   )
 }
+

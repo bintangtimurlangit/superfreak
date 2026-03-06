@@ -22,9 +22,9 @@ import {
 } from 'lucide-react'
 import StatusBadge from '@/components/orders/StatusBadge'
 import Button from '@/components/ui/Button'
-import Link from 'next/link'
 import type { Order as PayloadOrder } from '@/payload-types'
 import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
+import { Link } from '@/i18n/navigation'
 
 // Mock conversation data - keeping this for future implementation
 const mockConversations = [
@@ -203,15 +203,16 @@ export default function OrderDetailsPage() {
           trackingNumber: payloadOrder.shipping?.trackingNumber || null,
           customerNotes: payloadOrder.customerNotes || null,
           adminNotes: payloadOrder.adminNotes || null,
-          statusHistory: payloadOrder.statusHistory?.map((history) => ({
-            status: history.status,
-            changedAt: history.changedAt,
-          })) || [
-            {
-              status: payloadOrder.status,
-              changedAt: payloadOrder.createdAt,
-            },
-          ],
+          statusHistory:
+            payloadOrder.statusHistory?.map((history) => ({
+              status: history.status,
+              changedAt: history.changedAt,
+            })) || [
+              {
+                status: payloadOrder.status,
+                changedAt: payloadOrder.createdAt,
+              },
+            ],
           conversations: mockConversations, // Using mock data for now
         }
 
@@ -528,7 +529,7 @@ export default function OrderDetailsPage() {
               const currentStatusIndex = array.indexOf(order.status)
               const thisStatusIndex = index
 
-              // A status is "past" if it comes before the current status in the sequence
+              // A status is \"past\" if it comes before the current status in the sequence
               const isPast = thisStatusIndex < currentStatusIndex
               const isCurrent = order.status === status
 
@@ -556,7 +557,11 @@ export default function OrderDetailsPage() {
                     </div>
                     <div className="max-w-[100px]">
                       <StatusBadge
-                        status={status as OrderData['status']}
+                        status={
+                          status === 'unpaid' && order.paymentInfo?.status === 'paid'
+                            ? 'paid'
+                            : (status as OrderData['status'])
+                        }
                         showIcon={false}
                         className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
                       />
@@ -1018,3 +1023,4 @@ export default function OrderDetailsPage() {
     </div>
   )
 }
+
