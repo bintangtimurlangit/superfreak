@@ -126,10 +126,10 @@ export default function ConfigureModal({ isOpen, onClose, file, onSave }: Config
       }
       filamentTypes.docs?.forEach((doc) => {
         if (doc.colors && Array.isArray(doc.colors)) {
-          doc.colors.forEach((color: { name?: string; hexCode?: string }) => {
+          doc.colors.forEach((color: { name: string; hexCode?: string | null; id?: string | null }) => {
             if (color.name) {
               allColors.add(color.name)
-              const hex = color.hexCode?.trim()
+              const hex = color.hexCode != null ? String(color.hexCode).trim() : ''
               if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
                 colorNameToHex[color.name] = hex
               } else if (fallbackHex[color.name]) {
