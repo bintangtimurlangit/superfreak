@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, Pencil, Box, Plus, Minus, CopyPlus } from 'lucide-react'
+import { ChevronRight, Pencil, Box, Plus, Minus, CopyPlus, X } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import ModelViewer from '@/components/3d/ModelViewer'
 import type { UploadedFile } from './UploadStep'
@@ -24,6 +24,7 @@ interface ReviewStepProps {
   onConfigure: (fileId: string) => void
   onQuantityChange?: (fileId: string, quantity: number) => void
   onDuplicateFile?: (fileId: string) => void
+  onRemoveFile?: (fileId: string) => void
 }
 
 export default function ReviewStep({
@@ -33,6 +34,7 @@ export default function ReviewStep({
   onConfigure,
   onQuantityChange,
   onDuplicateFile,
+  onRemoveFile,
 }: ReviewStepProps) {
   const [pricingData, setPricingData] = useState<PrintingPricing[]>([])
   const [filePrices, setFilePrices] = useState<FilePrice[]>([])
@@ -144,8 +146,18 @@ export default function ReviewStep({
             {completedFiles.map((file) => (
               <div
                 key={file.id}
-                className="border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]"
+                className="relative border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]"
               >
+                {onRemoveFile && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveFile(file.id)}
+                    className="absolute top-3 right-3 p-1.5 rounded-[8px] text-[#7C7C7C] hover:bg-[#EFEFEF] hover:text-[#292929] transition-colors"
+                    aria-label="Remove model"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
                 <div className="flex items-start gap-4">
                   {/* 3D model preview - left side */}
                   <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 bg-white rounded-[10px] border border-[#EFEFEF] overflow-hidden">

@@ -23,6 +23,8 @@ export default function OrderForm() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [configureModalOpen, setConfigureModalOpen] = useState(false)
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
+  /** When set, the duplicate is only kept if user saves in ConfigureModal; closing without save removes it */
+  const [pendingDuplicateId, setPendingDuplicateId] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false)
   const [pricingSummary, setPricingSummary] = useState<{
@@ -136,6 +138,9 @@ export default function OrderForm() {
         return f
       }),
     )
+    if (fileId === pendingDuplicateId) {
+      setPendingDuplicateId(null)
+    }
     setConfigureModalOpen(false)
     setSelectedFileId(null)
 
@@ -358,6 +363,20 @@ export default function OrderForm() {
       tempFileId: file.tempFileId,
     }
     setUploadedFiles((prev) => [...prev, duplicate])
+    setPendingDuplicateId(newId)
+    setSelectedFileId(newId)
+    setConfigureModalOpen(true)
+  }
+
+  const handleRemoveFile = (fileId: string) => {
+    if (fileId === pendingDuplicateId) {
+      setPendingDuplicateId(null)
+    }
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+    if (selectedFileId === fileId) {
+      setConfigureModalOpen(false)
+      setSelectedFileId(null)
+    }
   }
 
   return (
@@ -382,6 +401,7 @@ export default function OrderForm() {
               onConfigure={handleConfigure}
               onQuantityChange={handleQuantityChange}
               onDuplicateFile={handleDuplicateFile}
+              onRemoveFile={handleRemoveFile}
             />
           )}
 
@@ -411,6 +431,10 @@ export default function OrderForm() {
       <ConfigureModal
         isOpen={configureModalOpen}
         onClose={() => {
+          if (pendingDuplicateId && selectedFileId === pendingDuplicateId) {
+            setUploadedFiles((prev) => prev.filter((f) => f.id !== pendingDuplicateId))
+            setPendingDuplicateId(null)
+          }
           setConfigureModalOpen(false)
           setSelectedFileId(null)
         }}
