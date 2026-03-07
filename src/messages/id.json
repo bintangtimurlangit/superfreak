@@ -40,6 +40,12 @@
     "proceedToCheckout": "Lanjut ke checkout",
     "startOrder": "Mulai pesanan",
     "quantity": "Jumlah",
-    "weight": "Berat"
+    "weight": "Berat",
+    "remove": "Hapus",
+    "subtotal": "Subtotal",
+    "shippingAtCheckout": "Ongkir dan total akhir di checkout.",
+    "loading": "Memuat keranjang…",
+    "priceAtCheckout": "Harga di checkout",
+    "backToOrder": "Kembali ke pesanan"
   }
 }

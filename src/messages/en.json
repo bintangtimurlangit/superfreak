@@ -40,6 +40,12 @@
     "proceedToCheckout": "Proceed to checkout",
     "startOrder": "Start order",
     "quantity": "Qty",
-    "weight": "Weight"
+    "weight": "Weight",
+    "remove": "Remove",
+    "subtotal": "Subtotal",
+    "shippingAtCheckout": "Shipping and final total at checkout.",
+    "loading": "Loading cart…",
+    "priceAtCheckout": "Price at checkout",
+    "backToOrder": "Back to order"
   }
 }
