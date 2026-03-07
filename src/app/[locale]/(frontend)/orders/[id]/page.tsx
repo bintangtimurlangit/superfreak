@@ -500,10 +500,14 @@ export default function OrderDetailsPage() {
                 Pay Now
               </Button>
             )}
-            <Button variant="secondary" className="border border-[#DCDCDC]">
-              <Download className="h-4 w-4 mr-2" />
+            <a
+              href={`/api/orders/${orderId}/invoice`}
+              download={`invoice-${order.orderNumber ?? orderId}.pdf`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white px-4 py-2 text-sm font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
+            >
+              <Download className="h-4 w-4" />
               Download Invoice
-            </Button>
+            </a>
             <Button variant="secondary" className="border border-[#DCDCDC]">
               <MessageSquare className="h-4 w-4 mr-2" />
               Contact Support
