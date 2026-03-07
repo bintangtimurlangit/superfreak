@@ -345,19 +345,20 @@ export default function OrderDetailsPage() {
   const handleCancelOrder = async () => {
     setIsCanceling(true)
     try {
-      // TODO: Implement API call to cancel order
-      // const response = await fetch(`/api/orders/${orderId}/cancel`, {
-      //   method: 'POST',
-      //   credentials: 'include',
-      // })
-      // if (!response.ok) throw new Error('Failed to cancel order')
-
-      // For now, just show a placeholder alert
-      alert('Cancel order functionality will be implemented in the backend')
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.details || data.error || 'Failed to cancel order')
+      }
+      const updated = await response.json()
+      setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
       setIsCancelModalOpen(false)
     } catch (error) {
       console.error('Error canceling order:', error)
-      alert('Failed to cancel order. Please try again.')
+      alert(error instanceof Error ? error.message : 'Failed to cancel order. Please try again.')
     } finally {
       setIsCanceling(false)
     }
