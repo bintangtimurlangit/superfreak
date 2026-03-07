@@ -32,5 +32,14 @@
   },
   "Common": {
     "home": "Home"
+  },
+  "Cart": {
+    "title": "My Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Upload and review 3D models on the order page to add them here.",
+    "proceedToCheckout": "Proceed to checkout",
+    "startOrder": "Start order",
+    "quantity": "Qty",
+    "weight": "Weight"
   }
 }

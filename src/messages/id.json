@@ -32,5 +32,14 @@
   },
   "Common": {
     "home": "Beranda"
+  },
+  "Cart": {
+    "title": "Keranjang Saya",
+    "empty": "Keranjang Anda kosong",
+    "emptyDescription": "Unggah dan tinjau model 3D di halaman pemesanan untuk menambahkannya ke sini.",
+    "proceedToCheckout": "Lanjut ke checkout",
+    "startOrder": "Mulai pesanan",
+    "quantity": "Jumlah",
+    "weight": "Berat"
   }
 }

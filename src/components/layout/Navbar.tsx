@@ -11,6 +11,7 @@ import { useBetterAuth } from '@/lib/auth/context'
 import { use } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
+import { useCart } from '@/components/providers/CartProvider'
 import {
   ChevronDown,
   MessageSquareText,
@@ -118,6 +119,7 @@ const Navbar = () => {
   ]
 
   const currentLanguage = languages.find((l) => l.locale === locale) ?? languages[0]
+  const { cartCount } = useCart()
 
   const handleLanguageSelect = (nextLocale: (typeof languages)[number]['locale']) => {
     setIsLanguageDropdownOpen(false)
@@ -210,7 +212,7 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] transition-colors text-sm text-[#292929] dark:text-foreground"
+                className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 aria-expanded={isLanguageDropdownOpen}
                 aria-haspopup="true"
                 aria-label={currentLanguage.label}
@@ -218,14 +220,9 @@ const Navbar = () => {
                 <Image
                   src={currentLanguage.flagSrc}
                   alt=""
-                  width={14}
-                  height={14}
-                  className="rounded-sm flex-shrink-0"
-                />
-                <span className="uppercase font-medium">{currentLanguage.locale}</span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 text-[#989898] transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
-                  aria-hidden
+                  width={18}
+                  height={18}
+                  className="rounded-sm object-cover"
                 />
               </button>
               {isLanguageDropdownOpen && (
@@ -256,20 +253,24 @@ const Navbar = () => {
 
             <Link
               href="/contact"
-              className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] transition-colors text-[#292929] dark:text-foreground"
+              className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               aria-label={t('contactUs')}
             >
               <MessageSquareText className="h-4 w-4" aria-hidden />
             </Link>
 
-            <Button
-              variant="secondary"
-              size="icon"
-              className="hidden lg:flex h-9 w-9 rounded-lg"
+            <Link
+              href="/cart"
+              className="hidden lg:flex relative items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               aria-label={t('myCart')}
             >
               <ShoppingCart className="h-4 w-4" aria-hidden />
-            </Button>
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-[10px] font-semibold">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </Link>
 
             {isAuthenticated && user ? (
               <div className="relative hidden lg:block" ref={userDropdownRef}>
@@ -478,10 +479,17 @@ const Navbar = () => {
                 </Button>
               </Link>
 
-              <Button variant="secondary" className="w-full justify-center text-sm">
-                <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
-                {t('myCart')}
-              </Button>
+              <Link href="/cart" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="secondary" className="w-full justify-center text-sm relative">
+                  <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
+                  {t('myCart')}
+                  {cartCount > 0 && (
+                    <span className="ml-2 h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-xs font-semibold">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               {!user ? (
                 <MobileUserProfileSkeleton />

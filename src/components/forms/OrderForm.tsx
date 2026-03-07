@@ -10,6 +10,7 @@ import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
 import { useSession } from '@/lib/auth/client'
 import { sliceFile } from '@/lib/slice'
+import { getCart, setCart, clearCart, type CartItem } from '@/lib/cart'
 
 const steps = [
   { id: 1, name: 'Upload Model' },
@@ -41,49 +42,65 @@ export default function OrderForm() {
   const isAuthenticated = !!sessionData?.user
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedOrderState = sessionStorage.getItem('pendingOrderState')
-      if (savedOrderState) {
-        try {
-          const orderState = JSON.parse(savedOrderState)
-          if (orderState.files && Array.isArray(orderState.files)) {
-            setUploadedFiles(orderState.files)
-            if (orderState.currentStep) {
-              setCurrentStep(orderState.currentStep)
-            }
-          }
-          sessionStorage.removeItem('pendingOrderState')
-          sessionStorage.removeItem('pendingOrderNextStep')
-        } catch (error) {
-          console.error('Error restoring order state:', error)
-        }
-      }
+    if (typeof window === 'undefined') return
 
-      const heroFiles = sessionStorage.getItem('heroUploadedFiles')
-      if (heroFiles) {
-        try {
-          const fileData = JSON.parse(heroFiles)
-          const newFiles: UploadedFile[] = fileData.map(
-            (file: { name: string; size: number; data: string }) => ({
-              id: Math.random().toString(36).substring(7),
-              name: file.name,
-              size: file.size,
-              file: file.data,
-              status: 'completed' as const,
-              progress: 100,
-              configuration: {
-                quantity: 1,
-                enabled: true,
-                wallCount: '2',
-              },
-            }),
-          )
-          setUploadedFiles(newFiles)
-          sessionStorage.removeItem('heroUploadedFiles')
-        } catch (error) {
-          console.error('Error loading files from Hero Section:', error)
+    const savedOrderState = sessionStorage.getItem('pendingOrderState')
+    if (savedOrderState) {
+      try {
+        const orderState = JSON.parse(savedOrderState)
+        if (orderState.files && Array.isArray(orderState.files)) {
+          setUploadedFiles(orderState.files)
+          if (orderState.currentStep) setCurrentStep(orderState.currentStep)
         }
+        sessionStorage.removeItem('pendingOrderState')
+        sessionStorage.removeItem('pendingOrderNextStep')
+      } catch (error) {
+        console.error('Error restoring order state:', error)
       }
+      return
+    }
+
+    const heroFiles = sessionStorage.getItem('heroUploadedFiles')
+    if (heroFiles) {
+      try {
+        const fileData = JSON.parse(heroFiles)
+        const newFiles: UploadedFile[] = fileData.map(
+          (file: { name: string; size: number; data: string }) => ({
+            id: Math.random().toString(36).substring(7),
+            name: file.name,
+            size: file.size,
+            file: file.data,
+            status: 'completed' as const,
+            progress: 100,
+            configuration: {
+              quantity: 1,
+              enabled: true,
+              wallCount: '2',
+            },
+          }),
+        )
+        setUploadedFiles(newFiles)
+        sessionStorage.removeItem('heroUploadedFiles')
+      } catch (error) {
+        console.error('Error loading files from Hero Section:', error)
+      }
+      return
+    }
+
+    // Restore from cart when user comes from cart page (e.g. "Proceed to checkout")
+    const cartItems = getCart()
+    if (cartItems.length > 0) {
+      const restored: UploadedFile[] = cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        status: 'completed' as const,
+        configuration: item.configuration,
+        tempFileId: item.tempFileId,
+        statistics: item.statistics,
+      }))
+      setUploadedFiles(restored)
+      setCurrentStep(2)
     }
   }, [])
 
@@ -212,9 +229,9 @@ export default function OrderForm() {
           const filePrice = filePrices.find((fp) => fp.fileId === file.id)
 
           return {
-            file: file.id,
+            file: file.tempFileId ?? file.id,
             fileName: file.name,
-            fileSize: file.file instanceof File ? file.file.size : 0,
+            fileSize: file.size || (file.file instanceof File ? file.file.size : 0),
             quantity: file.configuration?.quantity || 1,
             configuration: {
               material: file.configuration?.material || 'PLA',
@@ -304,6 +321,7 @@ export default function OrderForm() {
         const order = await response.json()
         const orderId = order.doc?.id || order.id
         setOrderId(orderId)
+        clearCart()
         setCurrentStep(currentStep + 1)
       } catch (error) {
         console.error('Error creating order:', error)
@@ -312,6 +330,20 @@ export default function OrderForm() {
         setIsCreatingOrder(false)
       }
       return
+    }
+
+    if (currentStep === 1) {
+      const cartItems: CartItem[] = uploadedFiles
+        .filter((f) => f.statistics)
+        .map((f) => ({
+          id: f.id,
+          name: f.name,
+          size: f.size,
+          tempFileId: f.tempFileId,
+          configuration: f.configuration,
+          statistics: f.statistics,
+        }))
+      setCart(cartItems)
     }
 
     if (currentStep < steps.length) {

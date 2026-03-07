@@ -12,6 +12,7 @@ import OrderRedirectHandler from '@/components/orders/OrderRedirectHandler'
 import { BetterAuthProvider } from '@/lib/auth/context'
 import { getContextProps } from '@/lib/auth/context/get-context-props'
 import QueryProvider from '@/components/providers/QueryProvider'
+import { CartProvider } from '@/components/providers/CartProvider'
 import { routing } from '@/i18n/routing'
 import { getMessages } from 'next-intl/server'
 
@@ -64,11 +65,13 @@ export default async function LocaleLayout({ children, params }: Props) {
         <NextIntlClientProvider messages={messages}>
           <BetterAuthProvider {...getContextProps()}>
             <QueryProvider>
-              <SmoothScroll />
-              <OrderRedirectHandler />
-              <Navbar />
-              <main>{children}</main>
-              <Footer />
+              <CartProvider>
+                <SmoothScroll />
+                <OrderRedirectHandler />
+                <Navbar />
+                <main>{children}</main>
+                <Footer />
+              </CartProvider>
             </QueryProvider>
           </BetterAuthProvider>
         </NextIntlClientProvider>
