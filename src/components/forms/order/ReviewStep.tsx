@@ -142,206 +142,184 @@ export default function ReviewStep({
             </p>
           </div>
 
-          <div className="space-y-3">
-            {completedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="relative border border-[#EFEFEF] rounded-[12px] p-4 bg-[#F8F8F8]"
-              >
-                {onRemoveFile && (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveFile(file.id)}
-                    className="absolute top-3 right-3 p-1.5 rounded-[8px] text-[#7C7C7C] hover:bg-[#EFEFEF] hover:text-[#292929] transition-colors"
-                    aria-label="Remove model"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                <div className="flex items-start gap-4">
-                  {/* 3D model preview - left side */}
-                  <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 bg-white rounded-[10px] border border-[#EFEFEF] overflow-hidden">
-                    {file.file ? (
-                      <ModelViewer
-                        file={file.file}
-                        className="w-full h-full"
-                        showControls={false}
-                        color={(file.configuration as { colorHex?: string })?.colorHex}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#F8F8F8]">
-                        <Box className="h-10 w-10 text-[#DCDCDC]" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                  <div className="min-w-0">
+          <div className="space-y-4">
+            {completedFiles.map((file) => {
+              const filePrice = filePrices.find((fp) => fp.fileId === file.id)
+              const qty = file.configuration?.quantity || 1
+              return (
+                <div
+                  key={file.id}
+                  className="relative overflow-hidden rounded-[16px] border border-[#E5E5E5] bg-white shadow-sm transition-shadow hover:shadow-md"
+                >
+                  {/* Top bar: name + price + remove */}
+                  <div className="flex items-center justify-between gap-4 border-b border-[#F0F0F0] px-4 py-3 bg-[#FAFAFA]">
                     <h3
-                      className="text-base font-semibold text-[#292929] mb-1"
+                      className="min-w-0 truncate text-sm font-semibold text-[#292929]"
                       style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      title={file.name}
                     >
                       {file.name}
                     </h3>
-                    <div className="space-y-1">
-                      <p
-                        className="text-xs text-[#7C7C7C]"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Material: {file.configuration?.material || 'Not selected'}
-                      </p>
-                      <p
-                        className="text-xs text-[#7C7C7C]"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
-                      >
-                        Color: {file.configuration?.color || 'Not selected'}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-xs text-[#7C7C7C]"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {filePrice ? (
+                        <div className="text-right">
+                          <p
+                            className="text-sm font-semibold text-[#1D0DF3]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {formatCurrency(filePrice.totalPrice)}
+                          </p>
+                          <p
+                            className="text-[11px] text-[#7C7C7C]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {formatWeight(filePrice.weight)} @ {formatCurrency(filePrice.pricePerGram)}/g
+                          </p>
+                        </div>
+                      ) : !file.statistics ? (
+                        <span className="text-xs font-medium text-amber-600">Re-calculate needed</span>
+                      ) : (
+                        <span className="text-xs text-[#7C7C7C]">Calculating...</span>
+                      )}
+                      {onRemoveFile && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveFile(file.id)}
+                          className="p-2 rounded-[10px] text-[#9CA3AF] hover:bg-[#EFEFEF] hover:text-[#292929] transition-colors"
+                          aria-label="Remove model"
                         >
-                          Quantity:
-                        </span>
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body: preview | specs | quantity + actions */}
+                  <div className="flex flex-col sm:flex-row gap-4 p-4">
+                    {/* 3D preview */}
+                    <div className="flex-shrink-0 w-full sm:w-32 h-32 bg-[#F8F8F8] rounded-[12px] border border-[#EEEEEE] overflow-hidden">
+                      {file.file ? (
+                        <ModelViewer
+                          file={file.file}
+                          className="w-full h-full"
+                          showControls={false}
+                          color={(file.configuration as { colorHex?: string })?.colorHex}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Box className="h-12 w-12 text-[#DCDCDC]" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Specs grid */}
+                    <div className="flex-1 min-w-0">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                        <div>
+                          <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Material</span>
+                          <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                            {file.configuration?.material || '–'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Color</span>
+                          <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                            {file.configuration?.color || '–'}
+                          </p>
+                        </div>
+                        {file.statistics && (
+                          <>
+                            <div>
+                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Weight/unit</span>
+                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                                {formatWeight(file.statistics.filament_weight_g || 0)}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Layer</span>
+                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                                {file.configuration?.layerHeight || '–'} mm
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Infill</span>
+                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                                {file.configuration?.infill || '–'}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Walls</span>
+                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                                {file.configuration?.wallCount || '2'}
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quantity + actions */}
+                    <div className="flex flex-col sm:items-end justify-between gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Qty</span>
                         {onQuantityChange ? (
-                          <div className="flex items-center gap-0.5 border border-[#DCDCDC] rounded-[8px] bg-white">
+                          <div className="flex items-center border border-[#E5E5E5] rounded-[10px] bg-[#FAFAFA] overflow-hidden">
                             <button
                               type="button"
-                              onClick={() =>
-                                onQuantityChange(
-                                  file.id,
-                                  (file.configuration?.quantity || 1) - 1,
-                                )
-                              }
-                              className="p-1.5 hover:bg-[#F8F8F8] rounded-l-[6px] transition-colors disabled:opacity-50"
+                              onClick={() => onQuantityChange(file.id, qty - 1)}
+                              className="p-2 hover:bg-[#EFEFEF] transition-colors disabled:opacity-40"
                               aria-label="Decrease quantity"
-                              disabled={(file.configuration?.quantity || 1) <= 1}
+                              disabled={qty <= 1}
                             >
-                              <Minus className="h-3.5 w-3.5 text-[#292929]" />
+                              <Minus className="h-4 w-4 text-[#292929]" />
                             </button>
                             <span
-                              className="text-xs font-medium text-[#292929] min-w-[1.75rem] text-center"
+                              className="w-8 text-center text-sm font-semibold text-[#292929]"
                               style={{ fontFamily: 'var(--font-geist-sans)' }}
                             >
-                              {file.configuration?.quantity || 1}
+                              {qty}
                             </span>
                             <button
                               type="button"
-                              onClick={() =>
-                                onQuantityChange(
-                                  file.id,
-                                  (file.configuration?.quantity || 1) + 1,
-                                )
-                              }
-                              className="p-1.5 hover:bg-[#F8F8F8] rounded-r-[6px] transition-colors disabled:opacity-50"
+                              onClick={() => onQuantityChange(file.id, qty + 1)}
+                              className="p-2 hover:bg-[#EFEFEF] transition-colors disabled:opacity-40"
                               aria-label="Increase quantity"
-                              disabled={(file.configuration?.quantity || 1) >= 999}
+                              disabled={qty >= 999}
                             >
-                              <Plus className="h-3.5 w-3.5 text-[#292929]" />
+                              <Plus className="h-4 w-4 text-[#292929]" />
                             </button>
                           </div>
                         ) : (
-                          <span
-                            className="text-xs text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {file.configuration?.quantity || 1} pcs
-                          </span>
+                          <span className="text-sm font-medium text-[#292929]">{qty} pcs</span>
                         )}
                       </div>
-                      {file.statistics && (
-                        <>
-                          <p
-                            className="text-xs text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Weight: {formatWeight(file.statistics.filament_weight_g || 0)} per unit
-                          </p>
-                          <p
-                            className="text-xs text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Layer Height: {file.configuration?.layerHeight || '-'} mm
-                          </p>
-                          <p
-                            className="text-xs text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Infill: {file.configuration?.infill || '-'}
-                          </p>
-                          <p
-                            className="text-xs text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Wall Count: {file.configuration?.wallCount || '2'}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 flex-shrink-0 sm:pt-0">
-                    <div className="text-right">
-                      {(() => {
-                        const filePrice = filePrices.find((fp) => fp.fileId === file.id)
-                        return filePrice ? (
-                          <>
-                            <p
-                              className="text-base font-semibold text-[#292929]"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              {formatCurrency(filePrice.totalPrice)}
-                            </p>
-                            <p
-                              className="text-xs text-[#7C7C7C] mt-1"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              {formatWeight(filePrice.weight)} @{' '}
-                              {formatCurrency(filePrice.pricePerGram)}/g
-                            </p>
-                          </>
-                        ) : !file.statistics ? (
-                          <p
-                            className="text-sm text-amber-600"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Re-calculate needed
-                          </p>
-                        ) : (
-                          <p
-                            className="text-sm text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Calculating...
-                          </p>
-                        )
-                      })()}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="h-9 px-3 gap-1.5 rounded-[10px] text-xs"
-                        onClick={() => onConfigure(file.id)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
-                      {onDuplicateFile && (
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           type="button"
                           variant="secondary"
-                          className="h-9 px-3 gap-1.5 rounded-[10px] text-xs border border-[#DCDCDC] bg-white hover:bg-[#F8F8F8]"
-                          onClick={() => onDuplicateFile(file.id)}
+                          className="h-9 px-3 gap-1.5 rounded-[10px] text-xs font-medium"
+                          onClick={() => onConfigure(file.id)}
                         >
-                          <CopyPlus className="h-3.5 w-3.5" />
-                          Add with different settings
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
                         </Button>
-                      )}
+                        {onDuplicateFile && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-9 px-3 gap-1.5 rounded-[10px] text-xs font-medium border border-[#E5E5E5] bg-white hover:bg-[#FAFAFA]"
+                            onClick={() => onDuplicateFile(file.id)}
+                          >
+                            <CopyPlus className="h-3.5 w-3.5" />
+                            Add variant
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="flex justify-start pt-6 border-t border-[#EFEFEF] mt-6">
