@@ -47,7 +47,8 @@ export interface UploadedFile {
 interface UploadStepProps {
   uploadedFiles: UploadedFile[]
   setUploadedFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>
-  onNext: () => void
+  /** Called when moving to Review step. Pass the finalized files (with statistics + tempFileId) so parent can set cart. */
+  onNext: (files?: UploadedFile[]) => void
   onConfigure?: (fileId: string) => void
 }
 
@@ -165,7 +166,7 @@ export default function UploadStep({
           f.id === fileId ? { ...f, status: 'completed' as const, progress: 100 } : f,
         ),
       )
-      return
+      return undefined
     }
 
     try {
@@ -253,6 +254,7 @@ export default function UploadStep({
             : f,
         ),
       )
+      return statistics
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error(`[SuperSlice] Error processing ${fileObject.name}:`, errorMessage)
@@ -332,13 +334,13 @@ export default function UploadStep({
       .every((f) => isModelConfigured(f))
   }
 
-  const uploadToTempStorage = async (files: UploadedFile[]): Promise<void> => {
+  const uploadToTempStorage = async (files: UploadedFile[]): Promise<UploadedFile[]> => {
     // Filter files that need to be uploaded (have File object and no tempFileId)
     const filesToUpload = files.filter((f) => f.file && !f.tempFileId)
 
     if (filesToUpload.length === 0) {
       console.log('[TempUpload] No files to upload to temp storage')
-      return
+      return files
     }
 
     console.log(`[TempUpload] Uploading ${filesToUpload.length} files to temp storage`)
@@ -391,18 +393,13 @@ export default function UploadStep({
         }
       })
 
-      // Update state with tempFileIds
-      setUploadedFiles((prev) =>
-        prev.map((file) => {
-          const tempFileId = tempFileMap.get(file.id)
-          if (tempFileId) {
-            return { ...file, tempFileId }
-          }
-          return file
-        }),
-      )
-
+      const merged = files.map((file) => {
+        const tempFileId = tempFileMap.get(file.id)
+        return tempFileId ? { ...file, tempFileId } : file
+      })
+      setUploadedFiles(merged)
       console.log('[TempUpload] Files updated with temp IDs')
+      return merged
     } catch (error) {
       console.error('[TempUpload] Error uploading to temp storage:', error)
       throw error
@@ -460,9 +457,9 @@ export default function UploadStep({
       console.log('[SuperSlice] No files to process, uploading to temp storage')
       setIsProcessing(false)
       try {
-        await uploadToTempStorage(uploadedFiles)
+        const merged = await uploadToTempStorage(uploadedFiles)
         console.log('[SuperSlice] Temp upload complete, proceeding to next step')
-        onNext()
+        onNext(merged)
       } catch (error) {
         console.error('[SuperSlice] Error uploading to temp storage:', error)
         alert('Failed to upload files. Please try again.')
@@ -481,7 +478,7 @@ export default function UploadStep({
 
       console.log(`[SuperSlice] Processing file: ${uploadedFile.name} (${uploadedFile.id})`)
       try {
-        await uploadToBackend(
+        const statistics = await uploadToBackend(
           uploadedFile.id,
           uploadedFile.file,
           uploadedFile.configuration || {
@@ -491,7 +488,7 @@ export default function UploadStep({
           },
         )
         console.log(`[SuperSlice] Successfully processed: ${uploadedFile.name}`)
-        return { success: true, fileId: uploadedFile.id }
+        return { success: true, fileId: uploadedFile.id, statistics }
       } catch (error) {
         console.error(`[SuperSlice] Error processing ${uploadedFile.name}:`, error)
         return { success: false, fileId: uploadedFile.id, error }
@@ -503,14 +500,16 @@ export default function UploadStep({
       const allSucceeded = results.every((r) => r.success)
 
       if (allSucceeded) {
-        // Small delay to ensure state updates have propagated
-        await new Promise((resolve) => setTimeout(resolve, 200))
-
-        // Upload to temp storage before proceeding
+        const filesWithStatistics = uploadedFiles.map((f) => {
+          const r = results.find((x) => x.fileId === f.id)
+          if (r && 'statistics' in r && r.statistics)
+            return { ...f, statistics: r.statistics, status: 'completed' as const, progress: 100 }
+          return f
+        })
         try {
-          await uploadToTempStorage(uploadedFiles)
+          const merged = await uploadToTempStorage(filesWithStatistics)
           console.log('[SuperSlice] Temp upload complete, proceeding to next step')
-          onNext()
+          onNext(merged)
         } catch (error) {
           console.error('[SuperSlice] Error uploading to temp storage:', error)
           alert('Failed to upload files. Please try again.')

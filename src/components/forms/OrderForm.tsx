@@ -332,8 +332,15 @@ export default function OrderForm() {
       return
     }
 
-    if (currentStep === 1) {
-      const cartItems: CartItem[] = uploadedFiles
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handleNextWithFiles = (files?: UploadedFile[]) => {
+    if (files && files.length > 0) {
+      setUploadedFiles(files)
+      const cartItems: CartItem[] = files
         .filter((f) => f.statistics)
         .map((f) => ({
           id: f.id,
@@ -344,11 +351,10 @@ export default function OrderForm() {
           statistics: f.statistics,
         }))
       setCart(cartItems)
+      setCurrentStep(2)
+      return
     }
-
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1)
-    }
+    handleNext()
   }
 
   useEffect(() => {
@@ -457,7 +463,7 @@ export default function OrderForm() {
             <UploadStep
               uploadedFiles={uploadedFiles}
               setUploadedFiles={setUploadedFiles}
-              onNext={handleNext}
+              onNext={handleNextWithFiles}
               onConfigure={handleConfigure}
             />
           )}

@@ -212,7 +212,7 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center gap-1 h-9 px-2 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 aria-expanded={isLanguageDropdownOpen}
                 aria-haspopup="true"
                 aria-label={currentLanguage.label}
@@ -222,7 +222,11 @@ const Navbar = () => {
                   alt=""
                   width={18}
                   height={18}
-                  className="rounded-sm object-cover"
+                  className="rounded-sm object-cover flex-shrink-0"
+                />
+                <ChevronDown
+                  className={`h-4 w-4 text-[#989898] flex-shrink-0 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
                 />
               </button>
               {isLanguageDropdownOpen && (
@@ -253,23 +257,33 @@ const Navbar = () => {
 
             <Link
               href="/contact"
-              className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="hidden lg:flex group items-center h-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 overflow-hidden w-9 hover:w-[7.5rem] transition-[width] duration-200"
               aria-label={t('contactUs')}
             >
-              <MessageSquareText className="h-4 w-4" aria-hidden />
+              <span className="flex items-center justify-center w-9 h-9 flex-shrink-0">
+                <MessageSquareText className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="whitespace-nowrap text-sm font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pr-3">
+                {t('contactUs')}
+              </span>
             </Link>
 
             <Link
               href="/cart"
-              className="hidden lg:flex relative items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="hidden lg:flex group relative items-center h-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 overflow-hidden w-9 hover:w-[6.5rem] transition-[width] duration-200"
               aria-label={t('myCart')}
             >
-              <ShoppingCart className="h-4 w-4" aria-hidden />
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-[10px] font-semibold">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
+              <span className="flex items-center justify-center w-9 h-9 flex-shrink-0 relative">
+                <ShoppingCart className="h-4 w-4" aria-hidden />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-[10px] font-semibold">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </span>
+              <span className="whitespace-nowrap text-sm font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pr-3">
+                {t('myCart')}
+              </span>
             </Link>
 
             {isAuthenticated && user ? (
