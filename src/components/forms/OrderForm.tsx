@@ -123,6 +123,43 @@ export default function OrderForm() {
         file.configuration?.infill !== configuration.infill ||
         file.configuration?.wallCount !== configuration.wallCount)
 
+    // When adding a variant: if same model name + same settings already exist, merge into that item's quantity instead of adding a new row
+    if (fileId === pendingDuplicateId && file) {
+      const sameSettings = (f: UploadedFile) =>
+        f.name === file.name &&
+        f.id !== fileId &&
+        (f.configuration?.material ?? '') === (configuration.material ?? '') &&
+        (f.configuration?.color ?? '') === (configuration.color ?? '') &&
+        (f.configuration?.layerHeight ?? '') === (configuration.layerHeight ?? '') &&
+        (f.configuration?.infill ?? '') === (configuration.infill ?? '') &&
+        (f.configuration?.wallCount ?? '') === (configuration.wallCount ?? '')
+      const existing = uploadedFiles.find(sameSettings)
+      if (existing) {
+        const addQty = configuration.quantity ?? 1
+        const existingQty = existing.configuration?.quantity ?? 1
+        const newQty = Math.min(999, existingQty + addQty)
+        setUploadedFiles((prev) =>
+          prev
+            .filter((f) => f.id !== fileId)
+            .map((f) =>
+              f.id === existing.id
+                ? {
+                    ...f,
+                    configuration: {
+                      ...f.configuration,
+                      quantity: newQty,
+                    },
+                  }
+                : f,
+            ),
+        )
+        setPendingDuplicateId(null)
+        setConfigureModalOpen(false)
+        setSelectedFileId(null)
+        return
+      }
+    }
+
     setUploadedFiles((prev) =>
       prev.map((f) => {
         if (f.id === fileId) {

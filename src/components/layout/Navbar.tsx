@@ -26,13 +26,7 @@ import {
 function UserProfileSkeleton() {
   return (
     <div className="relative hidden lg:block">
-      <div className="h-11 py-1 pl-1 pr-2 flex items-center gap-2 rounded-xl border border-[#EFEFEF] bg-white dark:bg-black">
-        <div className="h-9 w-9 rounded-lg bg-gray-200 animate-pulse flex-shrink-0" />
-        <div className="hidden sm:flex flex-col gap-1">
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-          <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
-        </div>
-      </div>
+      <div className="h-9 w-9 rounded-full bg-gray-200 animate-pulse" />
     </div>
   )
 }
@@ -210,80 +204,83 @@ const Navbar = () => {
             </nav>
           </div>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop Actions — compact icon row */}
+          <div className="hidden md:flex items-center gap-1.5">
             <div className="relative hidden lg:block" ref={languageDropdownDesktopRef}>
-              <Button
-                variant="secondary"
-                className="text-sm"
+              <button
+                type="button"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] transition-colors text-sm text-[#292929] dark:text-foreground"
+                aria-expanded={isLanguageDropdownOpen}
+                aria-haspopup="true"
+                aria-label={currentLanguage.label}
               >
-                <span className="mr-1 inline-flex items-center gap-2">
-                  <Image
-                    src={currentLanguage.flagSrc}
-                    alt=""
-                    width={16}
-                    height={16}
-                    className="rounded-sm"
-                  />
-                  {currentLanguage.label}
-                </span>
+                <Image
+                  src={currentLanguage.flagSrc}
+                  alt=""
+                  width={14}
+                  height={14}
+                  className="rounded-sm flex-shrink-0"
+                />
+                <span className="uppercase font-medium">{currentLanguage.locale}</span>
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
+                  className={`h-3.5 w-3.5 text-[#989898] transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`}
                   aria-hidden
                 />
-              </Button>
+              </button>
               {isLanguageDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
+                <div className="absolute top-full left-0 mt-1.5 w-44 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50 py-1">
                   {languages.map((language) => (
                     <button
                       key={language.locale}
                       onClick={() => handleLanguageSelect(language.locale)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors ${
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors flex items-center gap-2 ${
                         currentLanguage.locale === language.locale
                           ? 'bg-[#f5f5f5] dark:bg-white/10 font-medium'
                           : 'text-[#292929] dark:text-foreground'
                       }`}
                     >
-                      <span className="inline-flex items-center gap-2">
-                        <Image
-                          src={language.flagSrc}
-                          alt=""
-                          width={16}
-                          height={16}
-                          className="rounded-sm"
-                        />
-                        {language.label}
-                      </span>
+                      <Image
+                        src={language.flagSrc}
+                        alt=""
+                        width={14}
+                        height={14}
+                        className="rounded-sm"
+                      />
+                      {language.label}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            <Link href="/contact">
-              <Button variant="secondary" className="hidden lg:flex text-sm">
-                <MessageSquareText className="mr-2 h-4 w-4" aria-hidden />
-                {t('contactUs')}
-              </Button>
+            <Link
+              href="/contact"
+              className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] transition-colors text-[#292929] dark:text-foreground"
+              aria-label={t('contactUs')}
+            >
+              <MessageSquareText className="h-4 w-4" aria-hidden />
             </Link>
 
-            <Button variant="secondary" className="hidden lg:flex text-sm">
-              <ShoppingCart className="mr-2 h-4 w-4" aria-hidden />
-              {t('myCart')}
+            <Button
+              variant="secondary"
+              size="icon"
+              className="hidden lg:flex h-9 w-9 rounded-lg"
+              aria-label={t('myCart')}
+            >
+              <ShoppingCart className="h-4 w-4" aria-hidden />
             </Button>
 
             {isAuthenticated && user ? (
               <div className="relative hidden lg:block" ref={userDropdownRef}>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  className="h-11 py-1 pl-1 pr-2 text-left gap-2"
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-full overflow-hidden border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:ring-2 hover:ring-[#EFEFEF] dark:hover:ring-white/20 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   aria-label="Open account menu"
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
                   {profilePictureUrl ? (
-                    <div className="relative inline-flex h-9 w-9 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
+                    <div className="relative w-full h-full">
                       <Image
                         src={profilePictureUrl}
                         alt={displayName}
@@ -293,46 +290,45 @@ const Navbar = () => {
                       />
                     </div>
                   ) : (
-                    <span
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                      aria-hidden
-                    >
-                      <span className="text-sm font-bold text-white">{initials}</span>
+                    <span className="inline-flex h-full w-full items-center justify-center bg-blue-600 text-white text-sm font-semibold">
+                      {initials}
                     </span>
                   )}
-                  <span className="hidden sm:flex flex-col leading-tight">
-                    <span className="text-sm font-medium">{String(displayName)}</span>
-                    <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">
-                      {user?.email || ''}
-                    </span>
-                  </span>
-                </Button>
+                </button>
                 {isUserDropdownOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50">
+                  <div className="absolute top-full right-0 mt-1.5 w-56 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50 py-2">
+                    <div className="px-3 pb-2 mb-2 border-b border-[#EFEFEF] dark:border-white/10">
+                      <p className="text-sm font-medium text-[#292929] dark:text-foreground truncate">
+                        {String(displayName)}
+                      </p>
+                      <p className="text-xs text-[#989898] dark:text-foreground/60 truncate">
+                        {user?.email || ''}
+                      </p>
+                    </div>
                     <Link
                       href="/my-order"
-                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
-                      <Package className="h-4 w-4 mr-2" aria-hidden />
+                      <Package className="h-4 w-4 mr-2 flex-shrink-0" aria-hidden />
                       {t('myOrder')}
                     </Link>
                     <Link
                       href="/profile"
-                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
-                      <User className="h-4 w-4 mr-2" aria-hidden />
+                      <User className="h-4 w-4 mr-2 flex-shrink-0" aria-hidden />
                       {t('profile')}
                     </Link>
                     <div
                       data-logout-button="true"
                       onClick={handleLogout}
-                      className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground cursor-pointer"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground cursor-pointer"
                       role="button"
                       tabIndex={0}
                     >
-                      <LogOut className="h-4 w-4 mr-2" aria-hidden />
+                      <LogOut className="h-4 w-4 mr-2 flex-shrink-0" aria-hidden />
                       {t('logOut')}
                     </div>
                   </div>
@@ -341,10 +337,11 @@ const Navbar = () => {
             ) : (
               <Button
                 variant="secondary"
-                className="hidden lg:flex h-11 px-4 gap-2 rounded-[12px] border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] shadow-[inset_0_0_0_2px_rgba(126,126,126,0.25)] dark:!bg-white dark:text-[#292929] dark:hover:!bg-[#f2f2f2] dark:border-white/20 dark:shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] text-sm"
+                size="sm"
+                className="hidden lg:inline-flex h-9 px-3 rounded-lg border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] dark:!bg-white dark:text-[#292929] dark:hover:!bg-[#f2f2f2] dark:border-white/20 text-sm"
                 onClick={() => setIsSignInModalOpen(true)}
               >
-                <LogIn className="h-4 w-4" aria-hidden />
+                <LogIn className="h-4 w-4 mr-1.5" aria-hidden />
                 {t('signIn')}
               </Button>
             )}
