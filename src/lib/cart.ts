@@ -1,9 +1,7 @@
 /**
- * Cart persistence (sessionStorage). Cart holds serializable item data only (no File objects).
- * Used when user completes "Review Model" and cleared when order is created.
+ * Cart types. Persistence is handled by the backend (Payload `carts` collection)
+ * via GET/PUT/DELETE /api/cart and CartProvider. Use useCart() for reading/updating the cart.
  */
-
-const CART_STORAGE_KEY = 'cart'
 
 export interface CartItem {
   id: string
@@ -29,37 +27,5 @@ export interface CartItem {
     layer_height: number
     infill_density: number
     wall_count: number
-  }
-}
-
-export function getCart(): CartItem[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = sessionStorage.getItem(CART_STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-export function setCart(items: CartItem[]): void {
-  if (typeof window === 'undefined') return
-  try {
-    sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
-    window.dispatchEvent(new Event('cart-updated'))
-  } catch {
-    // ignore
-  }
-}
-
-export function clearCart(): void {
-  if (typeof window === 'undefined') return
-  try {
-    sessionStorage.removeItem(CART_STORAGE_KEY)
-    window.dispatchEvent(new Event('cart-updated'))
-  } catch {
-    // ignore
   }
 }

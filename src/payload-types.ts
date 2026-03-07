@@ -79,6 +79,7 @@ export interface Config {
     'printing-pricing': PrintingPricing;
     'printing-options': PrintingOption;
     orders: Order;
+    carts: Cart;
     'blog-posts': BlogPost;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -105,6 +106,7 @@ export interface Config {
     'printing-pricing': PrintingPricingSelect<false> | PrintingPricingSelect<true>;
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    carts: CartsSelect<false> | CartsSelect<true>;
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -721,6 +723,33 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * One cart per user. Stores items (sliced 3D models) until order is created.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts".
+ */
+export interface Cart {
+  id: string;
+  /**
+   * One cart per user.
+   */
+  user: string | AppUser;
+  /**
+   * Array of cart items (id, name, size, tempFileId, configuration, statistics).
+   */
+  items:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "blog-posts".
  */
@@ -957,6 +986,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: string | Order;
+      } | null)
+    | ({
+        relationTo: 'carts';
+        value: string | Cart;
       } | null)
     | ({
         relationTo: 'blog-posts';
@@ -1316,6 +1349,16 @@ export interface OrdersSelect<T extends boolean = true> {
         changedBy?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts_select".
+ */
+export interface CartsSelect<T extends boolean = true> {
+  user?: T;
+  items?: T;
   updatedAt?: T;
   createdAt?: T;
 }

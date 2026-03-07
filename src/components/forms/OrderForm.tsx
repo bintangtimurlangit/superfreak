@@ -10,7 +10,8 @@ import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
 import { useSession } from '@/lib/auth/client'
 import { sliceFile } from '@/lib/slice'
-import { getCart, setCart, clearCart, type CartItem } from '@/lib/cart'
+import { useCart } from '@/components/providers/CartProvider'
+import type { CartItem } from '@/lib/cart'
 
 const steps = [
   { id: 1, name: 'Upload Model' },
@@ -40,6 +41,7 @@ export default function OrderForm() {
   const [selectedAddress, setSelectedAddress] = useState<any>(null)
   const { data: sessionData, isPending: sessionLoading } = useSession()
   const isAuthenticated = !!sessionData?.user
+  const { cart, setCart, clearCart, isLoading: cartLoading } = useCart()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -86,23 +88,23 @@ export default function OrderForm() {
       }
       return
     }
-
-    // Restore from cart when user comes from cart page (e.g. "Proceed to checkout")
-    const cartItems = getCart()
-    if (cartItems.length > 0) {
-      const restored: UploadedFile[] = cartItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        size: item.size,
-        status: 'completed' as const,
-        configuration: item.configuration,
-        tempFileId: item.tempFileId,
-        statistics: item.statistics,
-      }))
-      setUploadedFiles(restored)
-      setCurrentStep(2)
-    }
   }, [])
+
+  // Restore from backend cart when user comes from cart page (e.g. "Proceed to checkout")
+  useEffect(() => {
+    if (cartLoading || cart.length === 0 || uploadedFiles.length > 0) return
+    const restored: UploadedFile[] = cart.map((item) => ({
+      id: item.id,
+      name: item.name,
+      size: item.size,
+      status: 'completed' as const,
+      configuration: item.configuration,
+      tempFileId: item.tempFileId,
+      statistics: item.statistics,
+    }))
+    setUploadedFiles(restored)
+    setCurrentStep(2)
+  }, [cartLoading, cart, uploadedFiles.length])
 
   const handleConfigure = (fileId: string) => {
     setSelectedFileId(fileId)

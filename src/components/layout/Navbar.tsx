@@ -268,23 +268,25 @@ const Navbar = () => {
               </span>
             </Link>
 
-            <Link
-              href="/cart"
-              className="hidden lg:flex group relative items-center h-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 overflow-hidden w-9 hover:w-[6.5rem] transition-[width] duration-200"
-              aria-label={t('myCart')}
-            >
-              <span className="flex items-center justify-center w-9 h-9 flex-shrink-0 relative">
-                <ShoppingCart className="h-4 w-4" aria-hidden />
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-[10px] font-semibold">
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                )}
-              </span>
-              <span className="whitespace-nowrap text-sm font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pr-3">
-                {t('myCart')}
-              </span>
-            </Link>
+            <div className="hidden lg:block relative">
+              <Link
+                href="/cart"
+                className="flex group items-center h-9 rounded-lg border border-[#EFEFEF] dark:border-white/[.12] bg-[#FCFCFC] dark:bg-[#111111] hover:bg-[#f7f7f7] dark:hover:bg-[#1a1a1a] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.25)] dark:shadow-none transition-colors text-[#292929] dark:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 overflow-hidden w-9 hover:w-[6.5rem] transition-[width] duration-200"
+                aria-label={t('myCart')}
+              >
+                <span className="flex items-center justify-center w-9 h-9 flex-shrink-0">
+                  <ShoppingCart className="h-4 w-4" aria-hidden />
+                </span>
+                <span className="whitespace-nowrap text-sm font-medium opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 pr-3">
+                  {t('myCart')}
+                </span>
+              </Link>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-[#292929] dark:bg-white text-white dark:text-[#292929] text-[10px] font-semibold border-2 border-white dark:border-[#111111] z-10">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </div>
 
             {isAuthenticated && user ? (
               <div className="relative hidden lg:block" ref={userDropdownRef}>
