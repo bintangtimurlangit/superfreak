@@ -297,14 +297,16 @@ export default function OrderDetailsPage() {
             paymentStatus?: string
           }
           if (data.success) {
+            const orderStatus = (data.orderStatus ?? undefined) as OrderData['status'] | undefined
+            const paymentStatus = (data.paymentStatus ?? undefined) as OrderData['paymentInfo']['status'] | undefined
             setOrder((prev) =>
               prev
                 ? {
                     ...prev,
-                    status: data.orderStatus ?? prev.status,
+                    status: orderStatus ?? prev.status,
                     paymentInfo: {
                       ...prev.paymentInfo,
-                      status: data.paymentStatus ?? prev.paymentInfo.status,
+                      status: paymentStatus ?? prev.paymentInfo.status,
                     },
                   }
                 : null,
