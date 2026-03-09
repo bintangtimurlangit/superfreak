@@ -472,12 +472,12 @@ export default function OrderDetailsPage() {
             <span>{formatDate(order.createdAt)}</span>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Action Buttons - consistent text-[14px] font-medium */}
+          <div className="flex flex-wrap items-center gap-3">
             {order.status === 'unpaid' && (
               <Button
                 onClick={() => setIsPaymentModalOpen(true)}
-                className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9]"
+                className="bg-[#1D0DF3] text-white hover:bg-[#1a0cd9] text-[14px] font-medium h-10 px-4"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pay Now
@@ -486,29 +486,28 @@ export default function OrderDetailsPage() {
             <a
               href={`/api/orders/${orderId}/invoice`}
               download={`invoice-${order.orderNumber ?? orderId}.pdf`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white px-4 py-2 text-[14px] font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white h-10 px-4 text-[14px] font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
             >
               <Download className="h-4 w-4" />
               Download Invoice
             </a>
-            <Button variant="secondary" className="border border-[#DCDCDC]">
+            <Button variant="secondary" className="border border-[#DCDCDC] text-[14px] font-medium h-10 px-4">
               <MessageSquare className="h-4 w-4 mr-2" />
               Contact Support
             </Button>
             {(order.status === 'delivered' || order.status === 'completed') && (
-              <Button className="bg-[#10B981] text-white hover:bg-[#059669]">
+              <Button className="bg-[#10B981] text-white hover:bg-[#059669] text-[14px] font-medium h-10 px-4">
                 <Package className="h-4 w-4 mr-2" />
                 Buy Again
               </Button>
             )}
-            {/* Cancel Order Button - Only show for certain statuses */}
             {(order.status === 'unpaid' ||
               order.status === 'in-review' ||
               order.status === 'needs-discussion') && (
               <Button
                 onClick={() => setIsCancelModalOpen(true)}
                 variant="secondary"
-                className="border border-red-200 text-red-600 hover:bg-red-50 ml-auto"
+                className="border border-red-200 text-red-600 hover:bg-red-50 ml-auto text-[14px] font-medium h-10 px-4"
               >
                 Cancel Order
               </Button>
@@ -534,7 +533,6 @@ export default function OrderDetailsPage() {
             ]
             return (
               <div className="w-full">
-                {/* Row 1: circles + connecting lines on one horizontal axis */}
                 <div className="flex items-center w-full">
                   {statuses.map((status, index) => {
                     const currentStatusIndex = statuses.indexOf(order.status)
@@ -571,7 +569,6 @@ export default function OrderDetailsPage() {
                     )
                   })}
                 </div>
-                {/* Row 2: status labels and dates centered under each circle (same segment widths as row 1) */}
                 <div className="flex w-full mt-3">
                   {statuses.map((status, index) => {
                     const currentStatusIndex = statuses.indexOf(order.status)
@@ -592,10 +589,10 @@ export default function OrderDetailsPage() {
                                   : (status as OrderData['status'])
                               }
                               showIcon={false}
-                              className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
+                              className={`!px-2 !py-0.5 !text-[12px] md:!text-[14px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
                             />
                           </div>
-                          <p className="text-[12px] md:text-[14px] text-[#989898] mt-1 text-center h-4">
+                          <p className="text-[12px] md:text-[14px] text-[#989898] mt-1.5 text-center min-h-[1.25rem] leading-tight">
                             {statusEntry
                               ? new Date(statusEntry.changedAt).toLocaleDateString('en-US', {
                                   month: 'short',
@@ -617,108 +614,79 @@ export default function OrderDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content - Left Side */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Order Items */}
+            {/* Order Items - redesigned card layout */}
             <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
-              <h2
-                className="text-[18px] md:text-[20px] font-semibold leading-[100%] text-[#292929] mb-4"
-              >
+              <h2 className="text-[18px] md:text-[20px] font-semibold leading-[100%] text-[#292929] mb-5">
                 Order Items
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {order.items.map((item, index) => (
                   <div
                     key={item.id}
-                    className={`pb-4 ${index < order.items.length - 1 ? 'border-b border-[#EFEFEF]' : ''}`}
+                    className={`rounded-[16px] border border-[#EFEFEF] bg-white overflow-hidden ${index < order.items.length - 1 ? 'mb-6' : ''}`}
                   >
-                    <div className="flex items-start gap-4 mb-3">
-                      {/* 3D Model Preview Placeholder */}
-                      <div className="w-24 h-24 bg-[#F8F8F8] rounded-lg flex items-center justify-center flex-shrink-0 border border-[#EFEFEF]">
+                    {/* Item row: image + name + quantity/price line + total */}
+                    <div className="p-4 flex items-start gap-4">
+                      <div className="w-20 h-20 flex-shrink-0 rounded-[12px] bg-[#F8F8F8] border border-[#EFEFEF] flex items-center justify-center">
                         <Package className="h-8 w-8 text-[#989898]" />
                       </div>
-
-                      {/* Item Details */}
                       <div className="flex-1 min-w-0">
-                        <h3
-                          className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-2"
-                        >
+                        <h3 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-1">
                           {item.fileName}
                         </h3>
-                        <div className="flex items-center gap-2 text-[14px]">
-                          <span className="text-[#989898]">Quantity:</span>
-                          <span className="text-[#292929] font-medium">{item.quantity}</span>
-                          {item.quantity > 1 && (
-                            <>
-                              <span className="text-[#989898]">×</span>
-                              <span className="text-[#292929]">{formatCurrency(item.price)}</span>
-                            </>
-                          )}
-                        </div>
+                        <p className="text-[12px] md:text-[14px] text-[#989898]">
+                          Quantity: {item.quantity} × {formatCurrency(item.price)}
+                        </p>
                       </div>
-
-                      {/* Item Total */}
-                      <div className="text-right">
-                        <p
-                          className="text-[18px] md:text-[20px] font-bold text-[#292929]"
-                        >
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[16px] md:text-[18px] font-bold text-[#292929]">
                           {formatCurrency(item.totalPrice)}
                         </p>
                       </div>
                     </div>
 
-                    {/* Print Configuration */}
-                    <div className="bg-[#F8F8F8] rounded-lg p-4 mt-3">
-                      <h4
-                        className="text-[14px] font-semibold text-[#292929] mb-3"
-                      >
+                    {/* Print Configuration - label (regular) : value (bold) */}
+                    <div className="bg-[#F8F8F8] border-t border-[#EFEFEF] px-4 py-4">
+                      <h4 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-3">
                         Print Configuration
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[14px]">
-                        <div>
-                          <span className="text-[#7C7C7C]">Material:</span>
-                          <p className="text-[#292929] font-medium mt-0.5">
-                            {item.configuration.material}
-                          </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2.5 text-[12px] md:text-[14px]">
+                        <div className="flex gap-1.5">
+                          <span className="text-[#7C7C7C] shrink-0">Material:</span>
+                          <span className="text-[#292929] font-semibold">{item.configuration.material}</span>
                         </div>
-                        <div>
-                          <span className="text-[#7C7C7C]">Color:</span>
-                          <p className="text-[#292929] font-medium mt-0.5">
-                            {item.configuration.color}
-                          </p>
+                        <div className="flex gap-1.5">
+                          <span className="text-[#7C7C7C] shrink-0">Color:</span>
+                          <span className="text-[#292929] font-semibold">{item.configuration.color}</span>
                         </div>
-                        <div>
-                          <span className="text-[#7C7C7C]">Layer Height:</span>
-                          <p className="text-[#292929] font-medium mt-0.5">
-                            {item.configuration.layerHeight}mm
-                          </p>
+                        <div className="flex gap-1.5">
+                          <span className="text-[#7C7C7C] shrink-0">Layer Height:</span>
+                          <span className="text-[#292929] font-semibold">{item.configuration.layerHeight}mm</span>
                         </div>
-                        <div>
-                          <span className="text-[#7C7C7C]">Infill:</span>
-                          <p className="text-[#292929] font-medium mt-0.5">
-                            {item.configuration.infill}%
-                          </p>
+                        <div className="flex gap-1.5">
+                          <span className="text-[#7C7C7C] shrink-0">Infill:</span>
+                          <span className="text-[#292929] font-semibold">{item.configuration.infill}%</span>
                         </div>
-                        <div>
-                          <span className="text-[#7C7C7C]">Wall Count:</span>
-                          <p className="text-[#292929] font-medium mt-0.5">
-                            {item.configuration.wallCount}
-                          </p>
+                        <div className="flex gap-1.5">
+                          <span className="text-[#7C7C7C] shrink-0">Wall Count:</span>
+                          <span className="text-[#292929] font-semibold">{item.configuration.wallCount}</span>
                         </div>
-                        {/* Filament Weight - moved from statistics */}
                         {item.statistics && (
-                          <div>
-                            <span className="text-[#7C7C7C]">Filament Weight:</span>
-                            <p className="text-[#292929] font-medium mt-0.5">
-                              {item.statistics.filamentWeight}g
-                            </p>
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Filament Weight:</span>
+                            <span className="text-[#292929] font-semibold">{item.statistics.filamentWeight}g</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Download Button */}
-                    <div className="mt-3">
-                      <button className="text-[14px] text-[#1D0DF3] hover:text-[#1a0cd9] font-medium flex items-center gap-1.5">
-                        <Download className="h-4 w-4" />
+                    {/* Download 3D File link */}
+                    <div className="px-4 pb-4 pt-2">
+                      <button
+                        type="button"
+                        className="text-[12px] md:text-[14px] text-[#1D0DF3] hover:text-[#1a0cd9] font-medium inline-flex items-center gap-1.5 underline underline-offset-2"
+                      >
+                        <Download className="h-3.5 w-3.5" />
                         Download 3D File
                       </button>
                     </div>
