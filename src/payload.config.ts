@@ -15,6 +15,7 @@ import { FilamentTypes } from './collections/Printing/FilamentTypes'
 import { PrintingPricing } from './collections/Printing/PrintingPricing'
 import { PrintingOptions } from './collections/Printing/PrintingOptions'
 import { Orders } from './collections/Orders/Orders'
+import { OrderMessages } from './collections/OrderMessages/OrderMessages'
 import { Carts } from './collections/Carts/Carts'
 import { BlogPosts } from './collections/Blog/BlogPosts'
 import { plugins } from './payload/plugins'
@@ -45,6 +46,7 @@ export default buildConfig({
     PrintingPricing,
     PrintingOptions,
     Orders,
+    OrderMessages,
     Carts,
     BlogPosts,
   ],

@@ -100,4 +100,23 @@ export async function setCachedShippingCost(
   return cacheSet(key, data, ttlSeconds)
 }
 
+// Pub/sub for order discussion live updates (SSE)
+const ORDER_MESSAGES_CHANNEL_PREFIX = 'order-messages:'
+
+export function getOrderMessagesChannel(orderId: string): string {
+  return `${ORDER_MESSAGES_CHANNEL_PREFIX}${orderId}`
+}
+
+export async function publishOrderMessage(
+  orderId: string,
+  message: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const redis = getRedis()
+    await redis.publish(getOrderMessagesChannel(orderId), JSON.stringify(message))
+  } catch (error) {
+    console.error('Redis PUBLISH order message error:', error)
+  }
+}
+
 export default getRedis

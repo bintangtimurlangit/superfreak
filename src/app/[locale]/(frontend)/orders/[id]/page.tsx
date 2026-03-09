@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useParams } from 'next/navigation'
 import {
   ArrowLeft,
@@ -26,45 +26,13 @@ import type { Order as PayloadOrder } from '@/payload-types'
 import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
 import { Link, useRouter } from '@/i18n/navigation'
 
-// Mock conversation data - keeping this for future implementation
-const mockConversations = [
-  {
-    id: '1',
-    message:
-      'Thank you for your order! We are currently reviewing your 3D models to ensure optimal print quality.',
-    senderType: 'admin',
-    senderName: 'Support Team',
-    timestamp: new Date(Date.now() - 90 * 60 * 1000).toISOString(), // 90 min ago
-    isRead: true,
-  },
-  {
-    id: '2',
-    message:
-      'We noticed that the wall thickness on your phone case design is quite thin (0.8mm). For better durability, we recommend increasing it to at least 1.2mm. Would you like us to adjust this, or would you prefer to upload a revised file?',
-    senderType: 'admin',
-    senderName: 'Engineering Team',
-    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 60 min ago
-    isRead: true,
-  },
-  {
-    id: '3',
-    message:
-      'Thanks for letting me know! Yes, please go ahead and adjust the wall thickness to 1.2mm. I want it to be durable.',
-    senderType: 'customer',
-    senderName: 'You',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 min ago
-    isRead: true,
-  },
-  {
-    id: '4',
-    message:
-      'Perfect! We will make the adjustment and proceed with printing. The modification will not affect the price or delivery time. We will update you once printing begins.',
-    senderType: 'admin',
-    senderName: 'Engineering Team',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 min ago
-    isRead: true,
-  },
-]
+// Order discussion message (from API)
+export interface OrderMessageItem {
+  id: string
+  body: string
+  author: string | { id: string; name?: string | null; email?: string | null; role?: string }
+  createdAt: string
+}
 
 interface OrderData {
   id: string
@@ -124,11 +92,23 @@ interface OrderData {
     status: string
     changedAt: string
   }>
-  conversations: typeof mockConversations
+  orderUserId?: string // current order owner (for discussion "customer" vs "admin")
+}
+
+function normalizeMessage(doc: {
+  id: string
+  body: string
+  author: string | { id: string; name?: string | null; email?: string | null; role?: string }
+  createdAt: string
+}): OrderMessageItem {
+  return { id: doc.id, body: doc.body, author: doc.author, createdAt: doc.createdAt }
 }
 
 export default function OrderDetailsPage() {
   const [newMessage, setNewMessage] = useState('')
+  const [messages, setMessages] = useState<OrderMessageItem[]>([])
+  const [sending, setSending] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
   const [verifyCompleted, setVerifyCompleted] = useState(false)
   const [order, setOrder] = useState<OrderData | null>(null)
@@ -137,6 +117,7 @@ export default function OrderDetailsPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [isCanceling, setIsCanceling] = useState(false)
+  const discussionRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const params = useParams()
   const router = useRouter()
@@ -217,7 +198,10 @@ export default function OrderDetailsPage() {
                 changedAt: payloadOrder.createdAt,
               },
             ],
-          conversations: mockConversations, // Using mock data for now
+          orderUserId:
+            typeof payloadOrder.user === 'object' && payloadOrder.user !== null && 'id' in payloadOrder.user
+              ? (payloadOrder.user as { id: string }).id
+              : (payloadOrder.user as string) ?? undefined,
         }
 
         setOrder(transformedOrder)
@@ -233,6 +217,40 @@ export default function OrderDetailsPage() {
       fetchOrder()
     }
   }, [orderId])
+
+  // Fetch discussion messages when order is needs-discussion
+  useEffect(() => {
+    if (!orderId || !order || order.status !== 'needs-discussion') return
+    const abort = new AbortController()
+    fetch(`/api/orders/${orderId}/messages`, { credentials: 'include', signal: abort.signal })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to fetch messages'))))
+      .then((data: { docs: unknown[] }) => {
+        setMessages((data.docs || []).map((d) => normalizeMessage(d as OrderMessageItem & { author: unknown })))
+      })
+      .catch((e) => {
+        if (e?.name !== 'AbortError') setMessages([])
+      })
+    return () => abort.abort()
+  }, [orderId, order?.id, order?.status])
+
+  // Live stream: SSE for new messages when discussion is visible
+  useEffect(() => {
+    if (!orderId || !order || order.status !== 'needs-discussion') return
+    const es = new EventSource(`/api/orders/${orderId}/messages/stream`, { withCredentials: true })
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as { id?: string; body?: string; author?: unknown; createdAt?: string }
+        if (data.id && data.body != null) {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.id)) return prev
+            return [...prev, normalizeMessage(data as Parameters<typeof normalizeMessage>[0])]
+          })
+        }
+      } catch {}
+    }
+    es.onerror = () => es.close()
+    return () => es.close()
+  }, [orderId, order?.id, order?.status])
 
   // Verify payment status when user returns from Midtrans (no full reload; update state so we show Paid immediately)
   useEffect(() => {
@@ -491,10 +509,21 @@ export default function OrderDetailsPage() {
               <Download className="h-4 w-4" />
               Download Invoice
             </a>
-            <Button variant="secondary" className="border border-[#DCDCDC] text-[14px] font-medium h-10 px-4">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Contact Support
-            </Button>
+            {order.status === 'needs-discussion' ? (
+              <Button
+                variant="secondary"
+                className="border border-[#DCDCDC] text-[14px] font-medium h-10 px-4"
+                onClick={() => discussionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Discuss order
+              </Button>
+            ) : (
+              <Button variant="secondary" className="border border-[#DCDCDC] text-[14px] font-medium h-10 px-4">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Contact Support
+              </Button>
+            )}
             {(order.status === 'delivered' || order.status === 'completed') && (
               <Button className="bg-[#10B981] text-white hover:bg-[#059669] text-[14px] font-medium h-10 px-4">
                 <Package className="h-4 w-4 mr-2" />
@@ -737,62 +766,64 @@ export default function OrderDetailsPage() {
           <div className="space-y-6">
             {/* Order Discussion - Only show for needs-discussion status */}
             {order.status === 'needs-discussion' && (
-              <div className="bg-blue-50 rounded-[20px] border-2 border-blue-200 p-5">
+              <div ref={discussionRef} className="bg-blue-50 rounded-[20px] border-2 border-blue-200 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <MessageSquare className="h-5 w-5 text-blue-600" />
-                  <h2
-                    className="text-[14px] sm:text-[16px] font-semibold text-blue-900"
-                  >
+                  <h2 className="text-[14px] sm:text-[16px] font-semibold text-blue-900">
                     Discussion
                   </h2>
                 </div>
 
                 {/* Messages Container - Compact */}
                 <div className="space-y-3 mb-3 max-h-[400px] overflow-y-auto">
-                  {order.conversations?.map((conversation: (typeof mockConversations)[0]) => (
-                    <div key={conversation.id}>
-                      <div
-                        className={`${
-                          conversation.senderType === 'customer'
-                            ? 'bg-blue-600 text-white ml-4'
-                            : 'bg-white text-[#292929] mr-4'
-                        } rounded-lg px-3 py-2 shadow-sm`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span
-                            className={`text-[12px] md:text-[14px] font-semibold ${
-                              conversation.senderType === 'customer'
-                                ? 'text-blue-100'
-                                : 'text-blue-600'
-                            }`}
-                          >
-                            {conversation.senderName}
-                          </span>
-                          <span
-                            className={`text-[12px] md:text-[14px] ${
-                              conversation.senderType === 'customer'
-                                ? 'text-blue-200'
-                                : 'text-[#989898]'
-                            }`}
-                          >
-                            {formatTimeAgo(conversation.timestamp)}
-                          </span>
-                        </div>
-                        <p
-                          className="text-[14px] leading-relaxed"
+                  {messages.length === 0 && (
+                    <p className="text-[14px] text-blue-700/80">No messages yet. Start the conversation below.</p>
+                  )}
+                  {messages.map((msg) => {
+                    const authorId = typeof msg.author === 'object' && msg.author !== null ? msg.author.id : msg.author
+                    const isCustomer = order.orderUserId && authorId === order.orderUserId
+                    const senderName =
+                      typeof msg.author === 'object' && msg.author !== null
+                        ? (msg.author.name || msg.author.email || 'Support')
+                        : 'Support'
+                    return (
+                      <div key={msg.id}>
+                        <div
+                          className={`${
+                            isCustomer ? 'bg-blue-600 text-white ml-4' : 'bg-white text-[#292929] mr-4'
+                          } rounded-lg px-3 py-2 shadow-sm`}
                         >
-                          {conversation.message}
-                        </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`text-[12px] md:text-[14px] font-semibold ${
+                                isCustomer ? 'text-blue-100' : 'text-blue-600'
+                              }`}
+                            >
+                              {isCustomer ? 'You' : senderName}
+                            </span>
+                            <span
+                              className={`text-[12px] md:text-[14px] ${
+                                isCustomer ? 'text-blue-200' : 'text-[#989898]'
+                              }`}
+                            >
+                              {formatTimeAgo(msg.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-[14px] leading-relaxed">{msg.body}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 {/* Message Input - Compact */}
                 <div className="pt-3 border-t border-blue-200">
+                  {messageError && (
+                    <p className="text-red-600 text-[14px] mb-2">{messageError}</p>
+                  )}
                   <textarea
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => { setNewMessage(e.target.value); setMessageError(null) }}
                     placeholder="Type your message..."
                     rows={2}
                     className="w-full px-3 py-2 rounded-lg border border-blue-300 text-[14px] placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-2"
@@ -804,9 +835,41 @@ export default function OrderDetailsPage() {
                     </button>
                     <Button
                       className="ml-auto bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 text-[14px]"
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || sending}
+                      onClick={async () => {
+                        const body = newMessage.trim()
+                        if (!body) return
+                        setSending(true)
+                        setMessageError(null)
+                        try {
+                          const res = await fetch(`/api/orders/${orderId}/messages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ body }),
+                          })
+                          const data = await res.json()
+                          if (res.ok && data.id) {
+                            setNewMessage('')
+                            setMessages((prev) => {
+                              if (prev.some((m) => m.id === data.id)) return prev
+                              return [...prev, normalizeMessage(data)]
+                            })
+                          } else if (res.status === 403) {
+                            setMessageError(data?.error || 'Discussion is not available for this order.')
+                          }
+                        } catch {
+                          setMessageError('Failed to send. Try again.')
+                        } finally {
+                          setSending(false)
+                        }
+                      }}
                     >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      {sending ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                      )}
                       Send
                     </Button>
                   </div>

@@ -483,6 +483,17 @@ export const Orders: CollectionConfig = {
       },
     },
     {
+      name: 'orderDiscussion',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.status === 'needs-discussion',
+        components: {
+          Field: '/components/payload/OrderDiscussionField#OrderDiscussionField',
+        },
+      },
+    },
+    {
       name: 'statusHistory',
       type: 'array',
       admin: {

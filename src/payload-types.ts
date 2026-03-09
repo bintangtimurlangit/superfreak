@@ -79,6 +79,7 @@ export interface Config {
     'printing-pricing': PrintingPricing;
     'printing-options': PrintingOption;
     orders: Order;
+    'order-messages': OrderMessage;
     carts: Cart;
     'blog-posts': BlogPost;
     'payload-kv': PayloadKv;
@@ -106,6 +107,7 @@ export interface Config {
     'printing-pricing': PrintingPricingSelect<false> | PrintingPricingSelect<true>;
     'printing-options': PrintingOptionsSelect<false> | PrintingOptionsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    'order-messages': OrderMessagesSelect<false> | OrderMessagesSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -723,6 +725,29 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * Per-order discussion messages between customer and admin (when order status is needs-discussion).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "order-messages".
+ */
+export interface OrderMessage {
+  id: string;
+  /**
+   * Order this message belongs to.
+   */
+  order: string | Order;
+  /**
+   * User (customer or admin) who sent the message.
+   */
+  author: string | AppUser;
+  /**
+   * Message content.
+   */
+  body: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * One cart per user. Stores items (sliced 3D models) until order is created.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -986,6 +1011,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: string | Order;
+      } | null)
+    | ({
+        relationTo: 'order-messages';
+        value: string | OrderMessage;
       } | null)
     | ({
         relationTo: 'carts';
@@ -1349,6 +1378,17 @@ export interface OrdersSelect<T extends boolean = true> {
         changedBy?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "order-messages_select".
+ */
+export interface OrderMessagesSelect<T extends boolean = true> {
+  order?: T;
+  author?: T;
+  body?: T;
   updatedAt?: T;
   createdAt?: T;
 }
