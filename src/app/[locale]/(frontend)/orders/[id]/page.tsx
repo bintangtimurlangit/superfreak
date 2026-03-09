@@ -541,8 +541,8 @@ export default function OrderDetailsPage() {
           >
             Order Progress
           </h2>
-          <div className="flex items-center justify-between">
-            {[
+          {(() => {
+            const statuses = [
               'unpaid',
               'in-review',
               'needs-discussion',
@@ -551,69 +551,90 @@ export default function OrderDetailsPage() {
               'in-delivery',
               'delivered',
               'completed',
-            ].map((status, index, array) => {
-              // Find the index of the current status in the array
-              const currentStatusIndex = array.indexOf(order.status)
-              const thisStatusIndex = index
-
-              // A status is \"past\" if it comes before the current status in the sequence
-              const isPast = thisStatusIndex < currentStatusIndex
-              const isCurrent = order.status === status
-
-              // Find if this specific status has a history entry (for showing the date)
-              const statusEntry = order.statusHistory.find((h) => h.status === status)
-
-              return (
-                <React.Fragment key={status}>
-                  <div className="flex flex-col items-center">
-                    <div className="relative flex items-center justify-center mb-2">
+            ]
+            return (
+              <div className="w-full">
+                {/* Row 1: circles + connecting lines on one horizontal axis */}
+                <div className="flex items-center w-full">
+                  {statuses.map((status, index) => {
+                    const currentStatusIndex = statuses.indexOf(order.status)
+                    const isPast = index < currentStatusIndex
+                    const isCurrent = order.status === status
+                    return (
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          isCurrent ? 'bg-[#1D0DF3]' : isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'
-                        }`}
+                        key={status}
+                        className={`flex items-center min-w-0 ${index < statuses.length - 1 ? 'flex-1' : 'flex-shrink-0'}`}
                       >
-                        {(() => {
-                          const Icon = getStatusIcon(status)
-                          return (
-                            <Icon
-                              className={`h-4 w-4 ${isPast || isCurrent ? 'text-white' : 'text-[#C8C8C8]'}`}
-                            />
-                          )
-                        })()}
+                        <div
+                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                            isCurrent ? 'bg-[#1D0DF3]' : isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'
+                          }`}
+                        >
+                          {(() => {
+                            const Icon = getStatusIcon(status)
+                            return (
+                              <Icon
+                                className={`h-4 w-4 ${isPast || isCurrent ? 'text-white' : 'text-[#C8C8C8]'}`}
+                              />
+                            )
+                          })()}
+                        </div>
+                        {index < statuses.length - 1 && (
+                          <div
+                            className={`flex-1 min-h-0 min-w-[8px] h-0.5 flex-shrink ${
+                              isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'
+                            }`}
+                            aria-hidden
+                          />
+                        )}
                       </div>
-                    </div>
-                    <div className="max-w-[100px]">
-                      <StatusBadge
-                        status={
-                          status === 'unpaid' && order.paymentInfo?.status === 'paid'
-                            ? 'paid'
-                            : (status as OrderData['status'])
-                        }
-                        showIcon={false}
-                        className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
-                      />
-                    </div>
-                    <p
-                      className="text-xs text-[#989898] mt-1 text-center h-4"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    >
-                      {statusEntry
-                        ? new Date(statusEntry.changedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          })
-                        : ''}
-                    </p>
-                  </div>
-                  {index < array.length - 1 && (
-                    <div className="flex-1 flex items-center" style={{ marginTop: '-65px' }}>
-                      <div className={`flex-1 h-0.5 ${isPast ? 'bg-[#1D0DF3]' : 'bg-[#E8E8E8]'}`} />
-                    </div>
-                  )}
-                </React.Fragment>
-              )
-            })}
-          </div>
+                    )
+                  })}
+                </div>
+                {/* Row 2: status labels and dates centered under each circle (same segment widths as row 1) */}
+                <div className="flex w-full mt-3">
+                  {statuses.map((status, index) => {
+                    const currentStatusIndex = statuses.indexOf(order.status)
+                    const isPast = index < currentStatusIndex
+                    const isCurrent = order.status === status
+                    const statusEntry = order.statusHistory.find((h) => h.status === status)
+                    return (
+                      <div
+                        key={status}
+                        className={`flex items-start min-w-0 ${index < statuses.length - 1 ? 'flex-1' : 'flex-shrink-0'}`}
+                      >
+                        <div className="flex flex-col items-center w-8 flex-shrink-0">
+                          <div className="max-w-[100px]">
+                            <StatusBadge
+                              status={
+                                status === 'unpaid' && order.paymentInfo?.status === 'paid'
+                                  ? 'paid'
+                                  : (status as OrderData['status'])
+                              }
+                              showIcon={false}
+                              className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
+                            />
+                          </div>
+                          <p
+                            className="text-xs text-[#989898] mt-1 text-center h-4"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {statusEntry
+                              ? new Date(statusEntry.changedAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })
+                              : ''}
+                          </p>
+                        </div>
+                        {index < statuses.length - 1 && <div className="flex-1 min-w-[8px] flex-shrink" aria-hidden />}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
