@@ -486,7 +486,7 @@ export default function OrderDetailsPage() {
             <a
               href={`/api/orders/${orderId}/invoice`}
               download={`invoice-${order.orderNumber ?? orderId}.pdf`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white px-4 py-2 text-sm font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white px-4 py-2 text-[14px] font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
             >
               <Download className="h-4 w-4" />
               Download Invoice
@@ -643,7 +643,7 @@ export default function OrderDetailsPage() {
                         >
                           {item.fileName}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-[14px]">
                           <span className="text-[#989898]">Quantity:</span>
                           <span className="text-[#292929] font-medium">{item.quantity}</span>
                           {item.quantity > 1 && (
@@ -658,7 +658,7 @@ export default function OrderDetailsPage() {
                       {/* Item Total */}
                       <div className="text-right">
                         <p
-                          className="text-lg font-bold text-[#292929]"
+                          className="text-[18px] md:text-[20px] font-bold text-[#292929]"
                         >
                           {formatCurrency(item.totalPrice)}
                         </p>
@@ -668,11 +668,11 @@ export default function OrderDetailsPage() {
                     {/* Print Configuration */}
                     <div className="bg-[#F8F8F8] rounded-lg p-4 mt-3">
                       <h4
-                        className="text-sm font-semibold text-[#292929] mb-3"
+                        className="text-[14px] font-semibold text-[#292929] mb-3"
                       >
                         Print Configuration
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[14px]">
                         <div>
                           <span className="text-[#7C7C7C]">Material:</span>
                           <p className="text-[#292929] font-medium mt-0.5">
@@ -717,7 +717,7 @@ export default function OrderDetailsPage() {
 
                     {/* Download Button */}
                     <div className="mt-3">
-                      <button className="text-sm text-[#1D0DF3] hover:text-[#1a0cd9] font-medium flex items-center gap-1.5">
+                      <button className="text-[14px] text-[#1D0DF3] hover:text-[#1a0cd9] font-medium flex items-center gap-1.5">
                         <Download className="h-4 w-4" />
                         Download 3D File
                       </button>
@@ -731,12 +731,12 @@ export default function OrderDetailsPage() {
             {order.customerNotes && (
               <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
                 <h2
-                  className="text-lg font-semibold text-[#292929] mb-3"
+                  className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-3"
                 >
                   Customer Notes
                 </h2>
                 <p
-                  className="text-sm text-[#656565] leading-relaxed"
+                  className="text-[14px] text-[#656565] leading-relaxed"
                 >
                   {order.customerNotes}
                 </p>
@@ -750,12 +750,12 @@ export default function OrderDetailsPage() {
                   <MessageSquare className="h-5 w-5 text-purple-600 mt-0.5" />
                   <div>
                     <h2
-                      className="text-lg font-semibold text-purple-900 mb-2"
+                      className="text-[18px] md:text-[20px] font-semibold text-purple-900 mb-2"
                     >
                       Message from Admin
                     </h2>
                     <p
-                      className="text-sm text-purple-800 leading-relaxed"
+                      className="text-[14px] text-purple-800 leading-relaxed"
                     >
                       {order.adminNotes}
                     </p>
@@ -773,7 +773,7 @@ export default function OrderDetailsPage() {
                 <div className="flex items-center gap-2 mb-3">
                   <MessageSquare className="h-5 w-5 text-blue-600" />
                   <h2
-                    className="text-base font-semibold text-blue-900"
+                    className="text-[14px] sm:text-[16px] font-semibold text-blue-900"
                   >
                     Discussion
                   </h2>
@@ -792,7 +792,7 @@ export default function OrderDetailsPage() {
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`text-xs font-semibold ${
+                            className={`text-[12px] md:text-[14px] font-semibold ${
                               conversation.senderType === 'customer'
                                 ? 'text-blue-100'
                                 : 'text-blue-600'
@@ -801,7 +801,7 @@ export default function OrderDetailsPage() {
                             {conversation.senderName}
                           </span>
                           <span
-                            className={`text-xs ${
+                            className={`text-[12px] md:text-[14px] ${
                               conversation.senderType === 'customer'
                                 ? 'text-blue-200'
                                 : 'text-[#989898]'
@@ -811,7 +811,7 @@ export default function OrderDetailsPage() {
                           </span>
                         </div>
                         <p
-                          className="text-sm leading-relaxed"
+                          className="text-[14px] leading-relaxed"
                         >
                           {conversation.message}
                         </p>
@@ -827,15 +827,15 @@ export default function OrderDetailsPage() {
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
                     rows={2}
-                    className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-2"
+                    className="w-full px-3 py-2 rounded-lg border border-blue-300 text-[14px] placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-2"
                   />
                   <div className="flex items-center gap-2">
-                    <button className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
+                    <button className="text-[12px] md:text-[14px] text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
                       <Paperclip className="h-3.5 w-3.5" />
                       Attach
                     </button>
                     <Button
-                      className="ml-auto bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 text-sm"
+                      className="ml-auto bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 text-[14px]"
                       disabled={!newMessage.trim()}
                     >
                       <Send className="h-3.5 w-3.5 mr-1.5" />
@@ -853,13 +853,13 @@ export default function OrderDetailsPage() {
                 Order Summary
               </h2>
               <div className="space-y-3">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-[14px]">
                   <span className="text-[#989898]">Subtotal</span>
                   <span className="text-[#292929] font-medium">
                     {formatCurrency(order.subtotal)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-[14px]">
                   <span className="text-[#989898]">Shipping</span>
                   <span className="text-[#292929] font-medium">
                     {formatCurrency(order.shippingCost)}
@@ -868,7 +868,7 @@ export default function OrderDetailsPage() {
                 <div className="pt-3 border-t border-[#EFEFEF]">
                   <div className="flex justify-between">
                     <span
-                      className="text-base font-semibold text-[#292929]"
+                      className="text-[14px] sm:text-[16px] font-semibold text-[#292929]"
                     >
                       Total
                     </span>
@@ -890,7 +890,7 @@ export default function OrderDetailsPage() {
                 <CreditCard className="h-5 w-5" />
                 Payment Info
               </h2>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-3 text-[14px]">
                 <div>
                   <span className="text-[#989898]">Method:</span>
                   <p className="text-[#292929] font-medium mt-0.5">
@@ -903,7 +903,7 @@ export default function OrderDetailsPage() {
                 </div>
                 <div>
                   <span className="text-[#989898]">Transaction ID:</span>
-                  <p className="text-[#292929] font-mono text-xs mt-0.5">
+                  <p className="text-[#292929] font-mono text-[12px] md:text-[14px] mt-0.5">
                     {order.paymentInfo.transactionId}
                   </p>
                 </div>
@@ -924,7 +924,7 @@ export default function OrderDetailsPage() {
                 <MapPin className="h-5 w-5" />
                 Shipping Address
               </h2>
-              <div className="text-sm text-[#656565] space-y-1">
+              <div className="text-[14px] text-[#656565] space-y-1">
                 <p className="font-semibold text-[#292929]">{order.shippingAddress.fullName}</p>
                 <p>{order.shippingAddress.addressLine1}</p>
                 {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
@@ -941,15 +941,15 @@ export default function OrderDetailsPage() {
             {order.trackingNumber && (
               <div className="bg-blue-50 rounded-[20px] border border-blue-200 p-6">
                 <h2
-                  className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2"
+                  className="text-[18px] md:text-[20px] font-semibold text-blue-900 mb-3 flex items-center gap-2"
                 >
                   <Truck className="h-5 w-5" />
                   Tracking Info
                 </h2>
                 <div className="space-y-3">
                   <div>
-                    <span className="text-sm text-blue-700">Tracking Number:</span>
-                    <p className="text-blue-900 font-mono text-sm font-semibold mt-1">
+                    <span className="text-[14px] text-blue-700">Tracking Number:</span>
+                    <p className="text-blue-900 font-mono text-[14px] font-semibold mt-1">
                       {order.trackingNumber}
                     </p>
                   </div>
@@ -989,7 +989,7 @@ export default function OrderDetailsPage() {
             {order.status === 'unpaid' && order.paymentInfo.status === 'paid' && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p
-                  className="text-sm text-yellow-800"
+                  className="text-[14px] text-yellow-800"
                 >
                   <strong>Note:</strong> You have already paid for this order. Canceling will
                   initiate a refund process.

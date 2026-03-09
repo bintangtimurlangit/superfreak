@@ -183,7 +183,7 @@ export default function AddAddressModal({
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200"
+        className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50">
@@ -193,12 +193,11 @@ export default function AddAddressModal({
             </div>
             <div>
               <h2
-                className="text-lg font-bold text-[#292929]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-bold text-[#292929]"
               >
                 Add shipping address
               </h2>
-              <p className="text-xs text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+              <p className="text-[12px] md:text-[14px] text-[#7C7C7C]">
                 Stay on this page — your order won&apos;t be lost
               </p>
             </div>
@@ -216,15 +215,14 @@ export default function AddAddressModal({
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[14px]">
                 {error}
               </div>
             )}
             <div>
               <label
                 htmlFor="modal-recipientName"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Recipient Name <span className="text-red-500">*</span>
               </label>
@@ -232,19 +230,17 @@ export default function AddAddressModal({
                 type="text"
                 id="modal-recipientName"
                 {...register('recipientName')}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
                 placeholder="Full name"
               />
               {errors.recipientName && (
-                <p className="mt-1 text-xs text-red-600">{errors.recipientName.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.recipientName.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-phoneNumber"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Phone Number <span className="text-red-500">*</span>
               </label>
@@ -252,19 +248,17 @@ export default function AddAddressModal({
                 type="tel"
                 id="modal-phoneNumber"
                 {...register('phoneNumber')}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
                 placeholder="08xx xxxx xxxx"
               />
               {errors.phoneNumber && (
-                <p className="mt-1 text-xs text-red-600">{errors.phoneNumber.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.phoneNumber.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-addressLine1"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Address Line 1 <span className="text-red-500">*</span>
               </label>
@@ -272,19 +266,17 @@ export default function AddAddressModal({
                 type="text"
                 id="modal-addressLine1"
                 {...register('addressLine1')}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
                 placeholder="Street name"
               />
               {errors.addressLine1 && (
-                <p className="mt-1 text-xs text-red-600">{errors.addressLine1.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.addressLine1.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-addressLine2"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Address Line 2 (Optional)
               </label>
@@ -292,16 +284,14 @@ export default function AddAddressModal({
                 type="text"
                 id="modal-addressLine2"
                 {...register('addressLine2')}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
                 placeholder="House number, RT, RW"
               />
             </div>
             <div>
               <label
                 htmlFor="modal-provinceCode"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Province <span className="text-red-500">*</span>
               </label>
@@ -309,8 +299,7 @@ export default function AddAddressModal({
                 id="modal-provinceCode"
                 {...register('provinceCode')}
                 onFocus={() => setProvinceDropdownOpened(true)}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
               >
                 <option value="">Select Province</option>
                 {provinces.map((p) => (
@@ -318,14 +307,13 @@ export default function AddAddressModal({
                 ))}
               </select>
               {errors.provinceCode && (
-                <p className="mt-1 text-xs text-red-600">{errors.provinceCode.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.provinceCode.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-regencyCode"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 City/Regency <span className="text-red-500">*</span>
               </label>
@@ -333,8 +321,7 @@ export default function AddAddressModal({
                 id="modal-regencyCode"
                 {...register('regencyCode')}
                 disabled={!provinceCode || regenciesLoading}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
               >
                 <option value="">
                   {regenciesLoading ? 'Loading...' : provinceCode ? 'Select City/Regency' : 'Select Province first'}
@@ -344,14 +331,13 @@ export default function AddAddressModal({
                 ))}
               </select>
               {errors.regencyCode && (
-                <p className="mt-1 text-xs text-red-600">{errors.regencyCode.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.regencyCode.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-districtCode"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 District <span className="text-red-500">*</span>
               </label>
@@ -359,8 +345,7 @@ export default function AddAddressModal({
                 id="modal-districtCode"
                 {...register('districtCode')}
                 disabled={!regencyCode || districtsLoading}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
               >
                 <option value="">
                   {districtsLoading ? 'Loading...' : regencyCode ? 'Select District' : 'Select City/Regency first'}
@@ -370,14 +355,13 @@ export default function AddAddressModal({
                 ))}
               </select>
               {errors.districtCode && (
-                <p className="mt-1 text-xs text-red-600">{errors.districtCode.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.districtCode.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-villageCode"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Village/Sub-district <span className="text-red-500">*</span>
               </label>
@@ -385,8 +369,7 @@ export default function AddAddressModal({
                 id="modal-villageCode"
                 {...register('villageCode')}
                 disabled={!districtCode || villagesLoading}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
               >
                 <option value="">
                   {villagesLoading ? 'Loading...' : districtCode ? 'Select Village/Sub-district' : 'Select District first'}
@@ -396,14 +379,13 @@ export default function AddAddressModal({
                 ))}
               </select>
               {errors.villageCode && (
-                <p className="mt-1 text-xs text-red-600">{errors.villageCode.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.villageCode.message}</p>
               )}
             </div>
             <div>
               <label
                 htmlFor="modal-postalCode"
-                className="block text-sm font-medium text-[#292929] mb-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="block text-[14px] font-medium text-[#292929] mb-2"
               >
                 Postal Code <span className="text-red-500">*</span>
               </label>
@@ -412,12 +394,11 @@ export default function AddAddressModal({
                 id="modal-postalCode"
                 {...register('postalCode')}
                 maxLength={5}
-                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
                 placeholder="12345"
               />
               {errors.postalCode && (
-                <p className="mt-1 text-xs text-red-600">{errors.postalCode.message}</p>
+                <p className="mt-1 text-[12px] md:text-[14px] text-red-600">{errors.postalCode.message}</p>
               )}
             </div>
             <div className="flex items-center gap-3 pt-2">
@@ -429,8 +410,7 @@ export default function AddAddressModal({
               />
               <label
                 htmlFor="modal-isDefault"
-                className="text-sm text-[#292929] cursor-pointer"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[14px] text-[#292929] cursor-pointer"
               >
                 Set as default shipping address
               </label>

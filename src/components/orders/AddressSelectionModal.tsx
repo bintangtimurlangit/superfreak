@@ -64,17 +64,16 @@ export default function AddressSelectionModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 font-sans">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50">
           <div>
             <h2
-              className="text-lg font-bold text-[#292929]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
+              className="text-[18px] md:text-[20px] font-bold text-[#292929]"
             >
               Select Shipping Address
             </h2>
-            <p className="text-xs text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            <p className="text-[12px] md:text-[14px] text-[#7C7C7C]">
               Choose an address for your delivery
             </p>
           </div>
@@ -95,8 +94,7 @@ export default function AddressSelectionModal({
               placeholder="Search by name or address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8F8F8] border border-[#EFEFEF] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
+              className="w-full pl-10 pr-4 py-2.5 bg-[#F8F8F8] border border-[#EFEFEF] rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -106,7 +104,7 @@ export default function AddressSelectionModal({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 text-[#989898]">
               <Loader2 className="h-8 w-8 animate-spin mb-2" />
-              <p className="text-sm">Loading addresses...</p>
+              <p className="text-[14px]">Loading addresses...</p>
             </div>
           ) : filteredAddresses.length > 0 ? (
             filteredAddresses.map((address: SavedAddress) => {
@@ -129,29 +127,25 @@ export default function AddressSelectionModal({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4
-                        className="font-semibold text-[#292929] text-sm truncate"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        className="font-semibold text-[#292929] text-[14px] truncate"
                       >
                         {address.recipientName}
                       </h4>
                       {address.isDefault && (
                         <span
-                          className="px-1.5 py-0.5 text-[10px] font-medium text-[#1D0DF3] bg-blue-50 rounded"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          className="px-1.5 py-0.5 text-[12px] md:text-[14px] font-medium text-[#1D0DF3] bg-blue-50 rounded"
                         >
                           Default
                         </span>
                       )}
                     </div>
                     <p
-                      className="text-xs text-[#989898] mb-1 truncate"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      className="text-[12px] md:text-[14px] text-[#989898] mb-1 truncate"
                     >
                       {address.phoneNumber}
                     </p>
                     <p
-                      className="text-xs text-[#292929] leading-relaxed line-clamp-2"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      className="text-[12px] md:text-[14px] text-[#292929] leading-relaxed line-clamp-2"
                     >
                       {[
                         address.addressLine1,
@@ -178,8 +172,7 @@ export default function AddressSelectionModal({
             <div className="text-center py-12">
               <MapPin className="h-12 w-12 text-[#EFEFEF] mx-auto mb-3" />
               <p
-                className="text-[#989898] text-sm"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[#989898] text-[14px]"
               >
                 {searchQuery ? 'No addresses match your search' : 'No addresses saved yet'}
               </p>
