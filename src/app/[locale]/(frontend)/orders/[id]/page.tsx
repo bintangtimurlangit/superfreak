@@ -367,14 +367,12 @@ export default function OrderDetailsPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] py-8">
+      <div className="min-h-screen bg-[#FAFAFA] py-8 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
-              <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                Loading order details...
-              </p>
+              <p className="text-[14px] sm:text-[16px] text-[#7C7C7C]">Loading order details...</p>
             </div>
           </div>
         </div>
@@ -385,14 +383,12 @@ export default function OrderDetailsPage() {
   // After payment return: show "Confirming payment..." until verify completes, then show order as Paid (no flash of Unpaid)
   if (confirmingPayment) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] py-8">
+      <div className="min-h-screen bg-[#FAFAFA] py-8 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
-              <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                Confirming your payment...
-              </p>
+              <p className="text-[14px] sm:text-[16px] text-[#7C7C7C]">Confirming your payment...</p>
             </div>
           </div>
         </div>
@@ -403,25 +399,21 @@ export default function OrderDetailsPage() {
   // Error state
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] py-8">
+      <div className="min-h-screen bg-[#FAFAFA] py-8 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
             href="/orders"
-            className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
+            className="inline-flex items-center gap-2 text-[14px] sm:text-[16px] text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Orders
           </Link>
           <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-12 text-center">
             <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
-            <h2
-              className="text-xl font-semibold text-[#292929] mb-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929] mb-2">
               Order Not Found
             </h2>
-            <p className="text-[#7C7C7C] mb-6" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            <p className="text-[14px] sm:text-[16px] font-normal text-[#7C7C7C] mb-6">
               {error ||
                 'The order you are looking for does not exist or you do not have access to it.'}
             </p>
@@ -437,13 +429,12 @@ export default function OrderDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] py-8">
+    <div className="min-h-screen bg-[#FAFAFA] py-8 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <Link
           href="/my-order"
-          className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
+          className="inline-flex items-center gap-2 text-[14px] sm:text-[16px] text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to My Orders
@@ -455,10 +446,7 @@ export default function OrderDetailsPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <Package className="h-6 w-6 text-[#1D0DF3]" />
-              <h1
-                className="text-2xl font-bold text-[#292929]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
+              <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929]">
                 {order.orderNumber}
               </h1>
               <StatusBadge status={order.status} />
@@ -466,10 +454,7 @@ export default function OrderDetailsPage() {
             {/* Estimated Delivery Badge */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
               <Truck className="h-4 w-4 text-blue-600" />
-              <span
-                className="text-sm text-blue-900 font-medium"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
+              <span className="text-[14px] font-medium text-blue-900">
                 Est. delivery:{' '}
                 {new Date(
                   new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000,
@@ -482,11 +467,9 @@ export default function OrderDetailsPage() {
           </div>
 
           {/* Date */}
-          <div className="flex items-center gap-2 text-sm text-[#989898] mb-6">
+          <div className="flex items-center gap-2 text-[14px] sm:text-[16px] text-[#989898] mb-6">
             <Calendar className="h-4 w-4" />
-            <span style={{ fontFamily: 'var(--font-geist-sans)' }}>
-              {formatDate(order.createdAt)}
-            </span>
+            <span>{formatDate(order.createdAt)}</span>
           </div>
 
           {/* Action Buttons */}
@@ -535,10 +518,7 @@ export default function OrderDetailsPage() {
 
         {/* Horizontal Order Timeline - All Statuses */}
         <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6 mb-6">
-          <h2
-            className="text-base font-semibold text-[#292929] mb-4"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
+          <h2 className="text-[18px] md:text-[20px] font-semibold leading-[100%] text-[#292929] mb-4">
             Order Progress
           </h2>
           {(() => {
@@ -615,10 +595,7 @@ export default function OrderDetailsPage() {
                               className={`!px-2 !py-0.5 !text-[10px] !gap-1 whitespace-nowrap ${!isPast && !isCurrent ? 'opacity-40' : ''}`}
                             />
                           </div>
-                          <p
-                            className="text-xs text-[#989898] mt-1 text-center h-4"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
+                          <p className="text-[12px] md:text-[14px] text-[#989898] mt-1 text-center h-4">
                             {statusEntry
                               ? new Date(statusEntry.changedAt).toLocaleDateString('en-US', {
                                   month: 'short',
@@ -643,8 +620,7 @@ export default function OrderDetailsPage() {
             {/* Order Items */}
             <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
               <h2
-                className="text-lg font-semibold text-[#292929] mb-4"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-semibold leading-[100%] text-[#292929] mb-4"
               >
                 Order Items
               </h2>
@@ -663,8 +639,7 @@ export default function OrderDetailsPage() {
                       {/* Item Details */}
                       <div className="flex-1 min-w-0">
                         <h3
-                          className="text-base font-semibold text-[#292929] mb-2"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-2"
                         >
                           {item.fileName}
                         </h3>
@@ -684,7 +659,6 @@ export default function OrderDetailsPage() {
                       <div className="text-right">
                         <p
                           className="text-lg font-bold text-[#292929]"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           {formatCurrency(item.totalPrice)}
                         </p>
@@ -695,7 +669,6 @@ export default function OrderDetailsPage() {
                     <div className="bg-[#F8F8F8] rounded-lg p-4 mt-3">
                       <h4
                         className="text-sm font-semibold text-[#292929] mb-3"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
                         Print Configuration
                       </h4>
@@ -759,13 +732,11 @@ export default function OrderDetailsPage() {
               <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
                 <h2
                   className="text-lg font-semibold text-[#292929] mb-3"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Customer Notes
                 </h2>
                 <p
                   className="text-sm text-[#656565] leading-relaxed"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   {order.customerNotes}
                 </p>
@@ -780,13 +751,11 @@ export default function OrderDetailsPage() {
                   <div>
                     <h2
                       className="text-lg font-semibold text-purple-900 mb-2"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
                       Message from Admin
                     </h2>
                     <p
                       className="text-sm text-purple-800 leading-relaxed"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
                       {order.adminNotes}
                     </p>
@@ -805,7 +774,6 @@ export default function OrderDetailsPage() {
                   <MessageSquare className="h-5 w-5 text-blue-600" />
                   <h2
                     className="text-base font-semibold text-blue-900"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Discussion
                   </h2>
@@ -829,7 +797,6 @@ export default function OrderDetailsPage() {
                                 ? 'text-blue-100'
                                 : 'text-blue-600'
                             }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
                           >
                             {conversation.senderName}
                           </span>
@@ -839,14 +806,12 @@ export default function OrderDetailsPage() {
                                 ? 'text-blue-200'
                                 : 'text-[#989898]'
                             }`}
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
                           >
                             {formatTimeAgo(conversation.timestamp)}
                           </span>
                         </div>
                         <p
                           className="text-sm leading-relaxed"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           {conversation.message}
                         </p>
@@ -863,7 +828,6 @@ export default function OrderDetailsPage() {
                     placeholder="Type your message..."
                     rows={2}
                     className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   />
                   <div className="flex items-center gap-2">
                     <button className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
@@ -884,8 +848,7 @@ export default function OrderDetailsPage() {
             {/* Order Summary */}
             <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
               <h2
-                className="text-lg font-semibold text-[#292929] mb-4"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-semibold leading-[100%] text-[#292929] mb-4"
               >
                 Order Summary
               </h2>
@@ -906,13 +869,11 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span
                       className="text-base font-semibold text-[#292929]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
                       Total
                     </span>
                     <span
-                      className="text-xl font-bold text-[#292929]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      className="text-[18px] md:text-[20px] font-bold text-[#292929]"
                     >
                       {formatCurrency(order.totalAmount)}
                     </span>
@@ -924,8 +885,7 @@ export default function OrderDetailsPage() {
             {/* Payment Information */}
             <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
               <h2
-                className="text-lg font-semibold text-[#292929] mb-4 flex items-center gap-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-4 flex items-center gap-2"
               >
                 <CreditCard className="h-5 w-5" />
                 Payment Info
@@ -959,8 +919,7 @@ export default function OrderDetailsPage() {
             {/* Shipping Address */}
             <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-6">
               <h2
-                className="text-lg font-semibold text-[#292929] mb-4 flex items-center gap-2"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-4 flex items-center gap-2"
               >
                 <MapPin className="h-5 w-5" />
                 Shipping Address
@@ -983,7 +942,6 @@ export default function OrderDetailsPage() {
               <div className="bg-blue-50 rounded-[20px] border border-blue-200 p-6">
                 <h2
                   className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   <Truck className="h-5 w-5" />
                   Tracking Info
@@ -1019,12 +977,11 @@ export default function OrderDetailsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[20px] max-w-md w-full p-6 shadow-xl">
             <h2
-              className="text-xl font-bold text-[#292929] mb-3"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
+              className="text-[18px] md:text-[20px] font-bold text-[#292929] mb-3"
             >
               Cancel Order?
             </h2>
-            <p className="text-[#656565] mb-6" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            <p className="text-[14px] sm:text-[16px] text-[#656565] mb-6">
               Are you sure you want to cancel order <strong>{order.orderNumber}</strong>? This
               action cannot be undone.
             </p>
@@ -1033,7 +990,6 @@ export default function OrderDetailsPage() {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p
                   className="text-sm text-yellow-800"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   <strong>Note:</strong> You have already paid for this order. Canceling will
                   initiate a refund process.

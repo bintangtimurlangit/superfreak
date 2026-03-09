@@ -139,17 +139,14 @@ export default function PaymentSelectionModal({
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 font-sans">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50">
           <div>
-            <h2
-              className="text-lg font-bold text-[#292929]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <h2 className="text-[18px] md:text-[20px] font-bold text-[#292929]">
               Complete Your Payment
             </h2>
-            <p className="text-xs text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            <p className="text-[12px] md:text-[14px] text-[#7C7C7C]">
               Order: {orderNumber}
             </p>
           </div>
@@ -165,22 +162,16 @@ export default function PaymentSelectionModal({
         <div className="p-6">
           {/* Order Brief */}
           <div className="mb-6 p-4 bg-[#F8F8F8] rounded-xl border border-[#EFEFEF] flex items-center justify-between">
-            <span
-              className="text-sm text-[#7C7C7C]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <span className="text-[14px] text-[#7C7C7C]">
               Amount to Pay
             </span>
-            <span
-              className="text-xl font-bold text-[#1D0DF3]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <span className="text-[18px] md:text-[20px] font-bold text-[#1D0DF3]">
               {formatCurrency(totalAmount)}
             </span>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-[12px] md:text-[14px] text-red-600">
               {error}
             </div>
           )}
@@ -214,16 +205,10 @@ export default function PaymentSelectionModal({
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <h3
-                      className="text-sm font-semibold text-[#292929]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    >
+                    <h3 className="text-[14px] font-semibold text-[#292929]">
                       {method.title}
                     </h3>
-                    <p
-                      className="text-[11px] text-[#7C7C7C]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
-                    >
+                    <p className="text-[12px] md:text-[14px] text-[#7C7C7C]">
                       {method.description}
                     </p>
                   </div>

@@ -61,15 +61,14 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5 font-sans">
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-[#1D0DF3] rounded-[12px] flex items-center justify-center flex-shrink-0">
             <Lock className="h-6 w-6 text-white" />
           </div>
           <h2
-            className="text-[24px] font-semibold text-[#292929]"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
+            className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929]"
           >
             Change Password
           </h2>
@@ -96,7 +95,6 @@ export default function ChangePasswordForm() {
             <label
               htmlFor="currentPassword"
               className="block text-sm font-medium text-[#292929] mb-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
               Current Password <span className="text-red-500">*</span>
             </label>
@@ -105,7 +103,6 @@ export default function ChangePasswordForm() {
               id="currentPassword"
               {...register('currentPassword')}
               className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
               placeholder="Enter your current password"
               disabled={isSubmitting}
             />
@@ -118,7 +115,6 @@ export default function ChangePasswordForm() {
             <label
               htmlFor="newPassword"
               className="block text-sm font-medium text-[#292929] mb-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
               New Password <span className="text-red-500">*</span>
             </label>
@@ -127,7 +123,6 @@ export default function ChangePasswordForm() {
               id="newPassword"
               {...register('newPassword')}
               className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
               placeholder="Enter your new password (min. 8 characters)"
               disabled={isSubmitting}
             />
@@ -145,7 +140,6 @@ export default function ChangePasswordForm() {
             <label
               htmlFor="confirmPassword"
               className="block text-sm font-medium text-[#292929] mb-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
               Confirm New Password <span className="text-red-500">*</span>
             </label>
@@ -154,7 +148,6 @@ export default function ChangePasswordForm() {
               id="confirmPassword"
               {...register('confirmPassword')}
               className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
               placeholder="Re-enter your new password"
               disabled={isSubmitting}
             />
@@ -170,7 +163,6 @@ export default function ChangePasswordForm() {
             onClick={handleCancel}
             disabled={isSubmitting}
             className="px-6 py-2.5 text-sm font-medium text-[#292929] border border-[#DCDCDC] rounded-lg hover:bg-[#F8F8F8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             Cancel
           </button>
@@ -178,7 +170,6 @@ export default function ChangePasswordForm() {
             type="submit"
             disabled={isSubmitting}
             className="px-6 py-2.5 text-sm font-medium text-white bg-[#1D0DF3] rounded-lg hover:bg-[#1a0bd9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             {isSubmitting ? 'Changing Password...' : 'Change Password'}
           </button>

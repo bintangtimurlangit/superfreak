@@ -9,7 +9,7 @@ import { useSession, updateUser, authClient } from '@/lib/auth/client'
 
 function EditProfileFormSkeleton() {
   return (
-    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5 font-sans">
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-gray-200 rounded-[12px] animate-pulse flex-shrink-0" />
@@ -433,8 +433,7 @@ export default function EditProfileForm() {
             <User className="h-6 w-6 text-white" />
           </div>
           <h2
-            className="text-[24px] font-semibold text-[#292929]"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
+            className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929]"
           >
             Edit Profile
           </h2>
@@ -448,14 +447,12 @@ export default function EditProfileForm() {
           <div className="flex-1">
             <div className="mb-6">
               <h2
-                className="text-lg font-semibold text-[#292929] mb-1"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-1"
               >
                 Personal Information
               </h2>
               <p
                 className="text-sm text-[#989898]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 Edit or complete your personal information
               </p>
@@ -466,7 +463,6 @@ export default function EditProfileForm() {
                 <label
                   htmlFor="name"
                   className="block text-sm font-medium text-[#292929] mb-2"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Name
                 </label>
@@ -476,7 +472,6 @@ export default function EditProfileForm() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                   placeholder="Enter your name"
                 />
               </div>
@@ -485,7 +480,6 @@ export default function EditProfileForm() {
                 <label
                   htmlFor="email"
                   className="block text-sm font-medium text-[#292929] mb-2"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Email
                 </label>
@@ -495,11 +489,9 @@ export default function EditProfileForm() {
                   value={email}
                   disabled
                   className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F5F5F5] text-[#989898] text-sm cursor-not-allowed"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 />
                 <p
                   className="mt-1 text-xs text-[#989898]"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Email cannot be changed
                 </p>
@@ -509,7 +501,6 @@ export default function EditProfileForm() {
                 <label
                   htmlFor="phoneNumber"
                   className="block text-sm font-medium text-[#292929] mb-2"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Phone Number
                 </label>
@@ -519,7 +510,6 @@ export default function EditProfileForm() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                   placeholder="Enter your phone number"
                 />
               </div>
@@ -530,14 +520,12 @@ export default function EditProfileForm() {
             <div className="border border-[#EFEFEF] rounded-lg p-6 bg-[#F8F8F8] h-full">
               <div className="mb-4">
                 <h3
-                  className="text-lg font-semibold text-[#292929] mb-1"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
+                  className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-1"
                 >
                   Profile Picture
                 </h3>
                 <p
                   className="text-sm text-[#989898] mb-4"
-                  style={{ fontFamily: 'var(--font-geist-sans)' }}
                 >
                   Upload or change your profile picture
                 </p>
@@ -558,7 +546,6 @@ export default function EditProfileForm() {
                     <div className="text-center w-full">
                       <div
                         className="text-sm font-medium text-[#292929] truncate"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
                         {selectedFile?.name || 'Current Picture'}
                       </div>
@@ -566,7 +553,6 @@ export default function EditProfileForm() {
                         <div className="space-y-1">
                           <div
                             className="text-xs text-[#989898]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
                           >
                             {formatFileSize(selectedFile.size)}
                             {originalFileSize && originalFileSize > selectedFile.size && (
@@ -578,7 +564,6 @@ export default function EditProfileForm() {
                           {selectedFile.size > 2 * 1024 * 1024 && (
                             <div
                               className="text-xs text-red-600 font-medium"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
                             >
                               ⚠️ File size exceeds 2MB limit
                             </div>
@@ -595,7 +580,6 @@ export default function EditProfileForm() {
                         onClick={handleCancelPreview}
                         disabled={saving}
                         className="w-full border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F5F5F5] text-sm font-medium disabled:opacity-50"
-                        style={{ fontFamily: 'var(--font-geist-sans)' }}
                       >
                         Cancel
                       </Button>
@@ -607,7 +591,6 @@ export default function EditProfileForm() {
                           onClick={() => fileInputRef.current?.click()}
                           disabled={saving}
                           className="flex-1 border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F5F5F5] text-sm font-medium disabled:opacity-50"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           Change
                         </Button>
@@ -617,7 +600,6 @@ export default function EditProfileForm() {
                           onClick={handleDeletePicture}
                           disabled={saving}
                           className="flex-1 border border-red-300 bg-white text-red-600 hover:bg-red-50 text-sm font-medium disabled:opacity-50"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           Delete
                         </Button>
@@ -627,7 +609,6 @@ export default function EditProfileForm() {
                   {selectedFile && (
                     <div
                       className="text-xs text-[#989898] text-center"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
                       Click &ldquo;Save My Profile&rdquo; to upload this picture
                     </div>
@@ -640,7 +621,6 @@ export default function EditProfileForm() {
                   </div>
                   <div
                     className="text-sm text-[#989898] space-y-1 text-center"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <p>Format: png or jpg</p>
                     <p className="font-medium text-[#292929]">Maximum file size: 2 MB</p>
@@ -652,7 +632,6 @@ export default function EditProfileForm() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={saving || compressing}
                     className="w-full !bg-[#1D0DF3] !text-white hover:!bg-[#1a0cd9] text-sm font-medium disabled:!opacity-50 disabled:!cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     {compressing ? (
                       <>
@@ -687,7 +666,6 @@ export default function EditProfileForm() {
             variant="secondary"
             onClick={handleCancel}
             className="border border-[#DCDCDC] bg-white text-[#1D0DF3] hover:bg-[#F5F5F5] text-sm font-medium"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             Cancel
           </Button>
@@ -696,7 +674,6 @@ export default function EditProfileForm() {
             variant="secondary"
             disabled={saving}
             className="!bg-[#1D0DF3] !text-white hover:!bg-[#1a0cd9] text-sm font-medium disabled:!opacity-50 disabled:!cursor-not-allowed disabled:hover:!bg-[#1D0DF3]"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             {saving ? 'Saving...' : 'Save My Profile'}
           </Button>

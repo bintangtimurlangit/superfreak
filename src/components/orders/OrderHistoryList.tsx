@@ -242,15 +242,12 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
   if (!isAuthenticated) {
     return (
-      <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-12 text-center">
+      <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-12 text-center font-sans">
         <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
-        <h3
-          className="text-xl font-semibold text-[#292929] mb-2"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
+        <h3 className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-2">
           Please Sign In
         </h3>
-        <p className="text-[#989898]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+        <p className="text-[14px] sm:text-[16px] text-[#989898]">
           You need to be signed in to view your order history.
         </p>
       </div>
@@ -258,7 +255,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 font-sans ${className}`}>
       {/* Header + Filters Combined */}
       <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
         {/* Header */}
@@ -266,10 +263,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           <div className="w-12 h-12 bg-[#1D0DF3] rounded-[12px] flex items-center justify-center flex-shrink-0">
             <Package className="h-6 w-6 text-white" />
           </div>
-          <h1
-            className="text-[24px] font-semibold text-[#292929]"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
+          <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929]">
             Order History
           </h1>
         </div>
@@ -286,8 +280,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
               <input
                 type="text"
                 placeholder="Search orders..."
-                className="w-full pl-10 pr-4 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="w-full pl-10 pr-4 py-2.5 border border-[#DCDCDC] rounded-lg bg-[#F8F8F8] text-[#292929] text-[14px] sm:text-[16px] focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#989898]" />
             </div>
@@ -298,20 +291,14 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
           {/* Status Filter Row */}
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="text-sm font-semibold text-[#292929] mr-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
-              Status
-            </span>
+            <span className="text-[14px] font-semibold text-[#292929] mr-2">Status</span>
             <button
               onClick={handleAllStatus}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
                 statusFilter.length === 0
                   ? 'bg-[#1D0DF3] text-white'
                   : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF] border border-[#DCDCDC]'
               }`}
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
               All
             </button>
@@ -329,12 +316,11 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
               <button
                 key={option.value}
                 onClick={() => handleStatusToggle(option.value as OrderStatus)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  statusFilter.includes(option.value as OrderStatus)
-                    ? 'bg-[#1D0DF3] text-white'
-                    : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF] border border-[#DCDCDC]'
+                className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
+                statusFilter.includes(option.value as OrderStatus)
+                  ? 'bg-[#1D0DF3] text-white'
+                  : 'bg-[#F8F8F8] text-[#292929] hover:bg-[#EFEFEF] border border-[#DCDCDC]'
                 }`}
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 {option.label}
               </button>
@@ -347,8 +333,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
                   setCustomStartDate(null)
                   setCustomEndDate(null)
                 }}
-                className="px-4 py-2 text-sm font-medium text-[#1D0DF3] hover:text-[#1a0cd9] transition-colors"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
+                className="px-4 py-2 text-[14px] font-medium text-[#1D0DF3] hover:text-[#1a0cd9] transition-colors"
               >
                 Reset Filter
               </button>
@@ -359,7 +344,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
       {/* Results Count and Pagination Info */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#989898]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+        <p className="text-[14px] sm:text-[16px] text-[#989898]">
           {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'} found
           {filteredOrders.length > ordersPerPage && (
             <span className="ml-2">
@@ -373,13 +358,10 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
       {filteredOrders.length === 0 ? (
         <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-12 text-center">
           <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
-          <h3
-            className="text-xl font-semibold text-[#292929] mb-2"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
+          <h3 className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-2">
             No Orders Found
           </h3>
-          <p className="text-[#989898]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+          <p className="text-[14px] sm:text-[16px] text-[#989898]">
             {orders.length === 0
               ? "You haven't placed any orders yet."
               : 'No orders match your current filters.'}
@@ -422,11 +404,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
                     // Show ellipsis
                     if (page === currentPage - 2 || page === currentPage + 2) {
                       return (
-                        <span
-                          key={page}
-                          className="px-2 text-[#989898]"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
+                        <span key={page} className="px-2 text-[14px] text-[#989898]">
                           ...
                         </span>
                       )
@@ -438,12 +416,11 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`min-w-[40px] h-10 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      className={`min-w-[40px] h-10 px-3 rounded-lg text-[14px] font-medium transition-colors ${
                         currentPage === page
                           ? 'bg-[#1D0DF3] text-white'
                           : 'border border-[#DCDCDC] text-[#292929] hover:bg-[#F8F8F8]'
                       }`}
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
                     >
                       {page}
                     </button>

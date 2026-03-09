@@ -228,14 +228,13 @@ export default function AddressForm() {
   }
 
   return (
-    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5">
+    <div className="bg-white rounded-[20px] border border-[#EFEFEF] p-4 md:p-5 font-sans">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 bg-[#1D0DF3] rounded-[12px] flex items-center justify-center flex-shrink-0">
           <Home className="h-6 w-6 text-white" />
         </div>
         <h2
-          className="text-[24px] font-semibold text-[#292929]"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
+          className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929]"
         >
           Address Information
         </h2>
@@ -259,8 +258,7 @@ export default function AddressForm() {
         {savedAddresses.length > 0 && (
           <div>
             <h3
-              className="text-lg font-semibold text-[#292929] mb-4"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
+              className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-4"
             >
               Saved Addresses
             </h3>
@@ -279,14 +277,12 @@ export default function AddressForm() {
                         <div className="flex items-center gap-2 mb-1">
                           <h4
                             className="font-semibold text-[#292929] text-sm"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
                           >
                             {address.recipientName}
                           </h4>
                           {address.isDefault && (
                             <span
                               className="px-2 py-0.5 text-xs font-medium text-[#1D0DF3] bg-blue-50 rounded"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
                             >
                               Default
                             </span>
@@ -294,13 +290,11 @@ export default function AddressForm() {
                         </div>
                         <p
                           className="text-xs text-[#989898] mb-1"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           {address.phoneNumber}
                         </p>
                         <p
                           className="text-xs text-[#292929] leading-relaxed"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
                         >
                           {formatAddress(address)}
                         </p>
@@ -326,14 +320,13 @@ export default function AddressForm() {
         {savedAddresses.length === 0 && !showAddForm && (
           <div className="text-center py-12 border-2 border-dashed border-[#EFEFEF] rounded-[12px] bg-[#F8F8F8]">
             <MapPin className="h-12 w-12 text-[#989898] mx-auto mb-4" />
-            <p className="text-[#989898] mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+            <p className="text-[#989898] mb-4">
               No addresses saved yet
             </p>
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
               className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#1D0DF3] rounded-lg hover:bg-[#1a0bd9] transition-colors"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
             >
               <Plus className="h-4 w-4" />
               Add Your First Address
@@ -344,8 +337,7 @@ export default function AddressForm() {
         {savedAddresses.length > 0 && (
           <div className="flex items-center justify-between mb-4">
             <h3
-              className="text-lg font-semibold text-[#292929]"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
+              className="text-[18px] md:text-[20px] font-semibold text-[#292929]"
             >
               Add New Address
             </h3>
@@ -354,7 +346,6 @@ export default function AddressForm() {
                 type="button"
                 onClick={() => setShowAddForm(true)}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1D0DF3] hover:bg-blue-50 rounded-lg transition-colors"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 <Plus className="h-4 w-4" />
                 Add Address
@@ -370,8 +361,7 @@ export default function AddressForm() {
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-[#1D0DF3]" />
                   <h3
-                    className="text-lg font-semibold text-[#292929]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
+                    className="text-[18px] md:text-[20px] font-semibold text-[#292929]"
                   >
                     New Address
                   </h3>
@@ -383,7 +373,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="recipientName"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Recipient Name <span className="text-red-500">*</span>
                   </label>
@@ -392,7 +381,6 @@ export default function AddressForm() {
                     id="recipientName"
                     {...register('recipientName')}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                     placeholder="Full recipient name"
                   />
                   {errors.recipientName && (
@@ -404,7 +392,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="phoneNumber"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Phone Number <span className="text-red-500">*</span>
                   </label>
@@ -413,7 +400,6 @@ export default function AddressForm() {
                     id="phoneNumber"
                     {...register('phoneNumber')}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                     placeholder="08xx xxxx xxxx"
                   />
                   {errors.phoneNumber && (
@@ -425,7 +411,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="addressLine1"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Address Line 1 <span className="text-red-500">*</span>
                   </label>
@@ -434,7 +419,6 @@ export default function AddressForm() {
                     id="addressLine1"
                     {...register('addressLine1')}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                     placeholder="Street name"
                   />
                   {errors.addressLine1 && (
@@ -446,7 +430,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="addressLine2"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Address Line 2 (Optional)
                   </label>
@@ -455,7 +438,6 @@ export default function AddressForm() {
                     id="addressLine2"
                     {...register('addressLine2')}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                     placeholder="House number, RT, RW"
                   />
                 </div>
@@ -464,7 +446,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="provinceCode"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Province <span className="text-red-500">*</span>
                   </label>
@@ -473,7 +454,6 @@ export default function AddressForm() {
                     {...register('provinceCode')}
                     onFocus={() => setProvinceDropdownOpened(true)}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <option value="">Select Province</option>
                     {provinces.map((province) => (
@@ -491,7 +471,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="regencyCode"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     City/Regency <span className="text-red-500">*</span>
                   </label>
@@ -500,7 +479,6 @@ export default function AddressForm() {
                     {...register('regencyCode')}
                     disabled={!provinceCode || regenciesLoading}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <option value="">
                       {regenciesLoading
@@ -524,7 +502,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="districtCode"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     District <span className="text-red-500">*</span>
                   </label>
@@ -533,7 +510,6 @@ export default function AddressForm() {
                     {...register('districtCode')}
                     disabled={!regencyCode || districtsLoading}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <option value="">
                       {districtsLoading
@@ -557,7 +533,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="villageCode"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Village/Sub-district <span className="text-red-500">*</span>
                   </label>
@@ -566,7 +541,6 @@ export default function AddressForm() {
                     {...register('villageCode')}
                     disabled={!districtCode || villagesLoading}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent disabled:bg-[#F8F8F8] disabled:text-[#989898]"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     <option value="">
                       {villagesLoading
@@ -590,7 +564,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="postalCode"
                     className="block text-sm font-medium text-[#292929] mb-2"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Postal Code <span className="text-red-500">*</span>
                   </label>
@@ -599,7 +572,6 @@ export default function AddressForm() {
                     id="postalCode"
                     {...register('postalCode')}
                     className="w-full px-3 py-2.5 border border-[#DCDCDC] rounded-lg bg-white text-[#292929] text-sm focus:outline-none focus:ring-2 focus:ring-[#1D0DF3] focus:border-transparent"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                     placeholder="12345"
                     maxLength={5}
                   />
@@ -618,7 +590,6 @@ export default function AddressForm() {
                   <label
                     htmlFor="isDefault"
                     className="text-sm text-[#292929] cursor-pointer"
-                    style={{ fontFamily: 'var(--font-geist-sans)' }}
                   >
                     Set as default shipping address
                   </label>
@@ -636,7 +607,6 @@ export default function AddressForm() {
                 }}
                 disabled={isSubmitting}
                 className="px-6 py-2.5 text-sm font-medium text-[#292929] border border-[#DCDCDC] rounded-lg hover:bg-[#F8F8F8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 Cancel
               </button>
@@ -644,7 +614,6 @@ export default function AddressForm() {
                 type="submit"
                 disabled={isSubmitting}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-[#1D0DF3] rounded-lg hover:bg-[#1a0bd9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
               >
                 {isSubmitting ? 'Saving...' : 'Save Address'}
               </button>
@@ -668,14 +637,13 @@ export default function AddressForm() {
         >
           <div
             className="bg-white rounded-[20px] border border-[#EFEFEF] p-6 max-w-md w-full"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                   <AlertTriangle className="h-5 w-5 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-[#292929]">Delete Address</h3>
+                <h3 className="text-[18px] md:text-[20px] font-semibold text-[#292929]">Delete Address</h3>
               </div>
               <button
                 type="button"

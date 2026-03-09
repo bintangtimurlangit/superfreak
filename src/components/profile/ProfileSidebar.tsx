@@ -95,14 +95,14 @@ export default function ProfileSidebar() {
   }
 
   return (
-    <aside className="w-full lg:w-64 flex-shrink-0">
+    <aside className="w-full lg:w-64 flex-shrink-0 font-sans">
       <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
+          className="flex items-center gap-2 text-[14px] text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back</span>
+          <span className="font-medium">Back</span>
         </button>
 
         <div className="mb-6 pb-6 border-b border-[#EFEFEF]">
@@ -113,31 +113,20 @@ export default function ProfileSidebar() {
               </div>
             ) : (
               <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-semibold text-lg">{initials}</span>
+                <span className="text-white font-semibold text-[18px] md:text-[20px]">{initials}</span>
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3
-                className="text-base font-semibold text-[#292929] truncate"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
+              <h3 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] truncate">
                 {displayName}
               </h3>
-              <p
-                className="text-sm text-[#989898] truncate"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
-                {user?.email}
-              </p>
+              <p className="text-[12px] md:text-[14px] text-[#989898] truncate">{user?.email}</p>
             </div>
           </div>
         </div>
 
         <nav className="space-y-2">
-          <div
-            className="text-xs font-medium text-[#989898] uppercase tracking-wider mb-4"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
-          >
+          <div className="text-[12px] md:text-[14px] font-medium text-[#989898] uppercase tracking-wider mb-4">
             MY PROFILE
           </div>
 
@@ -148,10 +137,9 @@ export default function ProfileSidebar() {
                 ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <Package className="h-5 w-5" />
-            <span className="text-sm font-medium">My Orders</span>
+            <span className="text-[14px] font-medium">My Orders</span>
           </Link>
 
           <Link
@@ -161,10 +149,9 @@ export default function ProfileSidebar() {
                 ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <User className="h-5 w-5" />
-            <span className="text-sm font-medium">Edit Profile</span>
+            <span className="text-[14px] font-medium">Edit Profile</span>
           </Link>
 
           <Link
@@ -174,10 +161,9 @@ export default function ProfileSidebar() {
                 ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <Home className="h-5 w-5" />
-            <span className="text-sm font-medium">Address Information</span>
+            <span className="text-[14px] font-medium">Address Information</span>
           </Link>
 
           <Link
@@ -187,10 +173,9 @@ export default function ProfileSidebar() {
                 ? 'bg-[#1D0DF3] text-white'
                 : 'text-[#292929] hover:bg-[#F8F8F8]'
             }`}
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <Lock className="h-5 w-5" />
-            <span className="text-sm font-medium">Change Password</span>
+            <span className="text-[14px] font-medium">Change Password</span>
           </Link>
         </nav>
 
@@ -198,10 +183,9 @@ export default function ProfileSidebar() {
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
           >
             <LogOut className="h-5 w-5" />
-            <span className="text-sm font-medium">Log Out</span>
+            <span className="text-[14px] font-medium">Log Out</span>
           </button>
         </div>
       </div>

@@ -119,12 +119,10 @@ export default function CartPage() {
 
   if (isLoading && cart.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F8F8F8] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#F8F8F8] flex items-center justify-center px-6 font-sans">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-[#1D0DF3] mx-auto mb-4" />
-          <p className="text-[#7C7C7C]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-            {t('loading')}
-          </p>
+          <p className="text-[14px] sm:text-[16px] text-[#7C7C7C]">{t('loading')}</p>
         </div>
       </div>
     )
@@ -132,12 +130,11 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F8F8F8]">
+      <div className="min-h-screen bg-[#F8F8F8] font-sans">
         <div className="max-w-4xl mx-auto px-6 md:px-10 py-8 md:py-12">
           <Link
             href="/order"
-            className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
-            style={{ fontFamily: 'var(--font-geist-sans)' }}
+            className="inline-flex items-center gap-2 text-[14px] sm:text-[16px] text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('backToOrder')}
@@ -146,16 +143,10 @@ export default function CartPage() {
             <div className="inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#EFEFEF] bg-[#F8F8F8] mb-6">
               <ShoppingCart className="h-8 w-8 text-[#989898]" />
             </div>
-            <h1
-              className="text-xl font-semibold text-[#292929] mb-2"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929] mb-2">
               {t('empty')}
             </h1>
-            <p
-              className="text-sm text-[#7C7C7C] mb-6"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <p className="text-[14px] sm:text-[16px] font-normal text-[#7C7C7C] mb-6">
               {t('emptyDescription')}
             </p>
             <Link href="/order">
@@ -170,28 +161,21 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8]">
+    <div className="min-h-screen bg-[#F8F8F8] font-sans">
       <div className="max-w-4xl mx-auto px-6 md:px-10 py-8 md:py-12">
         <Link
           href="/order"
-          className="inline-flex items-center gap-2 text-sm text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
+          className="inline-flex items-center gap-2 text-[14px] sm:text-[16px] text-[#292929] hover:text-[#1D0DF3] transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('backToOrder')}
         </Link>
 
-        <h1
-          className="text-[24px] font-semibold text-[#292929] mb-2 flex items-center gap-2"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
+        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-normal leading-[100%] tracking-[-0.5px] text-[#292929] mb-2 flex items-center gap-2">
           <ShoppingCart className="h-6 w-6" />
           {t('title')}
         </h1>
-        <p
-          className="text-sm text-[#7C7C7C] mb-6"
-          style={{ fontFamily: 'var(--font-geist-sans)' }}
-        >
+        <p className="text-[14px] sm:text-[16px] font-normal text-[#7C7C7C] mb-6">
           {cartCount} {cartCount === 1 ? 'item' : 'items'}
         </p>
 
@@ -207,8 +191,7 @@ export default function CartPage() {
                 >
                   <div className="flex items-center justify-between gap-4 border-b border-[#F0F0F0] px-4 py-3 bg-[#FAFAFA]">
                     <h3
-                      className="min-w-0 truncate text-sm font-semibold text-[#292929]"
-                      style={{ fontFamily: 'var(--font-geist-sans)' }}
+                      className="min-w-0 truncate text-[14px] font-semibold text-[#292929]"
                       title={item.name}
                     >
                       {item.name}
@@ -216,25 +199,16 @@ export default function CartPage() {
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {priceInfo ? (
                         <div className="text-right">
-                          <p
-                            className="text-sm font-semibold text-[#1D0DF3]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
+                          <p className="text-[14px] font-semibold text-[#1D0DF3]">
                             {formatCurrency(priceInfo.totalPrice)}
                           </p>
-                          <p
-                            className="text-[11px] text-[#7C7C7C]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
+                          <p className="text-[12px] md:text-[14px] font-normal text-[#7C7C7C]">
                             {formatWeight(priceInfo.weight)} @{' '}
                             {formatCurrency(priceInfo.pricePerGram)}/g
                           </p>
                         </div>
                       ) : (
-                        <span
-                          className="text-xs text-[#7C7C7C]"
-                          style={{ fontFamily: 'var(--font-geist-sans)' }}
-                        >
+                        <span className="text-[12px] md:text-[14px] text-[#7C7C7C]">
                           {t('priceAtCheckout')}
                         </span>
                       )}
@@ -254,108 +228,46 @@ export default function CartPage() {
                       <Box className="h-12 w-12 text-[#DCDCDC]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-[12px] md:text-[14px]">
                         <div>
-                          <span
-                            className="text-[#9CA3AF]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Material
-                          </span>
-                          <p
-                            className="font-medium text-[#292929]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {item.configuration?.material || '–'}
-                          </p>
+                          <span className="text-[#9CA3AF]">Material</span>
+                          <p className="font-medium text-[#292929]">{item.configuration?.material || '–'}</p>
                         </div>
                         <div>
-                          <span
-                            className="text-[#9CA3AF]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            Color
-                          </span>
-                          <p
-                            className="font-medium text-[#292929]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {item.configuration?.color || '–'}
-                          </p>
+                          <span className="text-[#9CA3AF]">Color</span>
+                          <p className="font-medium text-[#292929]">{item.configuration?.color || '–'}</p>
                         </div>
                         {item.statistics && (
                           <>
                             <div>
-                              <span
-                                className="text-[#9CA3AF]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
-                                Weight/unit
-                              </span>
-                              <p
-                                className="font-medium text-[#292929]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
+                              <span className="text-[#9CA3AF]">Weight/unit</span>
+                              <p className="font-medium text-[#292929]">
                                 {formatWeight(item.statistics.filament_weight_g || 0)}
                               </p>
                             </div>
                             <div>
-                              <span
-                                className="text-[#9CA3AF]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
-                                Layer
-                              </span>
-                              <p
-                                className="font-medium text-[#292929]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
+                              <span className="text-[#9CA3AF]">Layer</span>
+                              <p className="font-medium text-[#292929]">
                                 {item.configuration?.layerHeight || '–'} mm
                               </p>
                             </div>
                             <div>
-                              <span
-                                className="text-[#9CA3AF]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
-                                Infill
-                              </span>
-                              <p
-                                className="font-medium text-[#292929]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
+                              <span className="text-[#9CA3AF]">Infill</span>
+                              <p className="font-medium text-[#292929]">
                                 {item.configuration?.infill || '–'}
                               </p>
                             </div>
                             <div>
-                              <span
-                                className="text-[#9CA3AF]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
-                                Walls
-                              </span>
-                              <p
-                                className="font-medium text-[#292929]"
-                                style={{ fontFamily: 'var(--font-geist-sans)' }}
-                              >
+                              <span className="text-[#9CA3AF]">Walls</span>
+                              <p className="font-medium text-[#292929]">
                                 {item.configuration?.wallCount ?? '2'}
                               </p>
                             </div>
                           </>
                         )}
                         <div>
-                          <span
-                            className="text-[#9CA3AF]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {t('quantity')}
-                          </span>
-                          <p
-                            className="font-medium text-[#292929]"
-                            style={{ fontFamily: 'var(--font-geist-sans)' }}
-                          >
-                            {qty} pcs
-                          </p>
+                          <span className="text-[#9CA3AF]">{t('quantity')}</span>
+                          <p className="font-medium text-[#292929]">{qty} pcs</p>
                         </div>
                       </div>
                     </div>
@@ -367,23 +279,14 @@ export default function CartPage() {
 
           <div className="mt-6 pt-6 border-t border-[#EFEFEF]">
             <div className="flex items-center justify-between mb-2">
-              <span
-                className="text-base font-semibold text-[#292929]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
+              <span className="text-[14px] sm:text-[16px] font-semibold text-[#292929]">
                 {t('subtotal')}
               </span>
-              <span
-                className="text-lg font-semibold text-[#1D0DF3]"
-                style={{ fontFamily: 'var(--font-geist-sans)' }}
-              >
+              <span className="text-[18px] md:text-[20px] font-semibold text-[#1D0DF3]">
                 {formatCurrency(subtotal)}
               </span>
             </div>
-            <p
-              className="text-sm text-[#7C7C7C] mb-6"
-              style={{ fontFamily: 'var(--font-geist-sans)' }}
-            >
+            <p className="text-[14px] sm:text-[16px] font-normal text-[#7C7C7C] mb-6">
               {t('shippingAtCheckout')}
             </p>
             <Link href="/order" className="block">
