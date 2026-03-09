@@ -135,6 +135,8 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           orderNumber: order.orderNumber || 'N/A',
           status: order.status,
           totalAmount: order.summary.totalAmount,
+          subtotal: order.summary.subtotal,
+          shippingCost: order.summary.shippingCost,
           createdAt: order.createdAt,
           items: order.items.map((item) => ({
             fileName: item.fileName,

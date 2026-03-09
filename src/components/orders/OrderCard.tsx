@@ -1,7 +1,7 @@
 'use client'
 
-import React from 'react'
-import { Calendar, Package, ChevronRight } from 'lucide-react'
+import React, { useState } from 'react'
+import { Calendar, Package, ChevronDown, ChevronUp } from 'lucide-react'
 import StatusBadge, { type OrderStatus } from './StatusBadge'
 
 export interface Order {
@@ -9,6 +9,10 @@ export interface Order {
   orderNumber: string
   status: OrderStatus
   totalAmount: number
+  /** Sum of item prices (print price) */
+  subtotal?: number
+  /** Shipping cost (ongkir) */
+  shippingCost?: number
   createdAt: string
   items: Array<{
     fileName: string
@@ -24,6 +28,8 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order, onPayNow }: OrderCardProps) {
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('en-US', {
@@ -101,6 +107,28 @@ export default function OrderCard({ order, onPayNow }: OrderCardProps) {
         </span>
       </div>
 
+      {/* Expanded: Print price + Ongkir breakdown */}
+      {detailsExpanded && (order.subtotal != null || order.shippingCost != null) && (
+        <div className="mb-4 pb-4 border-b border-[#EFEFEF] space-y-2">
+          {order.subtotal != null && (
+            <div className="flex items-center justify-between text-[12px] md:text-[14px]">
+              <span className="text-[#7C7C7C]">Print price (subtotal)</span>
+              <span className="text-[#292929] font-medium">{formatCurrency(order.subtotal)}</span>
+            </div>
+          )}
+          {order.shippingCost != null && (
+            <div className="flex items-center justify-between text-[12px] md:text-[14px]">
+              <span className="text-[#7C7C7C]">Ongkir (shipping)</span>
+              <span className="text-[#292929] font-medium">{formatCurrency(order.shippingCost)}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between text-[12px] md:text-[14px] pt-1">
+            <span className="text-[#292929] font-semibold">Total</span>
+            <span className="text-[#292929] font-bold">{formatCurrency(order.totalAmount)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Tracking Number (if available) */}
       {order.trackingNumber && (
         <div className="mb-4 pb-4 border-b border-[#EFEFEF]">
@@ -143,10 +171,17 @@ export default function OrderCard({ order, onPayNow }: OrderCardProps) {
           </button>
         )}
         <button
-          className="p-2.5 border border-[#DCDCDC] rounded-lg hover:bg-[#F8F8F8] transition-colors"
-          title="More options"
+          type="button"
+          onClick={() => setDetailsExpanded((prev) => !prev)}
+          className="p-2.5 border border-[#DCDCDC] rounded-lg hover:bg-[#F8F8F8] transition-colors shrink-0"
+          title={detailsExpanded ? 'Hide price breakdown' : 'Show print price & ongkir'}
+          aria-expanded={detailsExpanded}
         >
-          <ChevronRight className="h-5 w-5 text-[#989898] rotate-90" />
+          {detailsExpanded ? (
+            <ChevronUp className="h-5 w-5 text-[#989898]" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-[#989898]" />
+          )}
         </button>
       </div>
     </div>
