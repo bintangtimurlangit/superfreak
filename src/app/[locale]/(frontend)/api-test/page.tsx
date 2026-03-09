@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { api, isUsingNestApi } from '@/lib/api-client'
+import { HEALTH } from '@/lib/api/urls'
 
 export default function ApiTestPage() {
   const [result, setResult] = useState<{ status: number; data: unknown; error?: string } | null>(null)
@@ -13,7 +14,7 @@ export default function ApiTestPage() {
     setLoading(true)
     setResult(null)
     try {
-      const res = await api.get('/health')
+      const res = await api.get(HEALTH)
       const data = await res.json().catch(() => ({}))
       setResult({ status: res.status, data })
     } catch (err) {

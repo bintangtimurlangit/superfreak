@@ -52,16 +52,31 @@ export default function BlogList() {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch('/api/blog?limit=100') // Fetch all posts for client-side filtering
-        const data = await response.json()
-
-        if (data.success && data.data.posts) {
-          setBlogPosts(data.data.posts)
-
-          // Extract unique categories
+        const { api, isUsingNestApi } = await import('@/lib/api-client')
+        const { BLOG } = await import('@/lib/api/urls')
+        const url = `${BLOG.base}?limit=100`
+        const res = isUsingNestApi() ? await api.get(url) : await fetch(url)
+        const ok = typeof (res as { ok?: boolean }).ok === 'boolean' ? (res as { ok: boolean }).ok : (res as Response).ok
+        if (!ok) {
+          setError('Failed to load blog posts')
+          return
+        }
+        const data = await (typeof (res as { json?: () => Promise<unknown> }).json === 'function' ? (res as { json: () => Promise<unknown> }).json() : (res as Response).json()) as {
+          success?: boolean
+          data?: { posts?: BlogPost[] }
+          posts?: BlogPost[]
+          docs?: BlogPost[]
+        }
+        const posts: BlogPost[] = Array.isArray(data)
+          ? data
+          : data.success && data.data?.posts
+            ? data.data.posts
+            : data.posts ?? data.docs ?? []
+        if (posts.length > 0 || data.success || isUsingNestApi()) {
+          setBlogPosts(posts)
           const categories = new Set<string>()
-          data.data.posts.forEach((post: BlogPost) => {
-            post.categories.forEach((cat) => categories.add(cat))
+          posts.forEach((post: BlogPost) => {
+            (post.categories || []).forEach((cat) => categories.add(cat))
           })
           setAllCategories(['All', ...Array.from(categories)])
         } else {

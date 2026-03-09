@@ -30,14 +30,14 @@ interface RajaOngkirResponse {
  * @returns RajaOngkir API response
  */
 export async function searchRajaOngkirLocation(query: string): Promise<RajaOngkirResponse> {
-  const response = await fetch(
-    `/api/rajaongkir/search-destination?query=${encodeURIComponent(query)}&limit=20`,
-  )
-
-  if (!response.ok) {
-    throw new Error('Failed to search RajaOngkir location')
-  }
-
+  const { api, isUsingNestApi } = await import('@/lib/api-client')
+  const { RAJAONGKIR, SHIPPING } = await import('@/lib/api/urls')
+  const path = isUsingNestApi()
+    ? `${SHIPPING.rajaongkirSearchDestination}?query=${encodeURIComponent(query)}&limit=20`
+    : `${RAJAONGKIR.searchDestination}?query=${encodeURIComponent(query)}&limit=20`
+  const res = isUsingNestApi() ? await api.get(path) : await fetch(path)
+  const response = typeof (res as { ok?: boolean }).ok === 'boolean' ? res as { ok: boolean; json: () => Promise<RajaOngkirResponse> } : res as Response
+  if (!response.ok) throw new Error('Failed to search RajaOngkir location')
   return response.json()
 }
 
@@ -173,26 +173,20 @@ export async function calculateShippingCost(
   weight: number,
   courier: string,
 ): Promise<ShippingCostResponse> {
-  const response = await fetch('/api/rajaongkir/calculate-cost', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      destinationId,
-      weight,
-      courier,
-    }),
-  })
-
+  const { api, isUsingNestApi } = await import('@/lib/api-client')
+  const { RAJAONGKIR, SHIPPING } = await import('@/lib/api/urls')
+  const body = { destinationId, weight, courier }
+  const res = isUsingNestApi()
+    ? await api.post(SHIPPING.rajaongkirCalculateCost, body)
+    : await fetch(RAJAONGKIR.calculateCost, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const response = typeof (res as { ok?: boolean }).ok === 'boolean' ? res as { ok: boolean; json: () => Promise<ShippingCostResponse> } : res as Response
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error', details: null, hint: null }))
+    const error = (await response.json().catch(() => ({}))) as { error?: string; details?: string; hint?: string }
     const parts = [error.error || 'Failed to calculate shipping cost']
     if (error.details) parts.push(String(error.details))
     if (error.hint) parts.push(String(error.hint))
     throw new Error(parts.join(' — '))
   }
-
   return response.json()
 }
 

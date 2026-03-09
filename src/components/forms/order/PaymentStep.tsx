@@ -69,24 +69,19 @@ export default function PaymentStep({ onBack, orderId }: PaymentStepProps) {
     setError(null)
 
     try {
-      // 1. Initialize payment with the selected method
-      const response = await fetch('/api/payment/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          orderId,
-          paymentMethod: selectedMethod,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to initialize payment')
-      }
-
-      const { snapToken } = await response.json()
+      const { api, isUsingNestApi } = await import('@/lib/api-client')
+      const { PAYMENT } = await import('@/lib/api/urls')
+      const body = { orderId, paymentMethod: selectedMethod }
+      const res = isUsingNestApi()
+        ? await api.post(PAYMENT.initialize, body)
+        : await fetch(PAYMENT.initialize, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body),
+          })
+      if (!res.ok) throw new Error('Failed to initialize payment')
+      const { snapToken } = await res.json()
 
       // 2. Open Midtrans Snap payment popup
       if (window.snap) {

@@ -2,8 +2,9 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { signOut } from '@/lib/auth/client'
+import { useSignOut, useAuthSession } from '@/lib/auth/use-auth-session'
 import { useBetterAuth } from '@/lib/auth/context'
+import { isUsingNestApi } from '@/lib/api-client'
 import { use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
@@ -38,10 +39,13 @@ export default function ProfileSidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const { currentUserPromise } = useBetterAuth()
-  const user = use(currentUserPromise)
+  const betterAuthUser = use(currentUserPromise)
+  const authSession = useAuthSession()
+  const nestUser = isUsingNestApi() ? authSession.data?.user : null
+  const user = nestUser ?? betterAuthUser
   const isAuthenticated = !!user
 
-  const appUser = user?.collection === 'app-users' ? user : null
+  const appUser = betterAuthUser?.collection === 'app-users' ? betterAuthUser : null
 
   useEffect(() => {
     const handleSessionUpdate = () => {
@@ -62,32 +66,23 @@ export default function ProfileSidebar() {
     })
   }, [user, appUser])
 
-  const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const displayName = (user as any)?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
   const initials =
-    (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') ||
+    ((user as any)?.name ? String((user as any).name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
+  const profilePictureUrl = (user as any)?.image ?? appUser?.image ?? null
 
   if (!isAuthenticated || !user) {
     return null
   }
 
-  const profilePictureUrl = appUser?.image || null
-
+  const signOutAuth = useSignOut()
   const handleLogout = async () => {
     try {
-      await signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push('/')
-            router.refresh()
-          },
-          onError: (error: any) => {
-            console.error('Logout error:', error)
-            router.push('/')
-          },
-        },
-      })
+      await signOutAuth({ callbackURL: '/' })
+      router.push('/')
+      router.refresh()
     } catch (error) {
       console.error('Logout error:', error)
       router.push('/')

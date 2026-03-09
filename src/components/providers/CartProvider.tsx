@@ -1,8 +1,9 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { type CartItem } from '@/lib/cart'
+import { CART } from '@/lib/api/urls'
 
 type CartContextValue = {
   cart: CartItem[]
@@ -17,7 +18,7 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCartState] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { data: session, isPending: sessionLoading } = useSession()
+  const { data: session, isPending: sessionLoading } = useAuthSession()
   const isAuthenticated = !!session?.user
 
   const loadCart = useCallback(async () => {
@@ -27,7 +28,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return
     }
     try {
-      const res = await fetch('/api/cart', { credentials: 'include' })
+      const { api, isUsingNestApi } = await import('@/lib/api-client')
+      const res = isUsingNestApi() ? await api.get(CART) : await fetch(CART, { credentials: 'include' })
       const data = await res.json()
       setCartState(Array.isArray(data?.items) ? data.items : [])
     } catch {
@@ -47,12 +49,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCartState(items)
       if (!isAuthenticated) return
       try {
-        await fetch('/api/cart', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ items }),
-        })
+        const { api, isUsingNestApi } = await import('@/lib/api-client')
+        if (isUsingNestApi()) {
+          await api.post(CART, { items })
+        } else {
+          await fetch(CART, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ items }),
+          })
+        }
       } catch (e) {
         console.error('Failed to persist cart', e)
       }
@@ -64,7 +71,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setCartState([])
     if (!isAuthenticated) return
     try {
-      await fetch('/api/cart', { method: 'DELETE', credentials: 'include' })
+      const { api, isUsingNestApi } = await import('@/lib/api-client')
+      if (isUsingNestApi()) {
+        await api.delete(CART)
+      } else {
+        await fetch(CART, { method: 'DELETE', credentials: 'include' })
+      }
     } catch (e) {
       console.error('Failed to clear cart', e)
     }

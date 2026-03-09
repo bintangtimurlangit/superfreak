@@ -137,8 +137,9 @@ export default function UploadStep({
     file: File | string,
     config: ModelConfiguration,
   ) => {
-    // Call Next.js API route (server-side proxies to SuperSlice; no NEXT_PUBLIC_ needed)
-    const sliceApiUrl = '/api/slice'
+    const { api, isUsingNestApi } = await import('@/lib/api-client')
+    const { SLICE } = await import('@/lib/api/urls')
+    const sliceApiUrl = SLICE
 
     // Convert data URL to File if needed
     let fileObject: File
@@ -217,13 +218,16 @@ export default function UploadStep({
         ),
       )
 
-      // Call Next.js API route (server proxies to SuperSlice internally)
-      const response = await fetch(sliceApiUrl, {
-        method: 'POST',
-        body: formData,
-      })
+      let responseLike: { ok: boolean; json: () => Promise<unknown> }
+      if (isUsingNestApi()) {
+        const res = await api.postFormData(SLICE, formData)
+        responseLike = { ok: res.ok, json: () => res.json() }
+      } else {
+        const response = await fetch(sliceApiUrl, { method: 'POST', body: formData })
+        responseLike = { ok: response.ok, json: () => response.json() }
+      }
 
-      console.log(`[SuperSlice] Response status: ${response.status}`)
+      console.log(`[SuperSlice] Response status: ${responseLike.ok ? 200 : 'error'}`)
 
       setUploadedFiles((prev) =>
         prev.map((f) =>
@@ -231,12 +235,12 @@ export default function UploadStep({
         ),
       )
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
+      if (!responseLike.ok) {
+        const errorData = (await responseLike.json().catch(() => ({}))) as { detail?: string }
+        throw new Error(errorData.detail || 'Slice request failed')
       }
 
-      const statistics = await response.json()
+      const statistics = (await responseLike.json()) as UploadedFile['statistics']
 
       // Log statistics to console
       console.log(`[SuperSlice] Statistics for ${fileObject.name}:`, statistics)
@@ -249,7 +253,7 @@ export default function UploadStep({
                 ...f,
                 status: 'completed' as const,
                 progress: 100,
-                statistics: statistics,
+                statistics,
               }
             : f,
         ),
@@ -370,18 +374,41 @@ export default function UploadStep({
         }
       })
 
-      // Upload to temp storage
-      const response = await fetch('/api/files/temp', {
-        method: 'POST',
-        body: formData,
-      })
+      const { api, isUsingNestApi } = await import('@/lib/api-client')
+      const { FILES } = await import('@/lib/api/urls')
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      let result: { files: { tempFileId: string; fileName: string }[] }
+      if (isUsingNestApi()) {
+        // Nest accepts single file per request
+        const allFiles: { tempFileId: string; fileName: string }[] = []
+        for (const uploadedFile of filesToUpload) {
+          if (!uploadedFile.file) continue
+          const fileObject =
+            typeof uploadedFile.file === 'string'
+              ? dataURLtoFile(uploadedFile.file, uploadedFile.name)
+              : uploadedFile.file
+          const fd = new FormData()
+          fd.append('file', fileObject)
+          const res = await api.postFormData(FILES.temp, fd)
+          if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            throw new Error(err.error || `Upload failed: ${res.status}`)
+          }
+          const data = (await res.json()) as { files?: { tempFileId?: string; fileName?: string }[] }
+          const list = data.files || []
+          list.forEach((t) => {
+            if (t.tempFileId && t.fileName) allFiles.push({ tempFileId: t.tempFileId, fileName: t.fileName })
+          })
+        }
+        result = { files: allFiles }
+      } else {
+        const response = await fetch(FILES.temp, { method: 'POST', body: formData })
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        }
+        result = await response.json()
       }
-
-      const result = await response.json()
       console.log('[TempUpload] Upload successful:', result)
 
       // Update files with tempFileId
@@ -503,7 +530,7 @@ export default function UploadStep({
         const filesWithStatistics = uploadedFiles.map((f) => {
           const r = results.find((x) => x.fileId === f.id)
           if (r && 'statistics' in r && r.statistics)
-            return { ...f, statistics: r.statistics, status: 'completed' as const, progress: 100 }
+            return { ...f, statistics: r.statistics as UploadedFile['statistics'], status: 'completed' as const, progress: 100 }
           return f
         })
         try {

@@ -78,30 +78,18 @@ export default function ConfigureModal({
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
 
-  // Fetch printing options from Payload REST API
+  // Fetch printing options (NestJS or Payload)
   const { data: printingOptions, isLoading: loadingOptions } = useQuery<PrintingOptionsData>({
     queryKey: ['printing-options'],
     queryFn: async (): Promise<PrintingOptionsData> => {
-      // Fetch from Payload's built-in REST API endpoints
-      const [filamentTypesRes, printingOptionsRes, pricingRes] = await Promise.all([
-        fetch('/api/filament-types?where[isActive][equals]=true&limit=100&sort=name'),
-        fetch('/api/printing-options?where[isActive][equals]=true&limit=100&sort=type'),
-        fetch('/api/printing-pricing?where[isActive][equals]=true&limit=100'),
-      ])
-
-      if (!filamentTypesRes.ok || !printingOptionsRes.ok || !pricingRes.ok) {
-        throw new Error('Failed to fetch printing options')
-      }
-
-      const [filamentTypes, printingOptions, pricing] = await Promise.all([
-        filamentTypesRes.json() as Promise<PayloadResponse<FilamentType>>,
-        printingOptionsRes.json() as Promise<PayloadResponse<PrintingOption>>,
-        pricingRes.json() as Promise<PayloadResponse<PrintingPricing>>,
-      ])
+      const { filamentTypes, printingOptions: optionsDoc, pricing } = await import('@/lib/printing-data').then((m) => m.fetchPrintingData())
+      const filamentTypesPayload = filamentTypes as PayloadResponse<FilamentType>
+      const printingOptionsPayload = optionsDoc as PayloadResponse<PrintingOption>
+      const pricingPayload = pricing as PayloadResponse<PrintingPricing>
 
       // Extract unique layer heights from pricing tables
       const layerHeights = new Set<number>()
-      pricing.docs?.forEach((priceDoc) => {
+      pricingPayload.docs?.forEach((priceDoc) => {
         if (priceDoc.pricingTable && Array.isArray(priceDoc.pricingTable)) {
           priceDoc.pricingTable.forEach((row) => {
             if (row.layerHeight != null && typeof row.layerHeight === 'number') {
@@ -112,7 +100,7 @@ export default function ConfigureModal({
       })
 
       // Organize data
-      const materials = (filamentTypes.docs?.map((doc) => doc.name).filter(Boolean) ||
+      const materials = (filamentTypesPayload.docs?.map((doc) => doc.name).filter(Boolean) ||
         []) as string[]
 
       // Get all colors from all filament types and build name -> hex map for preview
@@ -132,7 +120,7 @@ export default function ConfigureModal({
         Pink: '#e91e8c',
         Brown: '#795548',
       }
-      filamentTypes.docs?.forEach((doc) => {
+      filamentTypesPayload.docs?.forEach((doc) => {
         if (doc.colors && Array.isArray(doc.colors)) {
           doc.colors.forEach((color: { name: string; hexCode?: string | null; id?: string | null }) => {
             if (color.name) {
@@ -150,7 +138,7 @@ export default function ConfigureModal({
 
       // Organize printing options by type
       const optionsByType: Record<string, Array<{ label: string; value: string }>> = {}
-      printingOptions.docs?.forEach((doc) => {
+      printingOptionsPayload.docs?.forEach((doc) => {
         if (doc.values && Array.isArray(doc.values)) {
           optionsByType[doc.type || ''] = doc.values
             .filter((val) => val.isActive !== false)
@@ -162,7 +150,7 @@ export default function ConfigureModal({
       })
 
       // Get wall count max value
-      const wallCountOption = printingOptions.docs?.find((doc) => doc.type === 'wallCount')
+      const wallCountOption = printingOptionsPayload.docs?.find((doc) => doc.type === 'wallCount')
       const maxWallCount = (wallCountOption?.maxValue as number) || 20
 
       return {

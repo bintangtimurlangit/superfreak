@@ -6,6 +6,9 @@ import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { authClient } from '@/lib/auth/client'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { isUsingNestApi } from '@/lib/api-client'
+import { login as apiLogin } from '@/lib/auth/api-auth'
 
 interface SignInModalProps {
   isOpen: boolean
@@ -23,6 +26,7 @@ export default function SignInModal({
   initialEmail,
 }: SignInModalProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState(initialEmail || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -53,32 +57,41 @@ export default function SignInModal({
     }
 
     try {
-      await authClient.signIn.email(
-        {
-          email: email.trim(),
-          password: password,
-          callbackURL: '/'
-        },
-        {
-          onRequest: () => {
-            setLoading(true)
-            setError('')
+      if (isUsingNestApi()) {
+        await apiLogin(email.trim(), password)
+        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+        onClose()
+        router.refresh()
+        router.push('/')
+      } else {
+        await authClient.signIn.email(
+          {
+            email: email.trim(),
+            password: password,
+            callbackURL: '/'
           },
-          onSuccess: () => {
-      onClose()
-            router.refresh()
-            router.push('/')
-          },
-          onError: (ctx: any) => {
-            setError(ctx.error.message || 'An unexpected error occurred. Please try again.')
-            setLoading(false)
+          {
+            onRequest: () => {
+              setLoading(true)
+              setError('')
+            },
+            onSuccess: () => {
+              onClose()
+              router.refresh()
+              router.push('/')
+            },
+            onError: (ctx: any) => {
+              setError(ctx.error.message || 'An unexpected error occurred. Please try again.')
+              setLoading(false)
+            }
           }
-        }
-      )
-    } catch (error) {
+        )
+      }
+    } catch (err) {
       const errorMessage =
-        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+        err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
+    } finally {
       setLoading(false)
     }
   }
@@ -240,7 +253,8 @@ export default function SignInModal({
                   {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
 
-                {/* Google Button */}
+                {/* Google Button (hidden when using NestJS – email/password only) */}
+                {!isUsingNestApi() && (
                 <Button
                   type="button"
                   variant="secondary"
@@ -268,6 +282,7 @@ export default function SignInModal({
                   </svg>
                   Continue With Google
                 </Button>
+                )}
 
                 {/* Sign Up Section */}
                 <div className="text-center pt-3">

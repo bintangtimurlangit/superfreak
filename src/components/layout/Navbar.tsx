@@ -6,8 +6,9 @@ import Button from '@/components/ui/Button'
 import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
-import { signOut } from '@/lib/auth/client'
+import { useSignOut, useAuthSession } from '@/lib/auth/use-auth-session'
 import { useBetterAuth } from '@/lib/auth/context'
+import { isUsingNestApi } from '@/lib/api-client'
 import { use } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
@@ -42,21 +43,19 @@ const Navbar = () => {
   const locale = useLocale()
   const t = useTranslations('Navbar')
   const { currentUserPromise } = useBetterAuth()
-  const user = use(currentUserPromise)
+  const betterAuthUser = use(currentUserPromise)
+  const authSession = useAuthSession()
+  const nestUser = isUsingNestApi() ? authSession.data?.user : null
+  const appUser = betterAuthUser?.collection === 'app-users' ? betterAuthUser : null
+  const user = nestUser ?? betterAuthUser
   const isAuthenticated = !!user
 
-  // Type guard to check if user is AppUser (has image field)
-  const appUser = user?.collection === 'app-users' ? user : null
-
-  // Get user data from Payload auth (includes all fields like image)
-  const displayName = appUser?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const displayName = (user as any)?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
   const initials =
-    (appUser?.name ? String(appUser.name)[0]?.toUpperCase() : '') ||
+    ((user as any)?.name ? String((user as any).name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-
-  // Use image field from Payload user (not from better-auth session)
-  const profilePictureUrl = appUser?.image || null
+  const profilePictureUrl = (user as any)?.image ?? appUser?.image ?? null
 
   useEffect(() => {
     const handleSessionUpdate = () => {
@@ -128,25 +127,16 @@ const Navbar = () => {
     window.location.href = `/${nextLocale}${path}`
   }
 
+  const signOutAuth = useSignOut()
+
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-
     setIsUserDropdownOpen(false)
-
     try {
-      await signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push('/')
-            router.refresh()
-          },
-          onError: (error: any) => {
-            console.error('Logout error:', error)
-            router.push('/')
-          },
-        },
-      })
+      await signOutAuth({ callbackURL: '/' })
+      router.push('/')
+      router.refresh()
     } catch (error) {
       console.error('Logout error:', error)
       router.push('/')

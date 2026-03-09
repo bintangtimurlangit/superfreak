@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { MapPin, X } from 'lucide-react'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { addressSchema, type AddressFormData } from '@/lib/validations/address'
 import { useProvinces, useRegencies, useDistricts, useVillages } from '@/hooks/location/useLocation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Button from '@/components/ui/Button'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { ADDRESSES, USER_ADDRESSES } from '@/lib/api/urls'
 
 export interface AddressForOrder {
   id: string
@@ -44,7 +46,7 @@ export default function AddAddressModal({
   onClose,
   onSuccess,
 }: AddAddressModalProps) {
-  const { data: sessionData } = useSession()
+  const { data: sessionData } = useAuthSession()
   const user = sessionData?.user || null
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
@@ -96,12 +98,22 @@ export default function AddAddressModal({
     setValue('villageCode', '')
   }, [districtCode, setValue])
 
+  const useNest = isUsingNestApi()
   const createAddressMutation = useMutation({
     mutationFn: async (data: AddressFormData) => {
-      const response = await fetch('/api/user-addresses', {
+      const body = useNest ? { ...data } : { ...data, user: user?.id }
+      if (useNest) {
+        const res = await api.post(ADDRESSES.base, body)
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({})) as { message?: string }
+          throw new Error(err.message || 'Failed to save address')
+        }
+        return res.json()
+      }
+      const response = await fetch(USER_ADDRESSES.base, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, user: user?.id }),
+        body: JSON.stringify(body),
         credentials: 'include',
       })
       if (!response.ok) {

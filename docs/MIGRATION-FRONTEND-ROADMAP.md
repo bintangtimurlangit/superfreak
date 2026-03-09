@@ -13,90 +13,87 @@ Use this as a checklist. Backend (NestJS) is deployed; switch the frontend domai
 
 ---
 
-## Next steps (in order)
+## ✅ Auth swap (done)
 
-### 1. Auth swap (required before most features)
-
-- **Backend:** NestJS B2 Auth is ready (`/auth/login`, `/auth/register`, `/auth/logout`, `/auth/me`).
-- **Frontend:** Create `src/lib/auth/api-auth.ts`: login, register, logout, getMe using `api.post` / `api.get` to `NEXT_PUBLIC_API_URL`.
-- Replace or wrap session with a hook that calls `GET /auth/me` (e.g. React Query). Use it in CartProvider, OrderForm, OrderHistoryList, EditProfileForm.
-- Point login/signup forms to NestJS auth. Keep better-auth and `/api/auth/[...all]` until cutover is verified.
-
-**Files to touch:** `src/lib/auth/`, login/signup pages, `get-context-props.ts`, CartProvider, OrderForm, OrderHistoryList, EditProfileForm.
+- **Added:** `src/lib/auth/api-auth.ts` (login, register, logout, getMe), `src/lib/auth/use-auth-session.ts` (useAuthSession, useSignOut).
+- When `NEXT_PUBLIC_API_URL` is set: session from GET /auth/me, login/register via NestJS, logout via POST /auth/logout; Google sign-in hidden.
+- **Switched:** All `useSession` → `useAuthSession`; Navbar/ProfileSidebar use `useSignOut`; SignInModal/SignUpModal use api-auth when isUsingNestApi().
+- CartProvider loads/sets/clears cart via api client when isUsingNestApi().
 
 ---
 
-### 2. F1 – Printing and settings (read-only, good first test)
+## ✅ F1 – Printing and settings (done)
 
-- Replace `fetch('/api/filament-types?...')`, `fetch('/api/printing-options?...')`, `fetch('/api/printing-pricing?...')`, `fetch('/api/globals/courier-settings')` with `api.get('/api/printing/filament-types')`, `api.get('/api/printing/options')`, `api.get('/api/printing/pricing')`, `api.get('/api/settings/courier')`.
-- **Files:** `ConfigureModal.tsx`, `SummaryStep.tsx`, `cart/page.tsx` (if they use these).
+- **Added:** `src/lib/printing-data.ts` (fetchPrintingData) for NestJS or Payload.
+- ConfigureModal uses fetchPrintingData() for filament types, options, pricing.
+- SummaryStep fetches courier settings from api.get('/api/settings/courier') when isUsingNestApi().
 
 ---
 
-### 3. F2 – Addresses
+## ✅ Central API URLs (done)
 
-- Replace `/api/user-addresses` and `/api/user-addresses/:id` with `api.get/post/patch/delete('/api/addresses', ...)`.
+- **Added:** `src/lib/api/urls.ts` – all API paths (AUTH, CART, PRINTING, ORDERS, PAYMENT, ADDRESSES, WILAYAH, SLICE, FILES, BLOG, SHIPPING, USERS, etc.). Use these constants instead of string literals.
+
+---
+
+## ✅ F2 – Addresses (done)
+
+- When Nest: `api.get/post/delete(ADDRESSES.base | ADDRESSES.byId(id))`. Payload fallback: `USER_ADDRESSES`.
 - **Files:** `AddressForm.tsx`, `AddressSelectionModal.tsx`, `AddAddressModal.tsx`, `SummaryStep.tsx`.
 
 ---
 
-### 4. F3 – Profile and profile image
+## ✅ F3 – Profile and profile image (done)
 
-- `PATCH /api/users/me`, `POST /api/users/profile-image` (FormData) via api client.
-- **Files:** `EditProfileForm.tsx`.
-
----
-
-### 5. F4 – Cart
-
-- Replace `fetch('/api/cart')` with `api.get('/api/cart')`, `api.post('/api/cart', body)`, `api.delete('/api/cart')`.
-- **Files:** `CartProvider.tsx`, any component that mutates cart.
+- When Nest: `api.patch(USERS.me, { name })`, `api.postFormData(USERS.profileImage, formData)`.
+- **Files:** `EditProfileForm.tsx`. (Clearing profile image when Nest not supported yet.)
 
 ---
 
-### 6. F5 – Orders
+## ✅ F4 – Cart (done)
 
-- OrderForm: `api.post('/api/orders', body)`.
-- OrderHistoryList: `api.get('/api/orders')`.
-- Order detail: `api.get('/api/orders/:id')`, messages, cancel, invoice — all via api client.
+- When Nest: `api.get/post/delete(CART)`. **Files:** `CartProvider.tsx`.
+
+---
+
+## ✅ F5 – Orders (done)
+
+- When Nest: OrderForm `api.post(ORDERS.base)`, OrderHistoryList `api.get(ORDERS.base)`, orders/[id]: get, messages, stream, cancel, invoice, verify, POST message via api + ORDERS/PAYMENT urls.
 - **Files:** `OrderForm.tsx`, `OrderHistoryList.tsx`, `orders/[id]/page.tsx`.
 
 ---
 
-### 7. F6 – Payments
+## ✅ F6 – Payments (done)
 
-- `api.post('/api/payment/initialize', ...)`, `api.post('/api/payment/verify', ...)`.
-- **Files:** `PaymentSelectionModal.tsx`, `PaymentStep.tsx`, `orders/[id]/page.tsx` (verify).
-
----
-
-### 8. F7 – Files (checkout)
-
-- Temp: `api.post('/api/files/temp', FormData)`, get/delete via api client.
-- Finalize: `api.post('/api/files/finalize', body)` after order creation.
-- **Files:** `UploadStep.tsx`, order creation flow.
+- When Nest: `api.post(PAYMENT.initialize)`, `api.post(PAYMENT.verify)`.
+- **Files:** `PaymentSelectionModal.tsx`, `PaymentStep.tsx`, `orders/[id]/page.tsx`.
 
 ---
 
-### 9. F8 – Blog
+## ✅ F7 – Files (done)
 
-- `api.get('/api/blog')`, `api.get('/api/blog/:slug')`; create if needed: `api.post('/api/blog', ...)`.
-- **Files:** `BlogList.tsx`, `blog/[slug]/page.tsx`.
-
----
-
-### 10. F9 – Shipping (Biteship, RajaOngkir)
-
-- Replace direct fetch to Next.js routes with `api.post('/api/shipping/biteship/rates', ...)`, `api.post('/api/shipping/rajaongkir/calculate-cost', ...)`, `api.get('/api/shipping/rajaongkir/search-destination?...')`.
-- **Files:** `lib/biteship.ts`, `lib/rajaongkir.ts`, `SummaryStep.tsx`.
+- When Nest: temp upload (one file per request) and slice via `api.postFormData(FILES.temp | SLICE)`.
+- **Files:** `UploadStep.tsx`, `lib/slice.ts`. (Finalize: call `api.post(FILES.finalize, { orderId, tempFileIds })` after order create when needed.)
 
 ---
 
-### 11. F10 – Wilayah and Slice
+## ✅ F8 – Blog (done)
 
-- Wilayah: `api.get('/api/wilayah/provinces')`, `api.get('/api/wilayah/regencies/:code')`, etc.
-- Slice: `api.postFormData('/api/slice', formData)`.
-- **Files:** `useLocation.ts`, `SummaryStep.tsx`, `UploadStep.tsx`, `lib/slice.ts`.
+- When Nest: `api.get(BLOG.base)` in BlogList; normalize response shape.
+- **Files:** `BlogList.tsx`.
+
+---
+
+## ✅ F9 – Shipping (done)
+
+- When Nest: `api.post(SHIPPING.biteshipRates)`, `api.post(SHIPPING.rajaongkirCalculateCost)`, `api.get(SHIPPING.rajaongkirSearchDestination)`.
+- **Files:** `lib/biteship.ts`, `lib/rajaongkir.ts`.
+
+---
+
+## ✅ F10 – Wilayah and Slice (done)
+
+- When Nest: Wilayah via `api.get(WILAYAH.provinces | regencies | districts | villages)` in `useLocation.ts`. Slice via api in `UploadStep.tsx` and `lib/slice.ts`.
 
 ---
 

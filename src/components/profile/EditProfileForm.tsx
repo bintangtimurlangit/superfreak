@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation'
 import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Image from 'next/image'
-import { useSession, updateUser, authClient } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
+import { updateUser, authClient } from '@/lib/auth/client'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { USERS, PROFILE } from '@/lib/api/urls'
+import { useQueryClient } from '@tanstack/react-query'
 
 function EditProfileFormSkeleton() {
   return (
@@ -76,7 +80,9 @@ function EditProfileFormSkeleton() {
 
 export default function EditProfileForm() {
   const router = useRouter()
-  const { data: sessionData, isPending: loading, refetch: refetchSession } = useSession()
+  const queryClient = useQueryClient()
+  const { data: sessionData, isPending: loading, refetch: refetchSession } = useAuthSession()
+  const useNest = isUsingNestApi()
   const sessionUser = sessionData?.user || null
   const isAuthenticated = !!sessionUser
   const [mounted, setMounted] = useState(false)
@@ -298,6 +304,11 @@ export default function EditProfileForm() {
 
     setSaving(true)
     try {
+      if (useNest) {
+        // Backend has no clear-image endpoint yet; name-only PATCH keeps image
+        alert('Clearing profile picture is not supported when using the API.')
+        return
+      }
       await updateUser({
         image: undefined,
         fetchOptions: {
@@ -337,36 +348,51 @@ export default function EditProfileForm() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        const uploadResponse = await fetch('/api/profile-image', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        })
-
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json().catch(() => ({}))
-          throw new Error(errorData.error || 'Failed to upload profile image')
+        if (useNest) {
+          const res = await api.postFormData(USERS.profileImage, formData)
+          if (!res.ok) {
+            const err = (await res.json().catch(() => ({}))) as { error?: string }
+            throw new Error(err.error || 'Failed to upload profile image')
+          }
+          const uploadData = (await res.json()) as { url?: string }
+          imageUrl = uploadData.url
+        } else {
+          const uploadResponse = await fetch(PROFILE.image, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          })
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json().catch(() => ({}))
+            throw new Error(errorData.error || 'Failed to upload profile image')
+          }
+          const uploadData = await uploadResponse.json()
+          imageUrl = uploadData.url
         }
-
-        const uploadData = await uploadResponse.json()
-        imageUrl = uploadData.url
 
         if (!imageUrl) {
           throw new Error('Failed to get image URL after upload')
         }
-
-        console.log('[EditProfileForm] Image uploaded to S3:', {
-          url: imageUrl,
-          length: imageUrl.length,
-        })
       }
 
-      console.log('[EditProfileForm] Updating user with:', {
-        hasName: !!name.trim(),
-        hasImage: !!imageUrl,
-        imageUrl: imageUrl?.substring(0, 50) + '...',
-        hasPhoneNumber: !!phoneNumber.trim(),
-      })
+      if (useNest) {
+        const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { message?: string }
+          throw new Error(err.message || 'Failed to update profile')
+        }
+        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('session-updated'))
+        }
+        setPreviewUrl(null)
+        setSelectedFile(null)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        refetchSession()
+        return
+      }
 
       await updateUser({
         name: name.trim() || undefined,
@@ -374,15 +400,9 @@ export default function EditProfileForm() {
         phoneNumber: phoneNumber.trim() || undefined,
         fetchOptions: {
           onSuccess: async () => {
-            console.log('[EditProfileForm] Update successful, refreshing session...')
             await new Promise((resolve) => setTimeout(resolve, 500))
             try {
               const newSession = await authClient.getSession()
-              console.log('[EditProfileForm] Session refreshed:', {
-                hasUser: !!newSession?.data?.user,
-                hasImage: !!newSession?.data?.user?.image,
-                imageUrl: newSession?.data?.user?.image?.substring(0, 50),
-              })
               if (authClient.$store) {
                 authClient.$store.notify('$sessionSignal')
               }

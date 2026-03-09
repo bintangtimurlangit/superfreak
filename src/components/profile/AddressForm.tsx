@@ -3,15 +3,17 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Home, Plus, Trash2, MapPin, X, AlertTriangle } from 'lucide-react'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { SavedAddress } from '@/lib/types'
 import { addressSchema, type AddressFormData } from '@/lib/validations/address'
 import { useProvinces, useRegencies, useDistricts, useVillages } from '@/hooks/location/useLocation'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { ADDRESSES, USER_ADDRESSES } from '@/lib/api/urls'
 
 export default function AddressForm() {
-  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const user = sessionData?.user || null
   const queryClient = useQueryClient()
   const [showAddForm, setShowAddForm] = useState(false)
@@ -20,20 +22,26 @@ export default function AddressForm() {
   const [success, setSuccess] = useState(false)
   const [provinceDropdownOpened, setProvinceDropdownOpened] = useState(false)
 
+  const useNest = isUsingNestApi()
+
   const { data: savedAddresses = [], isLoading: addressesLoading } = useQuery({
     queryKey: ['addresses', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-
-      const response = await fetch(`/api/user-addresses`, {
-        credentials: 'include',
-      })
-
+      if (useNest) {
+        const res = await api.get(ADDRESSES.base)
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({})) as { message?: string }
+          throw new Error(err.message || 'Failed to fetch addresses')
+        }
+        const data = await res.json()
+        return Array.isArray(data) ? data : (data?.docs ?? [])
+      }
+      const response = await fetch(USER_ADDRESSES.base, { credentials: 'include' })
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to fetch addresses' }))
         throw new Error(error.message || 'Failed to fetch addresses')
       }
-
       const data = await response.json()
       return data.docs || []
     },
@@ -88,20 +96,25 @@ export default function AddressForm() {
 
   const createAddressMutation = useMutation({
     mutationFn: async (data: AddressFormData) => {
-      const response = await fetch('/api/user-addresses', {
+      const body = useNest ? { ...data } : { ...data, user: user?.id }
+      if (useNest) {
+        const res = await api.post(ADDRESSES.base, body)
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({})) as { message?: string }
+          throw new Error(err.message || 'Failed to save address')
+        }
+        return res.json()
+      }
+      const response = await fetch(USER_ADDRESSES.base, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...data, user: user?.id }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
         credentials: 'include',
       })
-
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to save address' }))
         throw new Error(error.message || 'Failed to save address')
       }
-
       return response.json()
     },
     onSuccess: () => {
@@ -119,11 +132,18 @@ export default function AddressForm() {
 
   const deleteAddressMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/user-addresses/${id}`, {
+      if (useNest) {
+        const res = await api.delete(ADDRESSES.byId(id))
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({})) as { message?: string }
+          throw new Error(err.message || 'Failed to delete address')
+        }
+        return
+      }
+      const response = await fetch(USER_ADDRESSES.byId(id), {
         method: 'DELETE',
         credentials: 'include',
       })
-
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: 'Failed to delete address' }))
         throw new Error(error.message || 'Failed to delete address')

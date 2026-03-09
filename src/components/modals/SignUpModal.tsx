@@ -5,6 +5,10 @@ import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { authClient } from '@/lib/auth/client'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
+import { isUsingNestApi } from '@/lib/api-client'
+import { register as apiRegister } from '@/lib/auth/api-auth'
 import EmailConfirmationModal from './EmailConfirmationModal'
 import SignInModal from './SignInModal'
 
@@ -15,6 +19,8 @@ interface SignUpModalProps {
 }
 
 export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignUpModalProps) {
+  const queryClient = useQueryClient()
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -77,41 +83,50 @@ export default function SignUpModal({ isOpen, onClose, onSwitchToSignIn }: SignU
     }
 
     try {
-      await authClient.signUp.email(
-        {
-          email: email.trim(),
-          password: password,
-          name: name.trim(),
-          callbackURL: '/',
-          phoneNumber: '',
-          image: '',
-        } as Parameters<typeof authClient.signUp.email>[0],
-        {
-          onRequest: () => {
-            setLoading(true)
-            setError('')
-          },
-          onSuccess: () => {
-            setSignupEmail(email.trim())
-            setShowEmailConfirmation(true)
-            setName('')
-            setEmail('')
-            setPassword('')
-            setConfirmPassword('')
-            setError('')
-            setLoading(false)
-          },
-          onError: (ctx: { error?: { message?: string } }) => {
-            const errorMessage = ctx.error?.message || 'An unexpected error occurred. Please try again.'
-            setError(errorMessage)
-            setLoading(false)
+      if (isUsingNestApi()) {
+        await apiRegister(name.trim(), email.trim(), password)
+        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+        onClose()
+        router.refresh()
+        router.push('/')
+      } else {
+        await authClient.signUp.email(
+          {
+            email: email.trim(),
+            password: password,
+            name: name.trim(),
+            callbackURL: '/',
+            phoneNumber: '',
+            image: '',
+          } as Parameters<typeof authClient.signUp.email>[0],
+          {
+            onRequest: () => {
+              setLoading(true)
+              setError('')
+            },
+            onSuccess: () => {
+              setSignupEmail(email.trim())
+              setShowEmailConfirmation(true)
+              setName('')
+              setEmail('')
+              setPassword('')
+              setConfirmPassword('')
+              setError('')
+              setLoading(false)
+            },
+            onError: (ctx: { error?: { message?: string } }) => {
+              const errorMessage = ctx.error?.message || 'An unexpected error occurred. Please try again.'
+              setError(errorMessage)
+              setLoading(false)
+            }
           }
-        }
-      )
+        )
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
       setError(errorMessage)
+    } finally {
       setLoading(false)
     }
   }

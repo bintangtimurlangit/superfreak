@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronRight, ChevronDown, MapPin, AlertCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { ADDRESSES, SETTINGS, PAYLOAD } from '@/lib/api/urls'
 import type { UploadedFile } from './UploadStep'
 import AddressSelectionModal from '@/components/orders/AddressSelectionModal'
 import AddAddressModal, { type AddressForOrder } from '@/components/orders/AddAddressModal'
@@ -95,7 +97,7 @@ export default function SummaryStep({
   onFilePricesUpdate,
   isCreatingOrder = false,
 }: SummaryStepProps) {
-  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const user = sessionData?.user || null
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [loading, setLoading] = useState(true)
@@ -249,23 +251,24 @@ export default function SummaryStep({
     }
   }, [totalPrice, shippingCost, filePrices, onPricingUpdate, onFilePricesUpdate])
 
-  // Fetch available couriers from settings
+  // Fetch available couriers from settings (NestJS or Payload)
   useEffect(() => {
     const fetchCourierSettings = async () => {
       try {
-        const response = await fetch('/api/globals/courier-settings')
+        const { api, isUsingNestApi } = await import('@/lib/api-client')
+        const response = isUsingNestApi()
+          ? await api.get(SETTINGS.courier)
+          : await fetch(PAYLOAD.courierSettings)
         if (response.ok) {
           const data = await response.json()
           const couriers = data.enabledCouriers || ['jne', 'jnt', 'sicepat']
           setAvailableCouriers(couriers)
-          // Set first courier as default
           if (couriers.length > 0 && !selectedCourier) {
             setSelectedCourier(couriers[0])
           }
         }
       } catch (error) {
         console.error('Error fetching courier settings:', error)
-        // Fallback to default couriers
         setAvailableCouriers(['jne', 'jnt', 'sicepat'])
         setSelectedCourier('jne')
       }
@@ -381,21 +384,33 @@ export default function SummaryStep({
     }
 
     try {
-      const queryParams = new URLSearchParams({
-        'where[user][equals]': user.id,
-        'where[isDefault][equals]': 'true',
-      })
-      const response = await fetch(`/api/addresses?${queryParams.toString()}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      let address: Record<string, unknown> | null = null
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.docs && data.docs.length > 0) {
-          const address = data.docs[0]
+      if (isUsingNestApi()) {
+        const res = await api.get(ADDRESSES.base)
+        if (res.ok) {
+          const data = (await res.json()) as unknown[] | { docs?: unknown[] }
+          const list = Array.isArray(data) ? data : (data?.docs ?? [])
+          const found = list.find((d) => (d as { isDefault?: boolean }).isDefault) ?? list[0]
+          address = found != null ? (found as Record<string, unknown>) : null
+        }
+      } else {
+        const queryParams = new URLSearchParams({
+          'where[user][equals]': user.id,
+          'where[isDefault][equals]': 'true',
+        })
+        const response = await fetch(`/api/addresses?${queryParams.toString()}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (response.ok) {
+          const data = await response.json()
+          const docList = (data as { docs?: unknown[] })?.docs
+          if (docList && docList.length > 0) address = docList[0] as Record<string, unknown>
+        }
+      }
+
+      if (address) {
 
           let regencyName = ''
           let districtName = ''
@@ -448,7 +463,7 @@ export default function SummaryStep({
             regencyName,
             districtName,
             villageName,
-          }
+          } as Address
 
           setDefaultAddress(fullAddress)
 
@@ -456,9 +471,8 @@ export default function SummaryStep({
           if (onAddressUpdate) {
             onAddressUpdate(fullAddress)
           }
-        } else {
-          setDefaultAddress(null)
-        }
+      } else {
+        setDefaultAddress(null)
       }
     } catch (error) {
       console.error('Error fetching default address:', error)

@@ -25,6 +25,8 @@ import Button from '@/components/ui/Button'
 import type { Order as PayloadOrder } from '@/payload-types'
 import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
 import { Link, useRouter } from '@/i18n/navigation'
+import { api, isUsingNestApi, getApiBaseUrl } from '@/lib/api-client'
+import { ORDERS, PAYMENT } from '@/lib/api/urls'
 
 // Order discussion message (from API)
 export interface OrderMessageItem {
@@ -130,15 +132,19 @@ export default function OrderDetailsPage() {
     const fetchOrder = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/orders/${orderId}`, {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch order')
+        let payloadOrder: PayloadOrder & { _id?: string }
+        if (isUsingNestApi()) {
+          const res = await api.get(ORDERS.byId(orderId))
+          if (!res.ok) throw new Error('Failed to fetch order')
+          payloadOrder = (await res.json()) as PayloadOrder & { _id?: string }
+          if (!payloadOrder.id && payloadOrder._id) {
+            (payloadOrder as PayloadOrder).id = String(payloadOrder._id)
+          }
+        } else {
+          const response = await fetch(`/api/orders/${orderId}`, { credentials: 'include' })
+          if (!response.ok) throw new Error('Failed to fetch order')
+          payloadOrder = await response.json()
         }
-
-        const payloadOrder: PayloadOrder = await response.json()
 
         // Transform Payload order to component format
         const transformedOrder: OrderData = {
@@ -222,21 +228,35 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!orderId || !order || order.status !== 'needs-discussion') return
     const abort = new AbortController()
-    fetch(`/api/orders/${orderId}/messages`, { credentials: 'include', signal: abort.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to fetch messages'))))
-      .then((data: { docs: unknown[] }) => {
-        setMessages((data.docs || []).map((d) => normalizeMessage(d as OrderMessageItem & { author: unknown })))
-      })
-      .catch((e) => {
-        if (e?.name !== 'AbortError') setMessages([])
-      })
+    const load = async () => {
+      try {
+        if (isUsingNestApi()) {
+          const res = await api.get(ORDERS.messages(orderId))
+          if (!res.ok) throw new Error('Failed to fetch messages')
+          const data = await res.json()
+          const list = Array.isArray(data) ? data : (data as { docs?: unknown[] }).docs || []
+          setMessages(list.map((d) => normalizeMessage(d as OrderMessageItem & { author: unknown })))
+        } else {
+          const res = await fetch(`/api/orders/${orderId}/messages`, { credentials: 'include', signal: abort.signal })
+          if (!res.ok) throw new Error('Failed to fetch messages')
+          const data: { docs: unknown[] } = await res.json()
+          setMessages((data.docs || []).map((d) => normalizeMessage(d as OrderMessageItem & { author: unknown })))
+        }
+      } catch (e) {
+        if ((e as Error)?.name !== 'AbortError') setMessages([])
+      }
+    }
+    load()
     return () => abort.abort()
   }, [orderId, order?.id, order?.status])
 
   // Live stream: SSE for new messages when discussion is visible
   useEffect(() => {
     if (!orderId || !order || order.status !== 'needs-discussion') return
-    const es = new EventSource(`/api/orders/${orderId}/messages/stream`, { withCredentials: true })
+    const streamUrl = isUsingNestApi()
+      ? `${getApiBaseUrl()}${ORDERS.messagesStream(orderId)}`
+      : `/api/orders/${orderId}/messages/stream`
+    const es = new EventSource(streamUrl, { withCredentials: true })
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data) as { id?: string; body?: string; author?: unknown; createdAt?: string }
@@ -261,14 +281,21 @@ export default function OrderDetailsPage() {
       setIsVerifying(true)
       sessionStorage.setItem(verificationKey, 'true')
 
-      fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orderId }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
+      const run = async () => {
+        try {
+          const res = isUsingNestApi()
+            ? await api.post(PAYMENT.verify, { orderId })
+            : await fetch(PAYMENT.verify, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ orderId }),
+              })
+          const data = (await res.json()) as {
+            success?: boolean
+            orderStatus?: string
+            paymentStatus?: string
+          }
           if (data.success) {
             setOrder((prev) =>
               prev
@@ -286,12 +313,14 @@ export default function OrderDetailsPage() {
           } else {
             sessionStorage.removeItem(verificationKey)
           }
-        })
-        .catch(() => sessionStorage.removeItem(verificationKey))
-        .finally(() => {
+        } catch {
+          sessionStorage.removeItem(verificationKey)
+        } finally {
           setIsVerifying(false)
           setVerifyCompleted(true)
-        })
+        }
+      }
+      run()
     } else if (isPaymentReturn && alreadyVerified) {
       setVerifyCompleted(true)
     }
@@ -363,16 +392,23 @@ export default function OrderDetailsPage() {
   const handleCancelOrder = async () => {
     setIsCanceling(true)
     try {
-      const response = await fetch(`/api/orders/${orderId}/cancel`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(data.details || data.error || 'Failed to cancel order')
+      if (isUsingNestApi()) {
+        const res = await api.post(ORDERS.cancel(orderId))
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { details?: string; error?: string }
+          throw new Error(data.details || data.error || 'Failed to cancel order')
+        }
+        const updated = (await res.json()) as { status?: string }
+        setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
+      } else {
+        const response = await fetch(ORDERS.cancel(orderId), { method: 'POST', credentials: 'include' })
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.details || data.error || 'Failed to cancel order')
+        }
+        const updated = await response.json()
+        setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
       }
-      const updated = await response.json()
-      setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
       setIsCancelModalOpen(false)
     } catch (error) {
       console.error('Error canceling order:', error)
@@ -502,7 +538,7 @@ export default function OrderDetailsPage() {
               </Button>
             )}
             <a
-              href={`/api/orders/${orderId}/invoice`}
+              href={isUsingNestApi() ? `${getApiBaseUrl()}${ORDERS.invoice(orderId)}` : `/api/orders/${orderId}/invoice`}
               download={`invoice-${order.orderNumber ?? orderId}.pdf`}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCDCDC] bg-white h-10 px-4 text-[14px] font-medium text-[#292929] transition-colors hover:bg-[#F5F5F5]"
             >
@@ -842,12 +878,14 @@ export default function OrderDetailsPage() {
                         setSending(true)
                         setMessageError(null)
                         try {
-                          const res = await fetch(`/api/orders/${orderId}/messages`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                            body: JSON.stringify({ body }),
-                          })
+                          const res = isUsingNestApi()
+                            ? await api.post(ORDERS.messages(orderId), { body })
+                            : await fetch(`/api/orders/${orderId}/messages`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ body }),
+                              })
                           const data = await res.json()
                           if (res.ok && data.id) {
                             setNewMessage('')

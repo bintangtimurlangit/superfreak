@@ -4,8 +4,10 @@ import { useState, useMemo } from 'react'
 import { MapPin, Search, X, Check, Plus, Loader2 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { SavedAddress } from '@/lib/types'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { useQuery } from '@tanstack/react-query'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { ADDRESSES, USER_ADDRESSES } from '@/lib/api/urls'
 
 interface AddressSelectionModalProps {
   isOpen: boolean
@@ -20,17 +22,22 @@ export default function AddressSelectionModal({
   onSelect,
   selectedAddressId,
 }: AddressSelectionModalProps) {
-  const { data: sessionData } = useSession()
+  const { data: sessionData } = useAuthSession()
   const user = sessionData?.user || null
   const [searchQuery, setSearchQuery] = useState('')
 
+  const useNest = isUsingNestApi()
   const { data: addresses = [], isLoading } = useQuery({
     queryKey: ['addresses', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
-      const response = await fetch(`/api/user-addresses`, {
-        credentials: 'include',
-      })
+      if (useNest) {
+        const res = await api.get(ADDRESSES.base)
+        if (!res.ok) throw new Error('Failed to fetch addresses')
+        const data = await res.json()
+        return Array.isArray(data) ? data : (data?.docs ?? [])
+      }
+      const response = await fetch(USER_ADDRESSES.base, { credentials: 'include' })
       if (!response.ok) throw new Error('Failed to fetch addresses')
       const data = await response.json()
       return data.docs || []

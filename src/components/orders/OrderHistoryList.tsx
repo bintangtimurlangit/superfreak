@@ -5,9 +5,11 @@ import { Package, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import OrderCard, { type Order } from './OrderCard'
 import { type OrderStatus } from './StatusBadge'
 import DateRangePicker from './DateRangePicker'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import type { Order as PayloadOrder } from '@/payload-types'
 import PaymentSelectionModal from './PaymentSelectionModal'
+import { api, isUsingNestApi } from '@/lib/api-client'
+import { ORDERS } from '@/lib/api/urls'
 
 type DateFilter = 'all' | '7days' | '30days' | '90days' | 'custom'
 
@@ -95,7 +97,7 @@ function OrderHistoryListSkeleton() {
 }
 
 export default function OrderHistoryList({ className = '' }: OrderHistoryListProps) {
-  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const user = sessionData?.user || null
   const isAuthenticated = !!user
   const [orders, setOrders] = useState<Order[]>([])
@@ -119,33 +121,46 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
       try {
         setLoading(true)
-        const response = await fetch('/api/orders', {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders')
+        type OrderRow = {
+          id?: string
+          _id?: string
+          orderNumber?: string
+          status: Order['status']
+          summary?: { totalAmount?: number; subtotal?: number; shippingCost?: number }
+          items?: { fileName?: string; quantity?: number; totalPrice?: number }[]
+          shipping?: { trackingNumber?: string }
+          createdAt?: string
         }
-
-        const data: PayloadOrdersResponse = await response.json()
-
-        // Transform Payload Order type to OrderCard Order interface
-        const transformedOrders: Order[] = data.docs.map((order: PayloadOrder) => ({
-          id: order.id,
-          orderNumber: order.orderNumber || 'N/A',
+        const mapOrder = (order: OrderRow): Order => ({
+          id: String(order.id ?? order._id ?? ''),
+          orderNumber: order.orderNumber ?? 'N/A',
           status: order.status,
-          totalAmount: order.summary.totalAmount,
-          subtotal: order.summary.subtotal,
-          shippingCost: order.summary.shippingCost,
-          createdAt: order.createdAt,
-          items: order.items.map((item) => ({
-            fileName: item.fileName,
-            quantity: item.quantity,
-            price: item.totalPrice / item.quantity, // Unit price = total / quantity
+          totalAmount: order.summary?.totalAmount ?? 0,
+          subtotal: order.summary?.subtotal ?? 0,
+          shippingCost: order.summary?.shippingCost ?? 0,
+          createdAt: order.createdAt ?? '',
+          items: (order.items || []).map((item) => ({
+            fileName: item.fileName ?? '',
+            quantity: item.quantity ?? 0,
+            price: item.quantity ? (item.totalPrice ?? 0) / item.quantity : 0,
           })),
           trackingNumber: order.shipping?.trackingNumber || undefined,
-        }))
+        })
 
+        if (isUsingNestApi()) {
+          const res = await api.get(ORDERS.base)
+          if (!res.ok) throw new Error('Failed to fetch orders')
+          const data = await res.json()
+          const docs = Array.isArray(data) ? data : (data as PayloadOrdersResponse).docs || []
+          const transformedOrders = docs.map((o) => mapOrder(o as OrderRow))
+          setOrders(transformedOrders)
+          return
+        }
+
+        const response = await fetch(ORDERS.base, { credentials: 'include' })
+        if (!response.ok) throw new Error('Failed to fetch orders')
+        const data: PayloadOrdersResponse = await response.json()
+        const transformedOrders = data.docs.map((o) => mapOrder(o as OrderRow))
         setOrders(transformedOrders)
       } catch (error) {
         console.error('Error fetching orders:', error)

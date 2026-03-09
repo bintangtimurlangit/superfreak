@@ -8,7 +8,7 @@ import SummaryStep, { type FilePrice } from './order/SummaryStep'
 import PaymentStep from './order/PaymentStep'
 import ConfigureModal from '@/components/forms/order/ConfigureModal'
 import SignInModal from '@/components/modals/SignInModal'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { sliceFile } from '@/lib/slice'
 import { useCart } from '@/components/providers/CartProvider'
 import type { CartItem } from '@/lib/cart'
@@ -39,7 +39,7 @@ export default function OrderForm() {
   const [pendingNextStep, setPendingNextStep] = useState(false)
   const [shippingDetails, setShippingDetails] = useState<any>(null)
   const [selectedAddress, setSelectedAddress] = useState<any>(null)
-  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const isAuthenticated = !!sessionData?.user
   const { cart, setCart, clearCart, isLoading: cartLoading } = useCart()
 
@@ -308,7 +308,25 @@ export default function OrderForm() {
           )
         }
 
-        const response = await fetch('/api/orders', {
+        const { api, isUsingNestApi } = await import('@/lib/api-client')
+        const { ORDERS } = await import('@/lib/api/urls')
+
+        if (isUsingNestApi()) {
+          const res = await api.post(ORDERS.base, orderData)
+          if (!res.ok) {
+            const errorData = (await res.json().catch(() => ({}))) as { message?: string; errors?: { message?: string }[] }
+            throw new Error(errorData.errors?.[0]?.message || errorData.message || 'Failed to create order')
+          }
+          const order = await res.json() as { id?: string; doc?: { id?: string } }
+          const orderId = order.doc?.id || order.id
+          if (!orderId) throw new Error('Order created but no ID returned')
+          setOrderId(orderId)
+          clearCart()
+          setCurrentStep(currentStep + 1)
+          return
+        }
+
+        const response = await fetch(ORDERS.base, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

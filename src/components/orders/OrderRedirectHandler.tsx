@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useSession } from '@/lib/auth/client'
+import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { usePathname } from 'next/navigation'
 
 export default function OrderRedirectHandler() {
-  const { data: sessionData, isPending: sessionLoading } = useSession()
+  const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const isAuthenticated = !!sessionData?.user
   const pathname = usePathname()
 

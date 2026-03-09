@@ -49,15 +49,20 @@ export async function sliceFile(
   formData.append('wall_count', wallCount.toString())
   formData.append('filament_type', filamentType)
 
-  const response = await fetch('/api/slice', {
-    method: 'POST',
-    body: formData,
-  })
-
+  const { api, isUsingNestApi } = await import('@/lib/api-client')
+  const { SLICE } = await import('@/lib/api/urls')
+  if (isUsingNestApi()) {
+    const res = await api.postFormData(SLICE, formData)
+    if (!res.ok) {
+      const errorData = (await res.json().catch(() => ({}))) as { detail?: string }
+      throw new Error(errorData.detail || 'Slice failed')
+    }
+    return res.json()
+  }
+  const response = await fetch(SLICE, { method: 'POST', body: formData })
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(errorData.detail || `Slice failed: ${response.status}`)
   }
-
   return response.json()
 }
