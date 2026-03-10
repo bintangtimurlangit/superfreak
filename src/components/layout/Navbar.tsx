@@ -137,7 +137,7 @@ const Navbar = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 relative bg-white dark:bg-black">
+    <header className="sticky top-0 z-50 relative bg-white">
       <div className="mx-auto">
         <div className="flex items-center justify-between gap-4 sm:gap-6 py-4 px-6 md:px-10">
           <div className="flex items-center gap-4 sm:gap-8">

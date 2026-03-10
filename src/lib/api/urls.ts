@@ -13,6 +13,7 @@ export const AUTH = {
   logout: '/api/auth/logout',
   me: '/api/auth/me',
   changePassword: '/api/auth/change-password',
+  google: '/api/auth/google',
 } as const
 
 // —— Health ——
