@@ -1,4 +1,3 @@
-import { withPayload } from '@payloadcms/next/withPayload'
 import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
@@ -7,11 +6,9 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const nextConfig = {
   output: 'standalone',
   eslint: {
-    // Don't fail Docker/build on ESLint warnings; fix them over time
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Optional: set to true to also skip type errors during build (use only if needed)
     // ignoreBuildErrors: true,
   },
   images: {
@@ -45,13 +42,8 @@ const nextConfig = {
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
       '.mjs': ['.mts', '.mjs'],
     }
-
     return webpackConfig
   },
 }
 
-export default withNextIntl(
-  withPayload(nextConfig, {
-    devBundleServerPackages: false,
-  }),
-)
+export default withNextIntl(nextConfig)

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import StatusBadge from '@/components/orders/StatusBadge'
 import Button from '@/components/ui/Button'
-import type { Order as PayloadOrder } from '@/payload-types'
+import type { Order as PayloadOrder } from '@/types/api'
 import PaymentSelectionModal from '@/components/orders/PaymentSelectionModal'
 import { Link, useRouter } from '@/i18n/navigation'
 import { api, isUsingNestApi, getApiBaseUrl } from '@/lib/api-client'
@@ -401,15 +401,17 @@ export default function OrderDetailsPage() {
           throw new Error(data.details || data.error || 'Failed to cancel order')
         }
         const updated = (await res.json()) as { status?: string }
-        setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
+        const newStatus = (updated.status ?? 'canceled') as OrderData['status']
+        setOrder((prev) => (prev ? { ...prev, status: newStatus } : null))
       } else {
         const response = await fetch(ORDERS.cancel(orderId), { method: 'POST', credentials: 'include' })
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
           throw new Error(data.details || data.error || 'Failed to cancel order')
         }
-        const updated = await response.json()
-        setOrder((prev) => (prev ? { ...prev, status: updated.status ?? 'canceled' } : null))
+        const updated = (await response.json()) as { status?: string }
+        const newStatus = (updated.status ?? 'canceled') as OrderData['status']
+        setOrder((prev) => (prev ? { ...prev, status: newStatus } : null))
       }
       setIsCancelModalOpen(false)
     } catch (error) {

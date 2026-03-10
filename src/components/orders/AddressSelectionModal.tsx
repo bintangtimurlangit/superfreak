@@ -34,7 +34,7 @@ export default function AddressSelectionModal({
       if (useNest) {
         const res = await api.get(ADDRESSES.base)
         if (!res.ok) throw new Error('Failed to fetch addresses')
-        const data = await res.json()
+        const data = (await res.json()) as unknown[] | { docs?: unknown[] }
         return Array.isArray(data) ? data : (data?.docs ?? [])
       }
       const response = await fetch(USER_ADDRESSES.base, { credentials: 'include' })

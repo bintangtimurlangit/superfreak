@@ -12,6 +12,7 @@ export const AUTH = {
   register: '/api/auth/register',
   logout: '/api/auth/logout',
   me: '/api/auth/me',
+  changePassword: '/api/auth/change-password',
 } as const
 
 // —— Health ——

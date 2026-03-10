@@ -39,8 +39,9 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
   options?: UseMutationOptions<TData, Error, TVariables>
 ) {
   const queryClient = useQueryClient()
+  const baseOpts = options as UseMutationOptions<TData, Error, TVariables | undefined>
   return useMutation({
-    ...options,
+    ...baseOpts,
     mutationFn: async (body?: TVariables) => {
       const res =
         method === 'post'
@@ -50,9 +51,9 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
             : await apiClient.delete<TData>(path)
       return res.data
     },
-    onSuccess: (...args) => {
+    onSuccess: (data, variables, context, ...rest) => {
       queryClient.invalidateQueries({ queryKey: ['auth'] })
-      options?.onSuccess?.(...args)
+      baseOpts.onSuccess?.(data, variables, context, ...rest)
     },
   })
 }

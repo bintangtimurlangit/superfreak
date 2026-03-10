@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { X, Mail } from 'lucide-react'
-import { sendVerificationEmail } from '@/lib/auth/client'
 
 interface EmailConfirmationModalProps {
   isOpen: boolean
@@ -20,40 +19,13 @@ export default function EmailConfirmationModal({
   onVerificationSuccess: _onVerificationSuccess,
 }: EmailConfirmationModalProps) {
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
 
   const handleResendVerification = async () => {
-    if (!email) {
-      setError('Email address is required')
-      return
-    }
-
     setError('')
     setResending(true)
-
-    try {
-      // Use better-auth's sendVerificationEmail
-      await sendVerificationEmail({
-        email,
-        fetchOptions: {
-          onSuccess: () => {
-            setError('')
-            setLoading(true) // Show success state
-            setTimeout(() => setLoading(false), 3000)
-          },
-          onError: (error: { error?: { message?: string } }) => {
-            const errorMessage = error.error?.message || 'Failed to resend verification email. Please try again.'
-            setError(errorMessage)
-          },
-        },
-      })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to resend verification email. Please try again.'
-      setError(errorMessage)
-    } finally {
-      setResending(false)
-    }
+    setError('Email verification is not available.')
+    setResending(false)
   }
 
   if (!isOpen) return null
@@ -128,7 +100,7 @@ export default function EmailConfirmationModal({
               )}
 
               {/* Success Message (after resending) */}
-              {!error && resending === false && loading && (
+              {!error && resending === false && (
                 <div className="mb-3 p-2.5 rounded-[12px] bg-green-50 border border-green-200">
                   <p className="text-xs text-green-600" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                     Verification email sent! Please check your inbox.

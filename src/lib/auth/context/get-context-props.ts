@@ -1,52 +1,33 @@
-import type { Account, DeviceSession } from '@/lib/auth/types'
-import { getPayload } from '@/lib/payload'
+import type { ApiUser } from '@/lib/auth/api-auth'
 import { headers as requestHeaders } from 'next/headers'
 
-export const getSession = async () => {
-  const payload = await getPayload()
-  if (!payload.betterAuth) {
-    console.error('[getSession] betterAuth not available on payload instance')
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+async function fetchNestUser(): Promise<ApiUser | null> {
+  if (!API_URL) return null
+  try {
+    const headers = await requestHeaders()
+    const cookie = headers.get('cookie') ?? ''
+    const res = await fetch(`${API_URL.replace(/\/$/, '')}/api/auth/me`, {
+      headers: { cookie },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data as ApiUser
+  } catch {
     return null
   }
-  const headers = await requestHeaders()
-  type Session = (typeof payload.betterAuth.$Infer)['Session']
-  const session = (await payload.betterAuth.api.getSession({ headers })) as Session
-  return session
 }
 
-export const getUserAccounts = async (): Promise<Account[]> => {
-  const payload = await getPayload()
-  if (!payload.betterAuth) {
-    console.error('[getUserAccounts] betterAuth not available on payload instance')
-    return []
-  }
-  const headers = await requestHeaders()
-  const accounts = await payload.betterAuth.api.listUserAccounts({ headers })
-  return accounts
-}
+export const getSession = async () => null
+export const getUserAccounts = async () => []
+export const getDeviceSessions = async () => []
+export const currentUser = fetchNestUser
 
-export const getDeviceSessions = async (): Promise<DeviceSession[]> => {
-  const payload = await getPayload()
-  if (!payload.betterAuth) {
-    console.error('[getDeviceSessions] betterAuth not available on payload instance')
-    return []
-  }
-  const headers = await requestHeaders()
-  const sessions = await payload.betterAuth.api.listSessions({ headers })
-  return sessions
-}
-
-export const currentUser = async () => {
-  const payload = await getPayload()
-  const headers = await requestHeaders()
-  const { user } = await payload.auth({ headers })
-  return user
-}
-
-export const getContextProps = () => {
-  const sessionPromise = getSession()
-  const userAccountsPromise = getUserAccounts()
-  const deviceSessionsPromise = getDeviceSessions()
-  const currentUserPromise = currentUser()
-  return { sessionPromise, userAccountsPromise, deviceSessionsPromise, currentUserPromise }
-}
+export const getContextProps = () => ({
+  sessionPromise: Promise.resolve(null),
+  userAccountsPromise: Promise.resolve([]),
+  deviceSessionsPromise: Promise.resolve([]),
+  currentUserPromise: fetchNestUser(),
+})

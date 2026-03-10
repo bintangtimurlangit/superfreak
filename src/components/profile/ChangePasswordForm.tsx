@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Lock } from 'lucide-react'
-import { changePassword } from '@/lib/auth/client'
+import { api } from '@/lib/api-client'
+import { AUTH } from '@/lib/api/urls'
 import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/validations/password'
 
 export default function ChangePasswordForm() {
@@ -32,24 +33,18 @@ export default function ChangePasswordForm() {
     setSuccess(false)
 
     try {
-      await changePassword({
+      const res = await api.post(AUTH.changePassword, {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
-        revokeOtherSessions: false,
-        fetchOptions: {
-          onSuccess: () => {
-            setSuccess(true)
-            reset()
-            setTimeout(() => {
-              setSuccess(false)
-            }, 5000)
-          },
-          onError: (error: { error?: { message?: string } }) => {
-            console.error('Change password error:', error)
-            setError(error.error?.message || 'Failed to change password')
-          },
-        },
       })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string }
+        setError(err.message || 'Failed to change password')
+        return
+      }
+      setSuccess(true)
+      reset()
+      setTimeout(() => setSuccess(false), 5000)
     } catch (err) {
       console.error('Change password error:', err)
       setError('An unexpected error occurred')

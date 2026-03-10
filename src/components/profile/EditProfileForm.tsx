@@ -6,9 +6,8 @@ import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Image from 'next/image'
 import { useAuthSession } from '@/lib/auth/use-auth-session'
-import { updateUser, authClient } from '@/lib/auth/client'
-import { api, isUsingNestApi } from '@/lib/api-client'
-import { USERS, PROFILE } from '@/lib/api/urls'
+import { api } from '@/lib/api-client'
+import { USERS } from '@/lib/api/urls'
 import { useQueryClient } from '@tanstack/react-query'
 
 function EditProfileFormSkeleton() {
@@ -82,7 +81,6 @@ export default function EditProfileForm() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data: sessionData, isPending: loading, refetch: refetchSession } = useAuthSession()
-  const useNest = isUsingNestApi()
   const sessionUser = sessionData?.user || null
   const isAuthenticated = !!sessionUser
   const [mounted, setMounted] = useState(false)
@@ -301,36 +299,8 @@ export default function EditProfileForm() {
     if (!confirm('Are you sure you want to delete your profile picture?')) {
       return
     }
-
-    setSaving(true)
-    try {
-      if (useNest) {
-        // Backend has no clear-image endpoint yet; name-only PATCH keeps image
-        alert('Clearing profile picture is not supported when using the API.')
-        return
-      }
-      await updateUser({
-        image: undefined,
-        fetchOptions: {
-          onSuccess: () => {
-            router.refresh()
-            setPreviewUrl(null)
-            setSelectedFile(null)
-            if (fileInputRef.current) {
-              fileInputRef.current.value = ''
-            }
-          },
-          onError: (error) => {
-            console.error('Error deleting profile picture:', error)
-            alert(error.error?.message || 'Failed to delete profile picture')
-          },
-        },
-      })
-    } catch (error) {
-      console.error('Error deleting profile picture:', error)
-    } finally {
-      setSaving(false)
-    }
+    // Backend has no clear-image endpoint yet
+    alert('Clearing profile picture is not supported.')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -348,82 +318,34 @@ export default function EditProfileForm() {
         const formData = new FormData()
         formData.append('file', selectedFile)
 
-        if (useNest) {
-          const res = await api.postFormData(USERS.profileImage, formData)
-          if (!res.ok) {
-            const err = (await res.json().catch(() => ({}))) as { error?: string }
-            throw new Error(err.error || 'Failed to upload profile image')
-          }
-          const uploadData = (await res.json()) as { url?: string }
-          imageUrl = uploadData.url
-        } else {
-          const uploadResponse = await fetch(PROFILE.image, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-          })
-          if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json().catch(() => ({}))
-            throw new Error(errorData.error || 'Failed to upload profile image')
-          }
-          const uploadData = await uploadResponse.json()
-          imageUrl = uploadData.url
+        const res = await api.postFormData(USERS.profileImage, formData)
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string }
+          throw new Error(err.error || 'Failed to upload profile image')
         }
+        const uploadData = (await res.json()) as { url?: string }
+        imageUrl = uploadData.url
 
         if (!imageUrl) {
           throw new Error('Failed to get image URL after upload')
         }
       }
 
-      if (useNest) {
-        const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
-        if (!res.ok) {
-          const err = (await res.json().catch(() => ({}))) as { message?: string }
-          throw new Error(err.message || 'Failed to update profile')
-        }
-        await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('session-updated'))
-        }
-        setPreviewUrl(null)
-        setSelectedFile(null)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-        refetchSession()
-        return
+      const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string }
+        throw new Error(err.message || 'Failed to update profile')
       }
-
-      await updateUser({
-        name: name.trim() || undefined,
-        image: imageUrl || undefined,
-        phoneNumber: phoneNumber.trim() || undefined,
-        fetchOptions: {
-          onSuccess: async () => {
-            await new Promise((resolve) => setTimeout(resolve, 500))
-            try {
-              const newSession = await authClient.getSession()
-              if (authClient.$store) {
-                authClient.$store.notify('$sessionSignal')
-              }
-            } catch (error) {
-              console.error('[EditProfileForm] Error refreshing session:', error)
-            }
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('session-updated'))
-            }
-            setPreviewUrl(null)
-            setSelectedFile(null)
-            if (fileInputRef.current) {
-              fileInputRef.current.value = ''
-            }
-          },
-          onError: (error) => {
-            console.error('[EditProfileForm] Error updating profile:', error)
-            alert(error.error?.message || 'Failed to update profile')
-          },
-        },
-      })
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('session-updated'))
+      }
+      setPreviewUrl(null)
+      setSelectedFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      refetchSession()
     } catch (error) {
       console.error('Error updating profile:', error)
       alert('Failed to update profile. Please try again.')

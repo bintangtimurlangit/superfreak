@@ -3,9 +3,6 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { useSignOut, useAuthSession } from '@/lib/auth/use-auth-session'
-import { useBetterAuth } from '@/lib/auth/context'
-import { isUsingNestApi } from '@/lib/api-client'
-import { use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
 import Image from 'next/image'
@@ -38,40 +35,24 @@ function ProfileSidebarSkeleton() {
 export default function ProfileSidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { currentUserPromise } = useBetterAuth()
-  const betterAuthUser = use(currentUserPromise)
   const authSession = useAuthSession()
-  const nestUser = isUsingNestApi() ? authSession.data?.user : null
-  const user = nestUser ?? betterAuthUser
+  const user = authSession.data?.user ?? null
   const isAuthenticated = !!user
-
-  const appUser = betterAuthUser?.collection === 'app-users' ? betterAuthUser : null
 
   useEffect(() => {
     const handleSessionUpdate = () => {
-      console.log('[ProfileSidebar] Session update event received, refreshing...')
       router.refresh()
     }
-
     window.addEventListener('session-updated', handleSessionUpdate)
     return () => window.removeEventListener('session-updated', handleSessionUpdate)
   }, [router])
 
-  useEffect(() => {
-    console.log('[ProfileSidebar] User updated:', {
-      hasUser: !!user,
-      userCollection: user?.collection,
-      hasImage: !!appUser?.image,
-      imageUrl: appUser?.image?.substring(0, 50),
-    })
-  }, [user, appUser])
-
-  const displayName = (user as any)?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const displayName = user?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
   const initials =
-    ((user as any)?.name ? String((user as any).name)[0]?.toUpperCase() : '') ||
+    (user?.name ? String(user.name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-  const profilePictureUrl = (user as any)?.image ?? appUser?.image ?? null
+  const profilePictureUrl = user?.image ?? null
 
   if (!isAuthenticated || !user) {
     return null

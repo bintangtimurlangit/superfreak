@@ -57,12 +57,12 @@ export async function sliceFile(
       const errorData = (await res.json().catch(() => ({}))) as { detail?: string }
       throw new Error(errorData.detail || 'Slice failed')
     }
-    return res.json()
+    return (await res.json()) as SliceStatistics
   }
   const response = await fetch(SLICE, { method: 'POST', body: formData })
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+    const errorData = (await response.json().catch(() => ({}))) as { detail?: string }
     throw new Error(errorData.detail || `Slice failed: ${response.status}`)
   }
-  return response.json()
+  return (await response.json()) as SliceStatistics
 }

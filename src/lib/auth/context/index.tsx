@@ -2,13 +2,13 @@
 
 import { createContext, useContext, ReactNode } from 'react'
 import type { Session, Account, DeviceSession } from '@/lib/auth/types'
-import type { TypedUser } from 'payload'
+import type { ApiUser } from '@/lib/auth/api-auth'
 
 type UserContextType = {
   sessionPromise: Promise<Session | null>
   userAccountsPromise: Promise<Account[] | null>
   deviceSessionsPromise: Promise<DeviceSession[] | null>
-  currentUserPromise: Promise<TypedUser | null>
+  currentUserPromise: Promise<ApiUser | null>
 }
 
 const BetterAuthContext = createContext<UserContextType | null>(null)
@@ -32,7 +32,7 @@ export function BetterAuthProvider({
   sessionPromise: Promise<Session | null>
   userAccountsPromise: Promise<Account[] | null>
   deviceSessionsPromise: Promise<DeviceSession[] | null>
-  currentUserPromise: Promise<TypedUser | null>
+  currentUserPromise: Promise<ApiUser | null>
 }) {
   return (
     <BetterAuthContext.Provider

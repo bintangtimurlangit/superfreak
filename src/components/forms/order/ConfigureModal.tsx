@@ -9,7 +9,7 @@ import type { UploadedFile } from './UploadStep'
 import { modelConfigurationSchema, type ModelConfigurationFormData } from '@/lib/validations/order'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import type { FilamentType, PrintingOption, PrintingPricing } from '@/payload-types'
+import type { FilamentType, PrintingOption, PrintingPricing } from '@/types/api'
 import ModelViewer from '@/components/3d/ModelViewer'
 
 interface ConfigureModalProps {

@@ -7,9 +7,6 @@ import SignInModal from '@/components/modals/SignInModal'
 import SignUpModal from '@/components/modals/SignUpModal'
 import ResetPasswordModal from '@/components/modals/ResetPasswordModal'
 import { useSignOut, useAuthSession } from '@/lib/auth/use-auth-session'
-import { useBetterAuth } from '@/lib/auth/context'
-import { isUsingNestApi } from '@/lib/api-client'
-import { use } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link, usePathname, useRouter } from '@/i18n/navigation'
 import { useCart } from '@/components/providers/CartProvider'
@@ -42,20 +39,16 @@ const Navbar = () => {
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('Navbar')
-  const { currentUserPromise } = useBetterAuth()
-  const betterAuthUser = use(currentUserPromise)
   const authSession = useAuthSession()
-  const nestUser = isUsingNestApi() ? authSession.data?.user : null
-  const appUser = betterAuthUser?.collection === 'app-users' ? betterAuthUser : null
-  const user = nestUser ?? betterAuthUser
+  const user = authSession.data?.user ?? null
   const isAuthenticated = !!user
 
-  const displayName = (user as any)?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
+  const displayName = user?.name || (user?.email ? String(user.email).split('@')[0] : 'User')
   const initials =
-    ((user as any)?.name ? String((user as any).name)[0]?.toUpperCase() : '') ||
+    (user?.name ? String(user.name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-  const profilePictureUrl = (user as any)?.image ?? appUser?.image ?? null
+  const profilePictureUrl = user?.image ?? null
 
   useEffect(() => {
     const handleSessionUpdate = () => {

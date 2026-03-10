@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import path from 'path'
 import fs from 'fs'
-import type { Order } from '@/payload-types'
+import type { Order } from '@/types/api'
 
 const BRAND_BLUE = { r: 29, g: 13, b: 243 } // #1D0DF3
 const BRAND_RED = { r: 227, g: 57, b: 70 } // #E63946

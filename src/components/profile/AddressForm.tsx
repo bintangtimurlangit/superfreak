@@ -34,7 +34,7 @@ export default function AddressForm() {
           const err = await res.json().catch(() => ({})) as { message?: string }
           throw new Error(err.message || 'Failed to fetch addresses')
         }
-        const data = await res.json()
+        const data = (await res.json()) as SavedAddress[] | { docs?: SavedAddress[] }
         return Array.isArray(data) ? data : (data?.docs ?? [])
       }
       const response = await fetch(USER_ADDRESSES.base, { credentials: 'include' })
@@ -42,8 +42,8 @@ export default function AddressForm() {
         const error = await response.json().catch(() => ({ message: 'Failed to fetch addresses' }))
         throw new Error(error.message || 'Failed to fetch addresses')
       }
-      const data = await response.json()
-      return data.docs || []
+      const data = (await response.json()) as { docs?: SavedAddress[] }
+      return data.docs ?? []
     },
     enabled: !!user?.id,
   })
