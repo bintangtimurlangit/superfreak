@@ -44,9 +44,17 @@ export function useSignOut(): (opts?: { callbackURL?: string }) => Promise<void>
   const queryClient = useQueryClient()
   return async (opts?: { callbackURL?: string }) => {
     if (isUsingNestApi()) {
-      await apiLogout()
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-      if (typeof window !== 'undefined' && opts?.callbackURL) window.location.href = opts.callbackURL || '/'
+      try {
+        await apiLogout()
+      } finally {
+        // Clear auth state immediately so UI shows logged-out
+        queryClient.setQueryData(['auth', 'me'], null)
+        queryClient.removeQueries({ queryKey: ['auth', 'me'] })
+      }
+      // Full-page redirect so browser applies cleared cookie and next load has no session
+      if (typeof window !== 'undefined') {
+        window.location.href = opts?.callbackURL ?? '/'
+      }
     } else {
       await betterAuthSignOut(opts as Parameters<typeof betterAuthSignOut>[0])
     }
