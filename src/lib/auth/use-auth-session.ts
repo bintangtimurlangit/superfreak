@@ -33,6 +33,8 @@ export function useSignOut(): (opts?: { callbackURL?: string }) => Promise<void>
     if (isUsingNestApi()) {
       try {
         await apiLogout()
+      } catch (_err) {
+        // Still clear local state and redirect so UI doesn't stay "logged in"
       } finally {
         queryClient.setQueryData(['auth', 'me'], null)
         queryClient.removeQueries({ queryKey: ['auth', 'me'] })
