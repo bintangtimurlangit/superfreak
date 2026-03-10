@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, Upload } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import Image from 'next/image'
+import ProfileAvatar from '@/components/profile/ProfileAvatar'
 import { useAuthSession } from '@/lib/auth/use-auth-session'
 import { api } from '@/lib/api-client'
 import { USERS } from '@/lib/api/urls'
@@ -476,15 +476,18 @@ export default function EditProfileForm() {
               {previewUrl ? (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center gap-4">
-                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0 border-2 border-white">
-                      <Image
-                        src={previewUrl === sessionUser?.image ? '/api/users/me/profile-image' : previewUrl}
-                        alt="Preview"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
+                    <ProfileAvatar
+                      hasImage={!!sessionUser?.image}
+                      displayName={sessionUser?.name || 'Profile'}
+                      initials={
+                        (sessionUser?.name ? String(sessionUser.name)[0]?.toUpperCase() : '') ||
+                        (sessionUser?.email ? String(sessionUser.email)[0]?.toUpperCase() : '') ||
+                        'U'
+                      }
+                      size="lg"
+                      className="rounded-lg border-2 border-white flex-shrink-0"
+                      srcOverride={selectedFile ? previewUrl : null}
+                    />
                     <div className="text-center w-full">
                       <div
                         className="text-sm font-medium text-[#292929] truncate"
@@ -559,15 +562,17 @@ export default function EditProfileForm() {
               ) : sessionUser?.image ? (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center gap-4">
-                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0 border-2 border-white">
-                      <Image
-                        src="/api/users/me/profile-image"
-                        alt={sessionUser.name || 'Profile'}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
+                    <ProfileAvatar
+                      hasImage
+                      displayName={sessionUser.name || 'Profile'}
+                      initials={
+                        (sessionUser?.name ? String(sessionUser.name)[0]?.toUpperCase() : '') ||
+                        (sessionUser?.email ? String(sessionUser.email)[0]?.toUpperCase() : '') ||
+                        'U'
+                      }
+                      size="lg"
+                      className="rounded-lg border-2 border-white flex-shrink-0"
+                    />
                     <div className="flex gap-3 w-full">
                       <Button
                         type="button"

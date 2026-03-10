@@ -21,6 +21,7 @@ import {
   User,
   LogOut,
 } from 'lucide-react'
+import ProfileAvatar from '@/components/profile/ProfileAvatar'
 
 function UserProfileSkeleton() {
   return (
@@ -48,7 +49,6 @@ const Navbar = () => {
     (user?.name ? String(user.name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-  const profilePictureUrl = user?.image ? '/api/users/me/profile-image' : null
 
   useEffect(() => {
     const handleSessionUpdate = () => {
@@ -279,21 +279,13 @@ const Navbar = () => {
                   aria-label="Open account menu"
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
-                  {profilePictureUrl ? (
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={profilePictureUrl}
-                        alt={displayName}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  ) : (
-                    <span className="inline-flex h-full w-full items-center justify-center bg-blue-600 text-white text-sm font-semibold">
-                      {initials}
-                    </span>
-                  )}
+                  <ProfileAvatar
+                    hasImage={!!user?.image}
+                    displayName={displayName}
+                    initials={initials}
+                    size="sm"
+                    className="rounded-full w-full h-full"
+                  />
                 </button>
                 {isUserDropdownOpen && (
                   <div className="absolute top-full right-0 mt-1.5 w-56 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50 py-2">
@@ -500,25 +492,13 @@ const Navbar = () => {
                     aria-label="Open account menu"
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                   >
-                    {profilePictureUrl ? (
-                      <div className="relative inline-flex h-9 w-9 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
-                        <Image
-                          src={profilePictureUrl}
-                          alt={displayName}
-                          fill
-                          unoptimized
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <span
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-700"
-                        aria-hidden
-                      >
-                        <span className="text-sm font-bold text-white">{initials}</span>
-                      </span>
-                    )}
+                    <ProfileAvatar
+                      hasImage={!!user?.image}
+                      displayName={displayName}
+                      initials={initials}
+                      size="sm"
+                      className="rounded-lg"
+                    />
                     <span className="flex flex-col leading-tight">
                       <span className="text-sm font-medium">{String(displayName)}</span>
                       <span className="text-[12px] leading-none font-normal text-[#989898] dark:text-foreground/60">

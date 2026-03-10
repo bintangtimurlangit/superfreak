@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import { useSignOut, useAuthSession } from '@/lib/auth/use-auth-session'
 import Link from 'next/link'
 import { ArrowLeft, Package, User, Home, Lock, LogOut } from 'lucide-react'
-import Image from 'next/image'
+import ProfileAvatar from '@/components/profile/ProfileAvatar'
 
 function ProfileSidebarSkeleton() {
   return (
@@ -52,7 +52,6 @@ export default function ProfileSidebar() {
     (user?.name ? String(user.name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-  const profilePictureUrl = user?.image ? '/api/users/me/profile-image' : null
 
   if (!isAuthenticated || !user) {
     return null
@@ -83,15 +82,13 @@ export default function ProfileSidebar() {
 
         <div className="mb-6 pb-6 border-b border-[#EFEFEF]">
           <div className="flex items-center gap-3 mb-2">
-            {profilePictureUrl ? (
-              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
-                <Image src={profilePictureUrl} alt={displayName} fill className="object-cover" unoptimized />
-              </div>
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-semibold text-[18px] md:text-[20px]">{initials}</span>
-              </div>
-            )}
+            <ProfileAvatar
+              hasImage={!!user?.image}
+              displayName={displayName}
+              initials={initials}
+              size="md"
+              className="rounded-lg"
+            />
             <div className="flex-1 min-w-0">
               <h3 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] truncate">
                 {displayName}
