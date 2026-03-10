@@ -478,7 +478,7 @@ export default function EditProfileForm() {
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0 border-2 border-white">
                       <Image
-                        src={previewUrl}
+                        src={previewUrl === sessionUser?.image ? '/api/users/me/profile-image' : previewUrl}
                         alt="Preview"
                         fill
                         className="object-cover"
@@ -555,6 +555,40 @@ export default function EditProfileForm() {
                       Click &ldquo;Save My Profile&rdquo; to upload this picture
                     </div>
                   )}
+                </div>
+              ) : sessionUser?.image ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0 border-2 border-white">
+                      <Image
+                        src="/api/users/me/profile-image"
+                        alt={sessionUser.name || 'Profile'}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="flex gap-3 w-full">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={saving}
+                        className="flex-1 border border-[#DCDCDC] bg-white text-[#292929] hover:bg-[#F5F5F5] text-sm font-medium disabled:opacity-50"
+                      >
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleDeletePicture}
+                        disabled={saving}
+                        className="flex-1 border border-red-300 bg-white text-red-600 hover:bg-red-50 text-sm font-medium disabled:opacity-50"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4 flex flex-col items-center">

@@ -48,7 +48,7 @@ const Navbar = () => {
     (user?.name ? String(user.name)[0]?.toUpperCase() : '') ||
     (user?.email ? String(user.email)[0]?.toUpperCase() : '') ||
     'U'
-  const profilePictureUrl = user?.image ?? null
+  const profilePictureUrl = user?.image ? '/api/users/me/profile-image' : null
 
   useEffect(() => {
     const handleSessionUpdate = () => {
