@@ -85,7 +85,7 @@ export default function ProfileSidebar() {
           <div className="flex items-center gap-3 mb-2">
             {profilePictureUrl ? (
               <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-blue-700 flex-shrink-0">
-                <Image src={profilePictureUrl} alt={displayName} fill className="object-cover" />
+                <Image src={profilePictureUrl} alt={displayName} fill className="object-cover" unoptimized />
               </div>
             ) : (
               <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center flex-shrink-0">

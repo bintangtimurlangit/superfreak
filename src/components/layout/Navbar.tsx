@@ -285,6 +285,7 @@ const Navbar = () => {
                         src={profilePictureUrl}
                         alt={displayName}
                         fill
+                        unoptimized
                         className="object-cover"
                         unoptimized
                       />
@@ -506,6 +507,7 @@ const Navbar = () => {
                           src={profilePictureUrl}
                           alt={displayName}
                           fill
+                          unoptimized
                           className="object-cover"
                           unoptimized
                         />
