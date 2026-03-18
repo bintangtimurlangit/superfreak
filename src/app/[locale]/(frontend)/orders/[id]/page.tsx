@@ -135,7 +135,12 @@ export default function OrderDetailsPage() {
         let payloadOrder: PayloadOrder & { _id?: string }
         if (isUsingNestApi()) {
           const res = await api.get(ORDERS.byId(orderId))
-          if (!res.ok) throw new Error('Failed to fetch order')
+          if (!res.ok) {
+            const status = (res as { status?: number }).status
+            if (status === 404) throw new Error('Order not found')
+            if (status === 403) throw new Error('You do not have access to this order')
+            throw new Error('Failed to fetch order')
+          }
           payloadOrder = (await res.json()) as PayloadOrder & { _id?: string }
           if (!payloadOrder.id && payloadOrder._id) {
             (payloadOrder as PayloadOrder).id = String(payloadOrder._id)
@@ -146,35 +151,45 @@ export default function OrderDetailsPage() {
           payloadOrder = await response.json()
         }
 
-        // Transform Payload order to component format
+        const summary = payloadOrder.summary ?? {}
+        const items = payloadOrder.items ?? []
+
+        // Transform Payload order to component format (Nest may return slightly different shape)
         const transformedOrder: OrderData = {
-          id: payloadOrder.id,
+          id: payloadOrder.id ?? String(payloadOrder._id ?? ''),
           orderNumber: payloadOrder.orderNumber || 'N/A',
-          status: payloadOrder.status,
-          subtotal: payloadOrder.summary.subtotal,
-          shippingCost: payloadOrder.summary.shippingCost,
-          totalAmount: payloadOrder.summary.totalAmount,
-          createdAt: payloadOrder.createdAt,
-          items: payloadOrder.items.map((item, index) => ({
-            id: item.id || `item-${index}`,
-            fileName: item.fileName,
-            quantity: item.quantity,
-            price: item.totalPrice / item.quantity, // Unit price = total / quantity
-            totalPrice: item.totalPrice,
-            configuration: {
-              material: item.configuration.material,
-              color: item.configuration.color,
-              layerHeight: item.configuration.layerHeight,
-              infill: item.configuration.infill,
-              wallCount: item.configuration.wallCount,
-            },
-            statistics: item.statistics
-              ? {
-                  printTime: item.statistics.printTime || 0,
-                  filamentWeight: item.statistics.filamentWeight || 0,
-                }
-              : undefined,
-          })),
+          status: payloadOrder.status ?? 'unpaid',
+          subtotal: Number(summary.subtotal) ?? 0,
+          shippingCost: Number(summary.shippingCost) ?? 0,
+          totalAmount: Number(summary.totalAmount) ?? 0,
+          createdAt: payloadOrder.createdAt ?? new Date().toISOString(),
+          items: items.map((item, index) => {
+            const row = item as unknown as Record<string, unknown>
+            const qty = Number(row.quantity) || 0
+            const totalPrice = Number((row as { totalPrice?: number }).totalPrice) ?? 0
+            const config = (row.configuration as Record<string, unknown>) ?? {}
+            const stats = row.statistics as Record<string, number> | undefined
+            return {
+              id: (row.id as string) || `item-${index}`,
+              fileName: (row.fileName as string) ?? '',
+              quantity: qty,
+              price: qty ? totalPrice / qty : 0,
+              totalPrice,
+              configuration: {
+                material: String(config.material ?? ''),
+                color: String(config.color ?? ''),
+                layerHeight: String(config.layerHeight ?? ''),
+                infill: String(config.infill ?? ''),
+                wallCount: String(config.wallCount ?? ''),
+              },
+              statistics: stats
+                ? {
+                    printTime: Number(stats.printTime) || 0,
+                    filamentWeight: Number(stats.filamentWeight) || 0,
+                  }
+                : undefined,
+            }
+          }),
           shippingAddress: {
             fullName: payloadOrder.shipping?.recipientName || 'N/A',
             addressLine1: payloadOrder.shipping?.addressLine1 || 'N/A',
@@ -207,7 +222,9 @@ export default function OrderDetailsPage() {
           orderUserId:
             typeof payloadOrder.user === 'object' && payloadOrder.user !== null && 'id' in payloadOrder.user
               ? (payloadOrder.user as { id: string }).id
-              : (payloadOrder.user as string) ?? undefined,
+              : payloadOrder.user != null
+                ? String(payloadOrder.user)
+                : undefined,
         }
 
         setOrder(transformedOrder)

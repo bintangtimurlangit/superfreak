@@ -108,6 +108,7 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
   const [customEndDate, setCustomEndDate] = useState<Date | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [paymentModalOrder, setPaymentModalOrder] = useState<Order | null>(null)
+  const [fetchError, setFetchError] = useState<'auth' | 'failed' | null>(null)
   const ordersPerPage = 5
 
   // Fetch orders from API
@@ -115,12 +116,14 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
     const fetchOrders = async () => {
       if (!isAuthenticated) {
         setOrders([])
+        setFetchError(null)
         setLoading(false)
         return
       }
 
       try {
         setLoading(true)
+        setFetchError(null)
         type OrderRow = {
           id?: string
           _id?: string
@@ -149,21 +152,33 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
 
         if (isUsingNestApi()) {
           const res = await api.get(ORDERS.base)
-          if (!res.ok) throw new Error('Failed to fetch orders')
+          if (!res.ok) {
+            const status = (res as { status?: number }).status
+            if (status === 401) setFetchError('auth')
+            else setFetchError('failed')
+            setOrders([])
+            return
+          }
           const data = await res.json()
-          const docs = Array.isArray(data) ? data : (data as PayloadOrdersResponse).docs || []
+          const docs = Array.isArray(data) ? data : (data as PayloadOrdersResponse).docs ?? []
           const transformedOrders = docs.map((o) => mapOrder(o as OrderRow))
           setOrders(transformedOrders)
           return
         }
 
         const response = await fetch(ORDERS.base, { credentials: 'include' })
-        if (!response.ok) throw new Error('Failed to fetch orders')
+        if (!response.ok) {
+          if (response.status === 401) setFetchError('auth')
+          else setFetchError('failed')
+          setOrders([])
+          return
+        }
         const data: PayloadOrdersResponse = await response.json()
-        const transformedOrders = data.docs.map((o) => mapOrder(o as OrderRow))
+        const transformedOrders = (data.docs ?? []).map((o) => mapOrder(o as OrderRow))
         setOrders(transformedOrders)
       } catch (error) {
         console.error('Error fetching orders:', error)
+        setFetchError('failed')
         setOrders([])
       } finally {
         setLoading(false)
@@ -376,12 +391,20 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
         <div className="bg-white border border-[#EFEFEF] rounded-[20px] p-12 text-center">
           <Package className="h-16 w-16 text-[#DCDCDC] mx-auto mb-4" />
           <h3 className="text-[18px] md:text-[20px] font-semibold text-[#292929] mb-2">
-            No Orders Found
+            {fetchError === 'auth'
+              ? 'Sign in required'
+              : fetchError === 'failed'
+                ? "Couldn't load orders"
+                : 'No Orders Found'}
           </h3>
           <p className="text-[14px] sm:text-[16px] text-[#989898]">
-            {orders.length === 0
-              ? "You haven't placed any orders yet."
-              : 'No orders match your current filters.'}
+            {fetchError === 'auth'
+              ? 'Please sign in again to view your orders.'
+              : fetchError === 'failed'
+                ? 'Something went wrong. Please try again later.'
+                : orders.length === 0
+                  ? "You haven't placed any orders yet."
+                  : 'No orders match your current filters.'}
           </p>
         </div>
       ) : (
