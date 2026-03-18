@@ -18,17 +18,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js public env vars are baked into the client bundle at build time.
-# These must be provided as build args in docker-compose so browser requests
-# go to the correct API origin (e.g. NEXT_PUBLIC_API_URL).
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_SERVER_URL
-ARG NEXT_PUBLIC_PAYLOAD_AUTH_URL
-
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
-ENV NEXT_PUBLIC_PAYLOAD_AUTH_URL=$NEXT_PUBLIC_PAYLOAD_AUTH_URL
-
 RUN \
   if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
   elif [ -f yarn.lock ]; then yarn run build; \
