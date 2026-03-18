@@ -166,13 +166,9 @@ export default function SummaryStep({
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(
-          '/api/printing-pricing?where[isActive][equals]=true&limit=100&depth=1',
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setPricingData(data.docs || [])
-        }
+        const { fetchPrintingData } = await import('@/lib/printing-data')
+        const sources = await fetchPrintingData()
+        setPricingData(sources.pricing.docs || [])
       } catch (error) {
         console.error('Error fetching pricing data:', error)
       }

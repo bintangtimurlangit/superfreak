@@ -209,7 +209,7 @@ export default function EditProfileForm() {
     if (!loading && sessionUser && !initialized) {
       setName(sessionUser.name || '')
       setEmail(sessionUser.email || '')
-      setPhoneNumber((sessionUser as any).phoneNumber || '')
+      setPhoneNumber(sessionUser.phoneNumber || '')
 
       if (sessionUser.image) {
         setPreviewUrl(sessionUser.image)
@@ -333,7 +333,10 @@ export default function EditProfileForm() {
 
       // NestJS /api/users/me does not accept `image` in the PATCH body (DTO forbids it).
       // Profile image upload is handled by POST /api/users/profile-image.
-      const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
+      const res = await api.patch(USERS.me, {
+        name: name.trim() || sessionUser.name,
+        phoneNumber: phoneNumber.trim() || undefined,
+      })
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string | string[] }
         const msg = Array.isArray(err.message) ? err.message.join(', ') : err.message

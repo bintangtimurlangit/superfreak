@@ -19,16 +19,26 @@ interface BlogPost {
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/blog/${slug}`, {
-      cache: 'no-store',
-    })
+    const { api, isUsingNestApi, getApiBaseUrl } = await import('@/lib/api-client')
+    const { BLOG } = await import('@/lib/api/urls')
+    const url = BLOG.bySlug(slug)
+    const response = isUsingNestApi()
+      ? await api.get(url)
+      : await fetch(`${getApiBaseUrl()}${url}`, { cache: 'no-store' })
 
-    if (!response.ok) {
+    const res = typeof (response as { ok?: boolean }).ok === 'boolean' ? (response as { ok: boolean; json: () => Promise<any> }) : (response as Response)
+    if (!res.ok) {
       return null
     }
 
-    const data = await response.json()
-    return data.success ? data.data : null
+    const data = await res.json()
+    // Support both Nest and legacy shapes:
+    // - { success: true, data: post }
+    // - post
+    if (data && typeof data === 'object' && 'success' in data) {
+      return (data as { success?: boolean; data?: BlogPost }).success ? (data as any).data : null
+    }
+    return data as BlogPost
   } catch (error) {
     console.error('Error fetching blog post:', error)
     return null

@@ -402,12 +402,7 @@ export default function UploadStep({
         }
         result = { files: allFiles }
       } else {
-        const response = await fetch(FILES.temp, { method: 'POST', body: formData })
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-        }
-        result = await response.json()
+        throw new Error('Temp file uploads require the Nest API (set NEXT_PUBLIC_API_URL).')
       }
       console.log('[TempUpload] Upload successful:', result)
 

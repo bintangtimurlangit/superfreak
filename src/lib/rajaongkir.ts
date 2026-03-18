@@ -174,11 +174,12 @@ export async function calculateShippingCost(
   courier: string,
 ): Promise<ShippingCostResponse> {
   const { api, isUsingNestApi } = await import('@/lib/api-client')
-  const { RAJAONGKIR, SHIPPING } = await import('@/lib/api/urls')
+  const { SHIPPING } = await import('@/lib/api/urls')
+  if (!isUsingNestApi()) {
+    throw new Error('RajaOngkir cost calculation requires the Nest API (set NEXT_PUBLIC_API_URL).')
+  }
   const body = { destinationId, weight, courier }
-  const res = isUsingNestApi()
-    ? await api.post(SHIPPING.rajaongkirCalculateCost, body)
-    : await fetch(RAJAONGKIR.calculateCost, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await api.post(SHIPPING.rajaongkirCalculateCost, body)
   const response = typeof (res as { ok?: boolean }).ok === 'boolean' ? res as { ok: boolean; json: () => Promise<ShippingCostResponse> } : res as Response
   if (!response.ok) {
     const error = (await response.json().catch(() => ({}))) as { error?: string; details?: string; hint?: string }

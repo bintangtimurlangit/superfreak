@@ -9,6 +9,7 @@ export interface ApiUser {
   name: string
   role: string
   image?: string
+  phoneNumber?: string
 }
 
 export interface ApiSession {

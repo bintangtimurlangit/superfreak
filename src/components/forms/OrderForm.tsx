@@ -263,7 +263,6 @@ export default function OrderForm() {
         )
 
         const orderData = {
-          status: 'unpaid',
           items: orderItems,
           summary: {
             subtotal: pricingSummary.subtotal,
