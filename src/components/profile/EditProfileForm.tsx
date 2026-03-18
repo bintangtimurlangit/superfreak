@@ -331,15 +331,18 @@ export default function EditProfileForm() {
         }
       }
 
-      const patchBody: { name: string; image?: string } = { name: name.trim() || sessionUser.name }
-      if (imageUrl) patchBody.image = imageUrl
-
-      const res = await api.patch(USERS.me, patchBody)
+      // NestJS /api/users/me does not accept `image` in the PATCH body (DTO forbids it).
+      // Profile image upload is handled by POST /api/users/profile-image.
+      const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { message?: string }
-        throw new Error(err.message || 'Failed to update profile')
+        const err = (await res.json().catch(() => ({}))) as { message?: string | string[] }
+        const msg = Array.isArray(err.message) ? err.message.join(', ') : err.message
+        throw new Error(msg || 'Failed to update profile')
       }
+
+      // Refresh session so UI picks up uploaded image URL (if backend updated it)
       await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      refetchSession()
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('session-updated'))
       }
