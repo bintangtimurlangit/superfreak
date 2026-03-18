@@ -13,6 +13,7 @@ export const AUTH = {
   logout: '/api/auth/logout',
   me: '/api/auth/me',
   changePassword: '/api/auth/change-password',
+  setPassword: '/api/auth/set-password',
   google: '/api/auth/google',
 } as const
 

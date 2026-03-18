@@ -10,6 +10,7 @@ export interface ApiUser {
   role: string
   image?: string
   phoneNumber?: string
+  hasPassword?: boolean
 }
 
 export interface ApiSession {
