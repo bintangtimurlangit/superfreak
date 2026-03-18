@@ -1,11 +1,20 @@
 'use client'
 
 /**
- * Current user's profile avatar. Uses a plain <img> for the authenticated
- * profile image so the browser sends the cookie to /api/users/me/profile-image.
- * No Next/Image to avoid optimizer fetching without cookies (401/500).
+ * Current user's profile avatar.
+ *
+ * Important: when using the NestJS backend on a different origin (NEXT_PUBLIC_API_URL),
+ * the auth cookie typically lives on the API origin, not the Next.js origin. In that
+ * case, we must load the image directly from the API origin so the browser sends the
+ * correct cookie. When NEXT_PUBLIC_API_URL is not set, fall back to same-origin proxy.
+ *
+ * We intentionally use a plain <img> (not next/image) to avoid optimizer fetching
+ * without user cookies.
  */
-const PROFILE_IMAGE_URL = '/api/users/me/profile-image'
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
+const PROFILE_IMAGE_URL = API_ORIGIN
+  ? `${API_ORIGIN}/api/users/me/profile-image`
+  : '/api/users/me/profile-image'
 
 const sizeClasses = {
   sm: 'h-9 w-9',

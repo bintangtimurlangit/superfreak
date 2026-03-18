@@ -275,7 +275,7 @@ const Navbar = () => {
               <div className="relative hidden lg:block" ref={userDropdownRef}>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center h-9 w-9 rounded-full overflow-hidden border border-[#EFEFEF] dark:border-white/10 bg-[#FCFCFC] dark:bg-[#111111] hover:ring-2 hover:ring-[#EFEFEF] dark:hover:ring-white/20 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="inline-flex items-center justify-center h-9 w-9 rounded-full overflow-hidden border border-[#EFEFEF] bg-[#FCFCFC] hover:ring-2 hover:ring-[#EFEFEF] transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   aria-label="Open account menu"
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
@@ -288,18 +288,18 @@ const Navbar = () => {
                   />
                 </button>
                 {isUserDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-1.5 w-56 bg-white dark:bg-black border border-[#EFEFEF] dark:border-white/10 rounded-lg shadow-lg z-50 py-2">
-                    <div className="px-3 pb-2 mb-2 border-b border-[#EFEFEF] dark:border-white/10">
-                      <p className="text-sm font-medium text-[#292929] dark:text-foreground truncate">
+                  <div className="absolute top-full right-0 mt-1.5 w-56 bg-white border border-[#EFEFEF] rounded-lg shadow-lg z-50 py-2">
+                    <div className="px-3 pb-2 mb-2 border-b border-[#EFEFEF]">
+                      <p className="text-sm font-medium text-[#292929] truncate">
                         {String(displayName)}
                       </p>
-                      <p className="text-xs text-[#989898] dark:text-foreground/60 truncate">
+                      <p className="text-xs text-[#989898] truncate">
                         {user?.email || ''}
                       </p>
                     </div>
                     <Link
                       href="/my-order"
-                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] transition-colors text-[#292929]"
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
                       <Package className="h-4 w-4 mr-2 flex-shrink-0" aria-hidden />
@@ -307,7 +307,7 @@ const Navbar = () => {
                     </Link>
                     <Link
                       href="/profile"
-                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] transition-colors text-[#292929]"
                       onClick={() => setIsUserDropdownOpen(false)}
                     >
                       <User className="h-4 w-4 mr-2 flex-shrink-0" aria-hidden />
@@ -316,7 +316,7 @@ const Navbar = () => {
                     <div
                       data-logout-button="true"
                       onClick={handleLogout}
-                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors text-[#292929] dark:text-foreground cursor-pointer"
+                      className="flex items-center w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f5] transition-colors text-[#292929] cursor-pointer"
                       role="button"
                       tabIndex={0}
                     >
