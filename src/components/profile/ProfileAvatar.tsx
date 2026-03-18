@@ -1,20 +1,26 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 /**
  * Current user's profile avatar.
  *
- * Important: when using the NestJS backend on a different origin (NEXT_PUBLIC_API_URL),
- * the auth cookie typically lives on the API origin, not the Next.js origin. In that
- * case, we must load the image directly from the API origin so the browser sends the
- * correct cookie. When NEXT_PUBLIC_API_URL is not set, fall back to same-origin proxy.
+ * - If user.image is an absolute URL (e.g. Google avatar), we use it directly.
+ * - Otherwise we use /api/users/me/profile-image (R2) so the browser sends the auth cookie.
+ * - On load error (404, CORS, etc.) we fall back to initials like Google does.
  *
- * We intentionally use a plain <img> (not next/image) to avoid optimizer fetching
- * without user cookies.
+ * We use a plain <img> (not next/image) to avoid optimizer fetching without user cookies.
  */
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '')
 const PROFILE_IMAGE_URL = API_ORIGIN
   ? `${API_ORIGIN}/api/users/me/profile-image`
   : '/api/users/me/profile-image'
+
+function isAbsoluteImageUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== 'string') return false
+  const trimmed = url.trim()
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://')
+}
 
 const sizeClasses = {
   sm: 'h-9 w-9',
@@ -59,25 +65,40 @@ export default function ProfileAvatar({
   imageClassName = 'object-cover',
   srcOverride,
 }: ProfileAvatarProps) {
+  const [imageError, setImageError] = useState(false)
+
+  // Reset error when src changes so a new/updated image can be shown
+  useEffect(() => {
+    setImageError(false)
+  }, [cacheKey, srcOverride])
+
   const sizeClass = sizeClasses[size]
   const initialsClass = initialsSizeClasses[size]
-  const showImage = hasImage || !!srcOverride
-  const srcBase = srcOverride ?? (hasImage ? PROFILE_IMAGE_URL : null)
-  const src =
-    srcBase && cacheKey && !srcOverride
-      ? `${srcBase}${srcBase.includes('?') ? '&' : '?'}v=${encodeURIComponent(cacheKey)}`
-      : srcBase
+
+  // Use external URL directly (e.g. Google avatar); otherwise our API endpoint
+  const effectiveSrc: string | null = srcOverride
+    ? srcOverride
+    : hasImage && cacheKey && isAbsoluteImageUrl(cacheKey)
+      ? cacheKey
+      : hasImage
+        ? cacheKey && !srcOverride
+          ? `${PROFILE_IMAGE_URL}${PROFILE_IMAGE_URL.includes('?') ? '&' : '?'}v=${encodeURIComponent(cacheKey)}`
+          : PROFILE_IMAGE_URL
+        : null
+
+  const showImage = effectiveSrc && !imageError
 
   return (
     <div
       className={`inline-flex items-center justify-center overflow-hidden bg-blue-700 flex-shrink-0 ${sizeClass} ${className}`.trim()}
     >
-      {showImage && src ? (
+      {showImage ? (
         <img
-          src={src}
+          src={effectiveSrc}
           alt={displayName}
           className={`h-full w-full ${imageClassName}`.trim()}
           referrerPolicy="no-referrer"
+          onError={() => setImageError(true)}
         />
       ) : (
         <span className={`font-semibold text-white ${initialsClass}`.trim()} aria-hidden>
