@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button'
 import ModelViewer from '@/components/3d/ModelViewer'
 import type { UploadedFile } from './UploadStep'
 import type { FilePrice } from './SummaryStep'
+import { fetchPrintingData } from '@/lib/printing-data'
 
 interface PrintingPricing {
   id: string
@@ -42,20 +43,16 @@ export default function ReviewStep({
   const [totalPrice, setTotalPrice] = useState(0)
 
   useEffect(() => {
-    const fetchPricing = async () => {
+    const load = async () => {
       try {
-        const response = await fetch(
-          '/api/printing-pricing?where[isActive][equals]=true&limit=100&depth=1',
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setPricingData(data.docs || [])
-        }
+        const sources = await fetchPrintingData()
+        setPricingData(sources.pricing.docs || [])
       } catch (error) {
         console.error('Error fetching pricing data:', error)
       }
     }
-    fetchPricing()
+
+    load()
   }, [])
 
   useEffect(() => {

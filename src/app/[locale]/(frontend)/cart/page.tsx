@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { ShoppingCart, Box, ChevronRight, X, ArrowLeft, Loader2 } from 'lucide-react'
 import type { CartItem } from '@/lib/cart'
+import { fetchPrintingData } from '@/lib/printing-data'
 
 interface PrintingPricingDoc {
   id: string
@@ -86,22 +87,18 @@ export default function CartPage() {
   const [pricingLoading, setPricingLoading] = useState(true)
 
   useEffect(() => {
-    const fetchPricing = async () => {
+    const load = async () => {
       try {
-        const res = await fetch(
-          '/api/printing-pricing?where[isActive][equals]=true&limit=100&depth=1',
-        )
-        if (res.ok) {
-          const data = await res.json()
-          setPricingDocs(data.docs || [])
-        }
+        const sources = await fetchPrintingData()
+        setPricingDocs(sources.pricing.docs || [])
       } catch (e) {
         console.error('Error fetching pricing:', e)
       } finally {
         setPricingLoading(false)
       }
     }
-    fetchPricing()
+
+    load()
   }, [])
 
   const { itemPrices, subtotal } = useMemo(
