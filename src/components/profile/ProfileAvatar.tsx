@@ -33,6 +33,11 @@ export type ProfileAvatarSize = keyof typeof sizeClasses
 export interface ProfileAvatarProps {
   /** Whether the user has a profile image (backend has image URL). */
   hasImage: boolean
+  /**
+   * Cache-busting key. Pass the user's `image` URL (or any changing token) so
+   * the browser fetches a fresh image when it changes.
+   */
+  cacheKey?: string | null
   displayName: string
   initials: string
   size?: ProfileAvatarSize
@@ -46,6 +51,7 @@ export interface ProfileAvatarProps {
 
 export default function ProfileAvatar({
   hasImage,
+  cacheKey,
   displayName,
   initials,
   size = 'md',
@@ -56,7 +62,11 @@ export default function ProfileAvatar({
   const sizeClass = sizeClasses[size]
   const initialsClass = initialsSizeClasses[size]
   const showImage = hasImage || !!srcOverride
-  const src = srcOverride ?? (hasImage ? PROFILE_IMAGE_URL : null)
+  const srcBase = srcOverride ?? (hasImage ? PROFILE_IMAGE_URL : null)
+  const src =
+    srcBase && cacheKey && !srcOverride
+      ? `${srcBase}${srcBase.includes('?') ? '&' : '?'}v=${encodeURIComponent(cacheKey)}`
+      : srcBase
 
   return (
     <div

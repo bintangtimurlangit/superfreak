@@ -281,6 +281,7 @@ const Navbar = () => {
                 >
                   <ProfileAvatar
                     hasImage={!!user?.image}
+                    cacheKey={user?.image}
                     displayName={displayName}
                     initials={initials}
                     size="sm"
@@ -494,6 +495,7 @@ const Navbar = () => {
                   >
                     <ProfileAvatar
                       hasImage={!!user?.image}
+                      cacheKey={user?.image}
                       displayName={displayName}
                       initials={initials}
                       size="sm"

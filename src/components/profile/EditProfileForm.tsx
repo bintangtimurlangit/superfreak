@@ -484,6 +484,7 @@ export default function EditProfileForm() {
                   <div className="flex flex-col items-center gap-4">
                     <ProfileAvatar
                       hasImage={!!sessionUser?.image}
+                      cacheKey={sessionUser?.image}
                       displayName={sessionUser?.name || 'Profile'}
                       initials={
                         (sessionUser?.name ? String(sessionUser.name)[0]?.toUpperCase() : '') ||
@@ -570,6 +571,7 @@ export default function EditProfileForm() {
                   <div className="flex flex-col items-center gap-4">
                     <ProfileAvatar
                       hasImage
+                      cacheKey={sessionUser?.image}
                       displayName={sessionUser.name || 'Profile'}
                       initials={
                         (sessionUser?.name ? String(sessionUser.name)[0]?.toUpperCase() : '') ||
