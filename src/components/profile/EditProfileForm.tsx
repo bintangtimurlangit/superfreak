@@ -331,7 +331,10 @@ export default function EditProfileForm() {
         }
       }
 
-      const res = await api.patch(USERS.me, { name: name.trim() || sessionUser.name })
+      const patchBody: { name: string; image?: string } = { name: name.trim() || sessionUser.name }
+      if (imageUrl) patchBody.image = imageUrl
+
+      const res = await api.patch(USERS.me, patchBody)
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string }
         throw new Error(err.message || 'Failed to update profile')
