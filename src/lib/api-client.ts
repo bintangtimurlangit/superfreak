@@ -88,9 +88,9 @@ export async function postFormData(
   formData: FormData
 ): Promise<ResponseLike<unknown>> {
   try {
-    const res = await apiClient.post(pathOnly(path), formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // Do NOT manually set Content-Type for FormData.
+    // The browser/axios will set multipart boundary automatically; overriding it breaks parsing.
+    const res = await apiClient.post(pathOnly(path), formData)
     return toResponse(res.data, res.status)
   } catch (err: unknown) {
     const ax = err as { response?: { status: number; data: unknown } }
