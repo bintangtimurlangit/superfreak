@@ -6,11 +6,30 @@ WORKDIR /app
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 # Prefer pnpm when pnpm-lock.yaml exists. Else npm: use install (not ci) so build works when lock is out of sync.
+# Add retry + longer timeout to reduce transient network failures (ECONNRESET) during Docker builds.
 RUN \
-  if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm install; \
-  else echo "Lockfile not found." && exit 1; \
+  install_with_retry() { \
+    cmd="$1"; \
+    max=5; \
+    n=1; \
+    until sh -c "$cmd"; do \
+      if [ "$n" -ge "$max" ]; then \
+        echo "Dependency install failed after $n attempts"; \
+        return 1; \
+      fi; \
+      echo "Install failed (attempt $n/$max). Retrying in 5s..."; \
+      n=$((n+1)); \
+      sleep 5; \
+    done; \
+  }; \
+  if [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm && pnpm config set fetch-retries 5 && pnpm config set fetch-timeout 120000 && install_with_retry "pnpm i --frozen-lockfile"; \
+  elif [ -f yarn.lock ]; then \
+    install_with_retry "yarn --frozen-lockfile --network-timeout 120000"; \
+  elif [ -f package-lock.json ]; then \
+    npm config set fetch-retries 5 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && install_with_retry "npm install"; \
+  else \
+    echo "Lockfile not found." && exit 1; \
   fi
 
 FROM base AS builder
