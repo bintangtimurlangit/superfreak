@@ -15,6 +15,120 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null)
 
+function tryParseJson(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+function normalizeConfiguration(raw: unknown): CartItem['configuration'] {
+  const v = tryParseJson(raw) as Record<string, unknown> | null
+  if (!v || typeof v !== 'object') return undefined
+
+  const material =
+    (v.material as string | undefined) ??
+    (v.filament_type as string | undefined) ??
+    (v.filamentType as string | undefined)
+  const color =
+    (v.color as string | undefined) ??
+    (v.filament_color as string | undefined) ??
+    (v.filamentColor as string | undefined)
+  const layerHeightRaw = v.layerHeight ?? v.layer_height
+  const infillRaw = v.infill ?? v.infill_density
+  const wallCountRaw = v.wallCount ?? v.wall_count
+  const quantityRaw = v.quantity
+
+  const layerHeight =
+    typeof layerHeightRaw === 'number'
+      ? String(layerHeightRaw)
+      : (layerHeightRaw as string | undefined)
+  const infill =
+    typeof infillRaw === 'number' ? `${infillRaw}%` : (infillRaw as string | undefined)
+  const wallCount =
+    typeof wallCountRaw === 'number' ? String(wallCountRaw) : (wallCountRaw as string | undefined)
+  const quantity =
+    typeof quantityRaw === 'number'
+      ? quantityRaw
+      : typeof quantityRaw === 'string'
+        ? Number(quantityRaw)
+        : undefined
+
+  const hasAny =
+    !!material || !!color || !!layerHeight || !!infill || !!wallCount || Number.isFinite(quantity)
+  if (!hasAny) return undefined
+
+  return {
+    material,
+    color,
+    layerHeight,
+    infill,
+    wallCount,
+    quantity: Number.isFinite(quantity) && (quantity as number) > 0 ? (quantity as number) : 1,
+  }
+}
+
+function normalizeStatistics(raw: unknown): CartItem['statistics'] {
+  const v = tryParseJson(raw) as Record<string, unknown> | null
+  if (!v || typeof v !== 'object') return undefined
+
+  const print_time_minutes = Number(v.print_time_minutes ?? v.printTime ?? 0)
+  const filament_weight_g = Number(v.filament_weight_g ?? v.filamentWeight ?? 0)
+  const hasAnyStats = Number.isFinite(print_time_minutes) && Number.isFinite(filament_weight_g) && filament_weight_g > 0
+  if (!hasAnyStats) return undefined
+
+  return {
+    print_time_minutes,
+    print_time_formatted: String(v.print_time_formatted ?? v.printTimeFormatted ?? ''),
+    filament_length_mm: Number(v.filament_length_mm ?? v.filamentLength ?? 0),
+    filament_volume_cm3: Number(v.filament_volume_cm3 ?? v.filamentVolume ?? 0),
+    filament_weight_g,
+    filament_type: String(v.filament_type ?? v.filamentType ?? ''),
+    layer_height: Number(v.layer_height ?? v.layerHeight ?? 0),
+    infill_density: Number(v.infill_density ?? v.infillDensity ?? 0),
+    wall_count: Number(v.wall_count ?? v.wallCount ?? 0),
+  }
+}
+
+function normalizeCartItem(raw: unknown): CartItem | null {
+  const item = tryParseJson(raw) as Record<string, unknown> | null
+  if (!item || typeof item !== 'object') return null
+
+  const id = String(item.id ?? item._id ?? item.tempFileId ?? item.file ?? '')
+  const name = String(item.name ?? item.fileName ?? 'Model')
+  const size = Number(item.size ?? item.fileSize ?? 0)
+  const tempFileId = (item.tempFileId ?? item.temp_file_id ?? item.file) as string | undefined
+
+  const configuration =
+    normalizeConfiguration(item.configuration) ??
+    normalizeConfiguration(item.config) ??
+    normalizeConfiguration(item.printConfig) ??
+    undefined
+
+  const statistics =
+    normalizeStatistics(item.statistics) ??
+    normalizeStatistics(item.sliceStats) ??
+    undefined
+
+  if (!id) return null
+
+  return {
+    id,
+    name,
+    size: Number.isFinite(size) ? size : 0,
+    tempFileId: tempFileId ? String(tempFileId) : undefined,
+    configuration,
+    statistics,
+  }
+}
+
+function normalizeCartItems(rawItems: unknown): CartItem[] {
+  const list = Array.isArray(rawItems) ? rawItems : []
+  return list.map(normalizeCartItem).filter((x): x is CartItem => !!x)
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCartState] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -31,32 +145,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const { api, isUsingNestApi } = await import('@/lib/api-client')
       const res = isUsingNestApi() ? await api.get(CART) : await fetch(CART, { credentials: 'include' })
       const data = await res.json()
-      const items = Array.isArray(data?.items) ? data.items : []
-      // #region agent debug log cart load
-      fetch('/api/debug/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Debug-Session-Id': '170b7e',
-        },
-        body: JSON.stringify({
-          sessionId: '170b7e',
-          runId: 'cart_load_before_restore',
-          hypothesisId: 'H1_cart_overwrite',
-          location: 'CartProvider.tsx:loadCart',
-          message: 'Loaded cart items from backend',
-          data: {
-            itemsCount: items.length,
-            hasFirst: items.length > 0,
-            firstHasConfiguration: !!(items[0] as any)?.configuration,
-            firstHasStatistics: !!(items[0] as any)?.statistics,
-            firstHasTempFileId: !!(items[0] as any)?.tempFileId,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {})
-      // #endregion
-      setCartState(items)
+      setCartState(normalizeCartItems((data as { items?: unknown[] })?.items))
     } catch {
       setCartState([])
     } finally {
@@ -74,30 +163,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCartState(items)
       if (!isAuthenticated) return
       try {
-        // #region agent debug log cart persist
-        fetch('/api/debug/ingest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': '170b7e',
-          },
-          body: JSON.stringify({
-            sessionId: '170b7e',
-            runId: 'cart_set_before_proceed',
-            hypothesisId: 'H1_cart_overwrite',
-            location: 'CartProvider.tsx:setCart',
-            message: 'Persisting cart items to backend',
-            data: {
-              itemsCount: items.length,
-              hasFirst: items.length > 0,
-              firstHasConfiguration: !!items[0]?.configuration,
-              firstHasStatistics: !!items[0]?.statistics,
-              firstConfigurationKeys: items[0]?.configuration ? Object.keys(items[0].configuration) : [],
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {})
-        // #endregion
         const { api, isUsingNestApi } = await import('@/lib/api-client')
         if (isUsingNestApi()) {
           await api.post(CART, { items })
