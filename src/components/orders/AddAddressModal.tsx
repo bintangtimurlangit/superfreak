@@ -198,7 +198,7 @@ export default function AddAddressModal({
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[78vh] md:max-h-[82vh] animate-in fade-in zoom-in duration-200 font-sans"
+        className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50 shrink-0">
@@ -228,7 +228,7 @@ export default function AddAddressModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="manual-modal-scrollbar flex-1 min-h-0 overflow-y-scroll overscroll-contain p-6 pr-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-4">
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[14px]">
                 {error}
