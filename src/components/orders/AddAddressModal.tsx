@@ -228,7 +228,7 @@ export default function AddAddressModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-4">
+          <div className="manual-modal-scrollbar flex-1 min-h-0 overflow-y-scroll overscroll-contain p-6 space-y-4">
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[14px]">
                 {error}
