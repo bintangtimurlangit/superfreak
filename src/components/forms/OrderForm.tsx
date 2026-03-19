@@ -50,6 +50,29 @@ export default function OrderForm() {
     if (savedOrderState) {
       try {
         const orderState = JSON.parse(savedOrderState)
+        // #region agent debug log restore from sessionStorage
+        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': '170b7e',
+          },
+          body: JSON.stringify({
+            sessionId: '170b7e',
+            runId: 'orderform_mount',
+            hypothesisId: 'H2_sessionStorage_restore_incomplete',
+            location: 'OrderForm.tsx:sessionStorageRestore',
+            message: 'Restoring pendingOrderState from sessionStorage',
+            data: {
+              hasFiles: !!(orderState?.files && Array.isArray(orderState.files)),
+              filesCount: Array.isArray(orderState?.files) ? orderState.files.length : 0,
+              firstHasConfiguration: !!(Array.isArray(orderState?.files) ? orderState.files[0] : undefined)?.configuration,
+              firstHasStatistics: !!(Array.isArray(orderState?.files) ? orderState.files[0] : undefined)?.statistics,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {})
+        // #endregion
         if (orderState.files && Array.isArray(orderState.files)) {
           setUploadedFiles(orderState.files)
           if (orderState.currentStep) setCurrentStep(orderState.currentStep)
@@ -81,6 +104,29 @@ export default function OrderForm() {
             },
           }),
         )
+        // #region agent debug log restore from heroUploadedFiles
+        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': '170b7e',
+          },
+          body: JSON.stringify({
+            sessionId: '170b7e',
+            runId: 'orderform_mount',
+            hypothesisId: 'H2_sessionStorage_restore_incomplete',
+            location: 'OrderForm.tsx:heroUploadedFilesRestore',
+            message: 'Restoring heroUploadedFiles from sessionStorage',
+            data: {
+              filesCount: newFiles.length,
+              firstHasConfiguration: !!newFiles[0]?.configuration,
+              firstHasStatistics: !!newFiles[0]?.statistics,
+              firstHasFile: !!newFiles[0]?.file,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {})
+        // #endregion
         setUploadedFiles(newFiles)
         sessionStorage.removeItem('heroUploadedFiles')
       } catch (error) {
@@ -92,7 +138,31 @@ export default function OrderForm() {
 
   // Restore from backend cart when user comes from cart page (e.g. "Proceed to checkout")
   useEffect(() => {
-    if (cartLoading || cart.length === 0 || uploadedFiles.length > 0) return
+    if (cartLoading || cart.length === 0 || uploadedFiles.length > 0) {
+      // #region agent debug log skip cart restore
+      fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Debug-Session-Id': '170b7e',
+        },
+        body: JSON.stringify({
+          sessionId: '170b7e',
+          runId: 'orderform_cart_restore',
+          hypothesisId: 'H3_cart_restore_missing_config',
+          location: 'OrderForm.tsx:cartRestoreSkip',
+          message: 'Skipping restore-from-backend-cart',
+          data: {
+            cartLoading,
+            cartItemsCount: cart.length,
+            uploadedFilesCount: uploadedFiles.length,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
+      return
+    }
     const restored: UploadedFile[] = cart.map((item) => ({
       id: item.id,
       name: item.name,
@@ -102,6 +172,31 @@ export default function OrderForm() {
       tempFileId: item.tempFileId,
       statistics: item.statistics,
     }))
+    // #region agent debug log after cart restore mapping
+    fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': '170b7e',
+      },
+      body: JSON.stringify({
+        sessionId: '170b7e',
+        runId: 'orderform_cart_restore',
+        hypothesisId: 'H3_cart_restore_missing_config',
+        location: 'OrderForm.tsx:cartRestoreMapped',
+        message: 'Restored uploadedFiles from backend cart',
+        data: {
+          restoredCount: restored.length,
+          restoredFirstHasConfiguration: !!restored[0]?.configuration,
+          restoredFirstHasStatistics: !!restored[0]?.statistics,
+          restoredFirstHasFile: !!restored[0]?.file,
+          cartFirstHasConfiguration: !!cart[0]?.configuration,
+          cartFirstHasStatistics: !!cart[0]?.statistics,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
     setUploadedFiles(restored)
     setCurrentStep(2)
   }, [cartLoading, cart, uploadedFiles.length])
@@ -320,6 +415,24 @@ export default function OrderForm() {
           const orderId = order.doc?.id || order.id
           if (!orderId) throw new Error('Order created but no ID returned')
           setOrderId(orderId)
+          // #region agent debug log order creation clearing cart
+          fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Debug-Session-Id': '170b7e',
+            },
+            body: JSON.stringify({
+              sessionId: '170b7e',
+              runId: 'orderform_order_create',
+              hypothesisId: 'H4_order_creation_clear_cart',
+              location: 'OrderForm.tsx:clearCartAfterOrder',
+              message: 'Calling clearCart() after successful order creation',
+              data: { currentStep, isUsingNestApi: true },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {})
+          // #endregion
           clearCart()
           setCurrentStep(currentStep + 1)
           return
@@ -340,6 +453,24 @@ export default function OrderForm() {
         const order = await response.json()
         const orderId = order.doc?.id || order.id
         setOrderId(orderId)
+        // #region agent debug log order creation clearing cart
+        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': '170b7e',
+          },
+          body: JSON.stringify({
+            sessionId: '170b7e',
+            runId: 'orderform_order_create',
+            hypothesisId: 'H4_order_creation_clear_cart',
+            location: 'OrderForm.tsx:clearCartAfterOrder',
+            message: 'Calling clearCart() after successful order creation',
+            data: { currentStep, isUsingNestApi: false },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {})
+        // #endregion
         clearCart()
         setCurrentStep(currentStep + 1)
       } catch (error) {

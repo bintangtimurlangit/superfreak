@@ -31,7 +31,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const { api, isUsingNestApi } = await import('@/lib/api-client')
       const res = isUsingNestApi() ? await api.get(CART) : await fetch(CART, { credentials: 'include' })
       const data = await res.json()
-      setCartState(Array.isArray(data?.items) ? data.items : [])
+      const items = Array.isArray(data?.items) ? data.items : []
+      // #region agent debug log cart load
+      fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Debug-Session-Id': '170b7e',
+        },
+        body: JSON.stringify({
+          sessionId: '170b7e',
+          runId: 'cart_load_before_restore',
+          hypothesisId: 'H1_cart_overwrite',
+          location: 'CartProvider.tsx:loadCart',
+          message: 'Loaded cart items from backend',
+          data: {
+            itemsCount: items.length,
+            hasFirst: items.length > 0,
+            firstHasConfiguration: !!(items[0] as any)?.configuration,
+            firstHasStatistics: !!(items[0] as any)?.statistics,
+            firstHasTempFileId: !!(items[0] as any)?.tempFileId,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
+      setCartState(items)
     } catch {
       setCartState([])
     } finally {
@@ -49,6 +74,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCartState(items)
       if (!isAuthenticated) return
       try {
+        // #region agent debug log cart persist
+        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Debug-Session-Id': '170b7e',
+          },
+          body: JSON.stringify({
+            sessionId: '170b7e',
+            runId: 'cart_set_before_proceed',
+            hypothesisId: 'H1_cart_overwrite',
+            location: 'CartProvider.tsx:setCart',
+            message: 'Persisting cart items to backend',
+            data: {
+              itemsCount: items.length,
+              hasFirst: items.length > 0,
+              firstHasConfiguration: !!items[0]?.configuration,
+              firstHasStatistics: !!items[0]?.statistics,
+              firstConfigurationKeys: items[0]?.configuration ? Object.keys(items[0].configuration) : [],
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {})
+        // #endregion
         const { api, isUsingNestApi } = await import('@/lib/api-client')
         if (isUsingNestApi()) {
           await api.post(CART, { items })
