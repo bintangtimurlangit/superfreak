@@ -235,33 +235,31 @@ export default function CartPage() {
                           <p className="font-medium text-[#292929]">{item.configuration?.color || '–'}</p>
                         </div>
                         {item.statistics && (
-                          <>
-                            <div>
-                              <span className="text-[#9CA3AF]">Weight/unit</span>
-                              <p className="font-medium text-[#292929]">
-                                {formatWeight(item.statistics.filament_weight_g || 0)}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]">Layer</span>
-                              <p className="font-medium text-[#292929]">
-                                {item.configuration?.layerHeight || '–'} mm
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]">Infill</span>
-                              <p className="font-medium text-[#292929]">
-                                {item.configuration?.infill || '–'}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]">Walls</span>
-                              <p className="font-medium text-[#292929]">
-                                {item.configuration?.wallCount ?? '2'}
-                              </p>
-                            </div>
-                          </>
+                          <div>
+                            <span className="text-[#9CA3AF]">Weight/unit</span>
+                            <p className="font-medium text-[#292929]">
+                              {formatWeight(item.statistics.filament_weight_g || 0)}
+                            </p>
+                          </div>
                         )}
+                        <div>
+                          <span className="text-[#9CA3AF]">Layer</span>
+                          <p className="font-medium text-[#292929]">
+                            {item.configuration?.layerHeight || '–'} mm
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[#9CA3AF]">Infill</span>
+                          <p className="font-medium text-[#292929]">
+                            {item.configuration?.infill || '–'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[#9CA3AF]">Walls</span>
+                          <p className="font-medium text-[#292929]">
+                            {item.configuration?.wallCount ?? '2'}
+                          </p>
+                        </div>
                         <div>
                           <span className="text-[#9CA3AF]">{t('quantity')}</span>
                           <p className="font-medium text-[#292929]">{qty} pcs</p>
@@ -286,7 +284,17 @@ export default function CartPage() {
             <p className="text-[14px] sm:text-[16px] font-normal text-[#7C7C7C] mb-6">
               {t('shippingAtCheckout')}
             </p>
-            <Link href="/order" className="block">
+            <Link
+              href="/order"
+              className="block"
+              onClick={() => {
+                try {
+                  sessionStorage.setItem('orderSource', 'cart')
+                } catch {
+                  // ignore
+                }
+              }}
+            >
               <Button className="w-full rounded-lg h-12 border border-[#292929] !bg-[#292929] text-white hover:!bg-[#333333] flex items-center justify-center gap-2">
                 {t('proceedToCheckout')}
                 <ChevronRight className="h-5 w-5" />

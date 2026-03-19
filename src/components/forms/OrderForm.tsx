@@ -39,6 +39,7 @@ export default function OrderForm() {
   const [pendingNextStep, setPendingNextStep] = useState(false)
   const [shippingDetails, setShippingDetails] = useState<any>(null)
   const [selectedAddress, setSelectedAddress] = useState<any>(null)
+  const [cameFromCart, setCameFromCart] = useState(false)
   const { data: sessionData, isPending: sessionLoading } = useAuthSession()
   const isAuthenticated = !!sessionData?.user
   const { cart, setCart, clearCart, isLoading: cartLoading } = useCart()
@@ -46,33 +47,23 @@ export default function OrderForm() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // If user clicked "Proceed to checkout" from cart, we must prefer backend cart state.
+    // Stale hero/pending session state can have incomplete configuration and will break the UI.
+    const orderSource = sessionStorage.getItem('orderSource')
+    if (orderSource === 'cart') {
+      setCameFromCart(true)
+      sessionStorage.removeItem('orderSource')
+      // Clear stale session state so the cart restore becomes the source of truth.
+      sessionStorage.removeItem('heroUploadedFiles')
+      sessionStorage.removeItem('pendingOrderState')
+      sessionStorage.removeItem('pendingOrderNextStep')
+      return
+    }
+
     const savedOrderState = sessionStorage.getItem('pendingOrderState')
     if (savedOrderState) {
       try {
         const orderState = JSON.parse(savedOrderState)
-        // #region agent debug log restore from sessionStorage
-        fetch('/api/debug/ingest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': '170b7e',
-          },
-          body: JSON.stringify({
-            sessionId: '170b7e',
-            runId: 'orderform_mount',
-            hypothesisId: 'H2_sessionStorage_restore_incomplete',
-            location: 'OrderForm.tsx:sessionStorageRestore',
-            message: 'Restoring pendingOrderState from sessionStorage',
-            data: {
-              hasFiles: !!(orderState?.files && Array.isArray(orderState.files)),
-              filesCount: Array.isArray(orderState?.files) ? orderState.files.length : 0,
-              firstHasConfiguration: !!(Array.isArray(orderState?.files) ? orderState.files[0] : undefined)?.configuration,
-              firstHasStatistics: !!(Array.isArray(orderState?.files) ? orderState.files[0] : undefined)?.statistics,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {})
-        // #endregion
         if (orderState.files && Array.isArray(orderState.files)) {
           setUploadedFiles(orderState.files)
           if (orderState.currentStep) setCurrentStep(orderState.currentStep)
@@ -104,29 +95,6 @@ export default function OrderForm() {
             },
           }),
         )
-        // #region agent debug log restore from heroUploadedFiles
-        fetch('/api/debug/ingest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': '170b7e',
-          },
-          body: JSON.stringify({
-            sessionId: '170b7e',
-            runId: 'orderform_mount',
-            hypothesisId: 'H2_sessionStorage_restore_incomplete',
-            location: 'OrderForm.tsx:heroUploadedFilesRestore',
-            message: 'Restoring heroUploadedFiles from sessionStorage',
-            data: {
-              filesCount: newFiles.length,
-              firstHasConfiguration: !!newFiles[0]?.configuration,
-              firstHasStatistics: !!newFiles[0]?.statistics,
-              firstHasFile: !!newFiles[0]?.file,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {})
-        // #endregion
         setUploadedFiles(newFiles)
         sessionStorage.removeItem('heroUploadedFiles')
       } catch (error) {
@@ -138,31 +106,26 @@ export default function OrderForm() {
 
   // Restore from backend cart when user comes from cart page (e.g. "Proceed to checkout")
   useEffect(() => {
-    if (cartLoading || cart.length === 0 || uploadedFiles.length > 0) {
-      // #region agent debug log skip cart restore
-      fetch('/api/debug/ingest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Debug-Session-Id': '170b7e',
-        },
-        body: JSON.stringify({
-          sessionId: '170b7e',
-          runId: 'orderform_cart_restore',
-          hypothesisId: 'H3_cart_restore_missing_config',
-          location: 'OrderForm.tsx:cartRestoreSkip',
-          message: 'Skipping restore-from-backend-cart',
-          data: {
-            cartLoading,
-            cartItemsCount: cart.length,
-            uploadedFilesCount: uploadedFiles.length,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {})
-      // #endregion
-      return
+    if (cartLoading || cart.length === 0) return
+
+    if (!cameFromCart && uploadedFiles.length > 0) {
+      const everyFileLooksIncomplete = uploadedFiles.every(
+        (f) =>
+          !f.file &&
+          !f.statistics &&
+          !(
+            f.configuration &&
+            (f.configuration.material ||
+              f.configuration.color ||
+              f.configuration.layerHeight ||
+              f.configuration.infill)
+          ),
+      )
+      if (!everyFileLooksIncomplete) return
     }
+
+    let cancelled = false
+
     const restored: UploadedFile[] = cart.map((item) => ({
       id: item.id,
       name: item.name,
@@ -171,34 +134,56 @@ export default function OrderForm() {
       configuration: item.configuration,
       tempFileId: item.tempFileId,
       statistics: item.statistics,
+      // `file` (actual File blob) is intentionally not restored here; we'll
+      // fetch it from temp storage using `tempFileId` so the 3D preview works.
+      file: undefined,
     }))
-    // #region agent debug log after cart restore mapping
-      fetch('/api/debug/ingest', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Debug-Session-Id': '170b7e',
-      },
-      body: JSON.stringify({
-        sessionId: '170b7e',
-        runId: 'orderform_cart_restore',
-        hypothesisId: 'H3_cart_restore_missing_config',
-        location: 'OrderForm.tsx:cartRestoreMapped',
-        message: 'Restored uploadedFiles from backend cart',
-        data: {
-          restoredCount: restored.length,
-          restoredFirstHasConfiguration: !!restored[0]?.configuration,
-          restoredFirstHasStatistics: !!restored[0]?.statistics,
-          restoredFirstHasFile: !!restored[0]?.file,
-          cartFirstHasConfiguration: !!cart[0]?.configuration,
-          cartFirstHasStatistics: !!cart[0]?.statistics,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
+
     setUploadedFiles(restored)
     setCurrentStep(2)
+
+    ;(async () => {
+      try {
+        const { isUsingNestApi, getApiBaseUrl } = await import('@/lib/api-client')
+        const base = isUsingNestApi() ? getApiBaseUrl() : ''
+        const basePrefix = base.replace(/\/$/, '')
+
+        const filesToRestore = restored.filter((f) => f.tempFileId && !f.file)
+
+        // Fetch each temp file as a blob, then convert it to a File so ModelViewer can use it.
+        const restoredFiles = await Promise.all(
+          filesToRestore.map(async (f) => {
+            const url = basePrefix
+              ? `${basePrefix}/api/files/temp/${f.tempFileId}`
+              : `/api/files/temp/${f.tempFileId}`
+
+            const res = await fetch(url, { credentials: 'include' })
+            if (!res.ok) throw new Error(`Failed to load temp file (${res.status})`)
+
+            const blob = await res.blob()
+            const contentType = res.headers.get('content-type') || 'application/octet-stream'
+            const fileObj = new File([blob], f.name || 'model.stl', { type: contentType })
+            return { id: f.id, file: fileObj }
+          }),
+        )
+
+        if (cancelled) return
+
+        setUploadedFiles((prev) =>
+          prev.map((f) => {
+            const match = restoredFiles.find((rf) => rf.id === f.id)
+            return match ? { ...f, file: match.file } : f
+          }),
+        )
+      } catch (err) {
+        // If temp restore fails we still keep configuration/statistics; model preview may be empty.
+        console.error('Failed to restore model from temp storage:', err)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [cartLoading, cart, uploadedFiles.length])
 
   const handleConfigure = (fileId: string) => {
@@ -415,24 +400,6 @@ export default function OrderForm() {
           const orderId = order.doc?.id || order.id
           if (!orderId) throw new Error('Order created but no ID returned')
           setOrderId(orderId)
-          // #region agent debug log order creation clearing cart
-          fetch('/api/debug/ingest', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Debug-Session-Id': '170b7e',
-            },
-            body: JSON.stringify({
-              sessionId: '170b7e',
-              runId: 'orderform_order_create',
-              hypothesisId: 'H4_order_creation_clear_cart',
-              location: 'OrderForm.tsx:clearCartAfterOrder',
-              message: 'Calling clearCart() after successful order creation',
-              data: { currentStep, isUsingNestApi: true },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {})
-          // #endregion
           clearCart()
           setCurrentStep(currentStep + 1)
           return
@@ -453,24 +420,6 @@ export default function OrderForm() {
         const order = await response.json()
         const orderId = order.doc?.id || order.id
         setOrderId(orderId)
-        // #region agent debug log order creation clearing cart
-        fetch('/api/debug/ingest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Debug-Session-Id': '170b7e',
-          },
-          body: JSON.stringify({
-            sessionId: '170b7e',
-            runId: 'orderform_order_create',
-            hypothesisId: 'H4_order_creation_clear_cart',
-            location: 'OrderForm.tsx:clearCartAfterOrder',
-            message: 'Calling clearCart() after successful order creation',
-            data: { currentStep, isUsingNestApi: false },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {})
-        // #endregion
         clearCart()
         setCurrentStep(currentStep + 1)
       } catch (error) {

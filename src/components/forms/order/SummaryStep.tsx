@@ -570,34 +570,31 @@ export default function SummaryStep({
                           Quantity: {file.configuration?.quantity || 1} pcs
                         </p>
                         {file.statistics && (
-                          <>
-                            <p
-                              className="text-xs text-[#7C7C7C]"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              Weight: {formatWeight(file.statistics.filament_weight_g || 0)} per
-                              unit
-                            </p>
-                            <p
-                              className="text-xs text-[#7C7C7C]"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              Layer Height: {file.configuration?.layerHeight || '-'} mm
-                            </p>
-                            <p
-                              className="text-xs text-[#7C7C7C]"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              Infill: {file.configuration?.infill || '-'}
-                            </p>
-                            <p
-                              className="text-xs text-[#7C7C7C]"
-                              style={{ fontFamily: 'var(--font-geist-sans)' }}
-                            >
-                              Wall Count: {file.configuration?.wallCount || '2'}
-                            </p>
-                          </>
+                          <p
+                            className="text-xs text-[#7C7C7C]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            Weight: {formatWeight(file.statistics.filament_weight_g || 0)} per unit
+                          </p>
                         )}
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Layer Height: {file.configuration?.layerHeight || '-'} mm
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Infill: {file.configuration?.infill || '-'}
+                        </p>
+                        <p
+                          className="text-xs text-[#7C7C7C]"
+                          style={{ fontFamily: 'var(--font-geist-sans)' }}
+                        >
+                          Wall Count: {file.configuration?.wallCount || '2'}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">

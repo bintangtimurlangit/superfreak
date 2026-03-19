@@ -225,33 +225,63 @@ export default function ReviewStep({
                           </p>
                         </div>
                         {file.statistics && (
-                          <>
-                            <div>
-                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Weight/unit</span>
-                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                                {formatWeight(file.statistics.filament_weight_g || 0)}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Layer</span>
-                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                                {file.configuration?.layerHeight || '–'} mm
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Infill</span>
-                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                                {file.configuration?.infill || '–'}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[#9CA3AF]" style={{ fontFamily: 'var(--font-geist-sans)' }}>Walls</span>
-                              <p className="font-medium text-[#292929]" style={{ fontFamily: 'var(--font-geist-sans)' }}>
-                                {file.configuration?.wallCount || '2'}
-                              </p>
-                            </div>
-                          </>
+                          <div>
+                            <span
+                              className="text-[#9CA3AF]"
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              Weight/unit
+                            </span>
+                            <p
+                              className="font-medium text-[#292929]"
+                              style={{ fontFamily: 'var(--font-geist-sans)' }}
+                            >
+                              {formatWeight(file.statistics.filament_weight_g || 0)}
+                            </p>
+                          </div>
                         )}
+                        <div>
+                          <span
+                            className="text-[#9CA3AF]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            Layer
+                          </span>
+                          <p
+                            className="font-medium text-[#292929]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {file.configuration?.layerHeight || '–'} mm
+                          </p>
+                        </div>
+                        <div>
+                          <span
+                            className="text-[#9CA3AF]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            Infill
+                          </span>
+                          <p
+                            className="font-medium text-[#292929]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {file.configuration?.infill || '–'}
+                          </p>
+                        </div>
+                        <div>
+                          <span
+                            className="text-[#9CA3AF]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            Walls
+                          </span>
+                          <p
+                            className="font-medium text-[#292929]"
+                            style={{ fontFamily: 'var(--font-geist-sans)' }}
+                          >
+                            {file.configuration?.wallCount || '2'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
