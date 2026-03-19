@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import { CreditCard, Smartphone, Building2, X, Loader2, type LucideIcon } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Script from 'next/script'
@@ -117,6 +118,8 @@ export default function PaymentSelectionModal({
       setIsProcessing(false)
     }
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

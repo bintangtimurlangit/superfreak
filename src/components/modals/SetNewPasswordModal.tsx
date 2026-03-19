@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { Eye, EyeOff, X } from 'lucide-react'
@@ -54,6 +55,8 @@ export default function SetNewPasswordModal({
       setLoading(false)
     }, 1000)
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

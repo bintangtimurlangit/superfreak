@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Info, ChevronRight, ChevronLeft } from 'lucide-react'
@@ -273,6 +274,8 @@ export default function ConfigureModal({
       setCurrentStep(currentStep - 1)
     }
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen || !file) return null
 

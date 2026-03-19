@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import Image from 'next/image'
 import Button from '@/components/ui/Button'
 import { X, Mail } from 'lucide-react'
@@ -27,6 +28,8 @@ export default function EmailConfirmationModal({
     setError('Email verification is not available.')
     setResending(false)
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

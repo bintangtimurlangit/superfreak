@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import { MapPin, Search, X, Check, Plus, Loader2 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { SavedAddress } from '@/lib/types'
@@ -62,6 +63,8 @@ export default function AddressSelectionModal({
       return recipientMatch || addressMatch
     })
   }, [addresses, searchQuery])
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

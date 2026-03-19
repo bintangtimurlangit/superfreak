@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { MapPin, X } from 'lucide-react'
@@ -188,6 +189,8 @@ export default function AddAddressModal({
       reset()
     }
   }, [isOpen, reset])
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 
