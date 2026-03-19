@@ -33,7 +33,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json()
       const items = Array.isArray(data?.items) ? data.items : []
       // #region agent debug log cart load
-      fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+      fetch('/api/debug/ingest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!isAuthenticated) return
       try {
         // #region agent debug log cart persist
-        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        fetch('/api/debug/ingest', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

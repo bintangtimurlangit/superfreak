@@ -51,7 +51,7 @@ export default function OrderForm() {
       try {
         const orderState = JSON.parse(savedOrderState)
         // #region agent debug log restore from sessionStorage
-        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        fetch('/api/debug/ingest', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export default function OrderForm() {
           }),
         )
         // #region agent debug log restore from heroUploadedFiles
-        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        fetch('/api/debug/ingest', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export default function OrderForm() {
   useEffect(() => {
     if (cartLoading || cart.length === 0 || uploadedFiles.length > 0) {
       // #region agent debug log skip cart restore
-      fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+      fetch('/api/debug/ingest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export default function OrderForm() {
       statistics: item.statistics,
     }))
     // #region agent debug log after cart restore mapping
-    fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+      fetch('/api/debug/ingest', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ export default function OrderForm() {
           if (!orderId) throw new Error('Order created but no ID returned')
           setOrderId(orderId)
           // #region agent debug log order creation clearing cart
-          fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+          fetch('/api/debug/ingest', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -454,7 +454,7 @@ export default function OrderForm() {
         const orderId = order.doc?.id || order.id
         setOrderId(orderId)
         // #region agent debug log order creation clearing cart
-        fetch('http://127.0.0.1:7877/ingest/36ed12ab-b5c5-46e1-8c4f-f5fb8dd64ccd', {
+        fetch('/api/debug/ingest', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
