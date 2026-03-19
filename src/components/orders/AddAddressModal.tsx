@@ -195,13 +195,13 @@ export default function AddAddressModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-[#EFEFEF] flex items-center justify-between bg-gray-50/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1D0DF3] rounded-xl flex items-center justify-center">
               <MapPin className="h-5 w-5 text-white" />
@@ -227,8 +227,8 @@ export default function AddAddressModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-4">
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[14px]">
                 {error}
@@ -432,7 +432,7 @@ export default function AddAddressModal({
             </div>
           </div>
 
-          <div className="p-4 border-t border-[#EFEFEF] flex justify-end gap-3 bg-gray-50/50">
+          <div className="p-4 border-t border-[#EFEFEF] flex justify-end gap-3 bg-gray-50/50 shrink-0">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
