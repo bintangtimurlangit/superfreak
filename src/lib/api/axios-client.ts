@@ -13,9 +13,6 @@ const BASE_URL =
 export const apiClient = axios.create({
   baseURL: BASE_URL.replace(/\/$/, '') || undefined,
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 /** Response type: axios returns data in .data */
