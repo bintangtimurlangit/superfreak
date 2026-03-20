@@ -130,9 +130,23 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           orderNumber?: string
           status: Order['status']
           summary?: { totalAmount?: number; subtotal?: number; shippingCost?: number }
-          items?: { fileName?: string; quantity?: number; totalPrice?: number }[]
+          items?: unknown[]
           shipping?: { trackingNumber?: string }
           createdAt?: string
+        }
+        const normalizeOrderItem = (raw: unknown): { fileName: string; quantity: number; price: number } | null => {
+          let obj = raw as Record<string, unknown> | null
+          if (Array.isArray(raw)) {
+            obj = raw.length > 0 && typeof raw[0] === 'object' ? (raw[0] as Record<string, unknown>) : null
+          }
+          if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null
+          const qty = Number(obj.quantity) || 1
+          const totalPrice = Number(obj.totalPrice) || 0
+          return {
+            fileName: String(obj.fileName ?? 'Unknown Model'),
+            quantity: qty,
+            price: qty ? totalPrice / qty : 0,
+          }
         }
         const mapOrder = (order: OrderRow): Order => ({
           id: String(order.id ?? order._id ?? ''),
@@ -142,11 +156,9 @@ export default function OrderHistoryList({ className = '' }: OrderHistoryListPro
           subtotal: order.summary?.subtotal ?? 0,
           shippingCost: order.summary?.shippingCost ?? 0,
           createdAt: order.createdAt ?? '',
-          items: (order.items || []).map((item) => ({
-            fileName: item.fileName ?? '',
-            quantity: item.quantity ?? 0,
-            price: item.quantity ? (item.totalPrice ?? 0) / item.quantity : 0,
-          })),
+          items: (order.items || [])
+            .map(normalizeOrderItem)
+            .filter((item): item is NonNullable<typeof item> => item !== null),
           trackingNumber: order.shipping?.trackingNumber || undefined,
         })
 

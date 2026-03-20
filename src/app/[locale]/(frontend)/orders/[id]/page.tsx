@@ -132,9 +132,6 @@ export default function OrderDetailsPage() {
     const fetchOrder = async () => {
       try {
         setLoading(true)
-        console.groupCollapsed('[OrderDebug] Fetch start')
-        console.log('orderId:', orderId)
-        console.log('usingNestApi:', isUsingNestApi())
         let payloadOrder: PayloadOrder & { _id?: string }
         if (isUsingNestApi()) {
           const res = await api.get(ORDERS.byId(orderId))
@@ -154,49 +151,47 @@ export default function OrderDetailsPage() {
           payloadOrder = await response.json()
         }
 
-        console.log('[OrderDebug] Raw payloadOrder:', payloadOrder)
-        console.log('[OrderDebug] Raw payloadOrder.items length:', payloadOrder.items?.length ?? 0)
-
         const summary = payloadOrder.summary ?? {}
-        const items = payloadOrder.items ?? []
+        const rawItems = payloadOrder.items ?? []
 
-        // Transform Payload order to component format (Nest may return slightly different shape)
+        // Normalize items — backend may store corrupted entries (e.g. empty arrays)
+        const validItems = rawItems
+          .map((item) => {
+            // Unwrap items that were accidentally wrapped in an extra array
+            if (Array.isArray(item)) {
+              return item.length > 0 && typeof item[0] === 'object' ? item[0] : null
+            }
+            return item && typeof item === 'object' ? item : null
+          })
+          .filter((item): item is Record<string, unknown> => item !== null && typeof item === 'object' && !Array.isArray(item))
+
+        console.log('[OrderDebug] rawItems:', rawItems.length, 'validItems:', validItems.length)
+
         const transformedOrder: OrderData = {
           id: payloadOrder.id ?? String(payloadOrder._id ?? ''),
           orderNumber: payloadOrder.orderNumber || 'N/A',
           status: payloadOrder.status ?? 'unpaid',
-          subtotal: Number(summary.subtotal) ?? 0,
-          shippingCost: Number(summary.shippingCost) ?? 0,
-          totalAmount: Number(summary.totalAmount) ?? 0,
+          subtotal: Number(summary.subtotal) || 0,
+          shippingCost: Number(summary.shippingCost) || 0,
+          totalAmount: Number(summary.totalAmount) || 0,
           createdAt: payloadOrder.createdAt ?? new Date().toISOString(),
-          items: items.map((item, index) => {
-            const rowCandidate =
-              Array.isArray(item) && item.length > 0 && typeof item[0] === 'object'
-                ? (item[0] as unknown)
-                : item
-            const row = rowCandidate as Record<string, unknown>
-            const qty = Number(row.quantity) || 0
-            const totalPrice = Number((row as { totalPrice?: number }).totalPrice) ?? 0
+          items: validItems.map((row, index) => {
+            const qty = Number(row.quantity) || 1
+            const totalPrice = Number(row.totalPrice) || 0
             const config = (row.configuration as Record<string, unknown>) ?? {}
             const stats = row.statistics as Record<string, number> | undefined
-            console.log('[OrderDebug] Mapping item', {
-              index,
-              rawItem: row,
-              rawConfig: config,
-              rawStats: stats,
-            })
             return {
-              id: (row.id as string) || `item-${index}`,
-              fileName: (row.fileName as string) ?? '',
+              id: String(row.id ?? row._id ?? `item-${index}`),
+              fileName: String(row.fileName ?? 'Unknown Model'),
               quantity: qty,
               price: qty ? totalPrice / qty : 0,
               totalPrice,
               configuration: {
-                material: String(config.material ?? ''),
-                color: String(config.color ?? ''),
-                layerHeight: String(config.layerHeight ?? ''),
-                infill: String(config.infill ?? ''),
-                wallCount: String(config.wallCount ?? ''),
+                material: String(config.material || '-'),
+                color: String(config.color || '-'),
+                layerHeight: String(config.layerHeight || '-'),
+                infill: String(config.infill || '-'),
+                wallCount: String(config.wallCount || '-'),
               },
               statistics: stats
                 ? {
@@ -243,22 +238,9 @@ export default function OrderDetailsPage() {
                 : undefined,
         }
 
-        console.log('[OrderDebug] Transformed order:', transformedOrder)
-        console.log(
-          '[OrderDebug] Transformed items summary:',
-          transformedOrder.items.map((it) => ({
-            id: it.id,
-            fileName: it.fileName,
-            quantity: it.quantity,
-            configuration: it.configuration,
-            statistics: it.statistics,
-          })),
-        )
-        console.groupEnd()
         setOrder(transformedOrder)
       } catch (err) {
         console.error('Error fetching order:', err)
-        console.groupEnd()
         setError(err instanceof Error ? err.message : 'Failed to load order')
       } finally {
         setLoading(false)
@@ -269,26 +251,6 @@ export default function OrderDetailsPage() {
       fetchOrder()
     }
   }, [orderId])
-
-  // Log exactly what UI is about to render.
-  useEffect(() => {
-    if (!order) return
-    console.groupCollapsed('[OrderDebug] Render state')
-    console.log('order.id:', order.id)
-    console.log('order.status:', order.status)
-    console.log('items length:', order.items.length)
-    console.log(
-      'items:',
-      order.items.map((it) => ({
-        id: it.id,
-        fileName: it.fileName,
-        quantity: it.quantity,
-        configuration: it.configuration,
-        statistics: it.statistics,
-      })),
-    )
-    console.groupEnd()
-  }, [order])
 
   // Fetch discussion messages when order is needs-discussion
   useEffect(() => {
@@ -755,78 +717,88 @@ export default function OrderDetailsPage() {
                 Order Items
               </h2>
               <div className="space-y-6">
-                {order.items.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className={`rounded-[16px] border border-[#EFEFEF] bg-white overflow-hidden ${index < order.items.length - 1 ? 'mb-6' : ''}`}
-                  >
-                    {/* Item row: image + name + quantity/price line + total */}
-                    <div className="p-4 flex items-start gap-4">
-                      <div className="w-20 h-20 flex-shrink-0 rounded-[12px] bg-[#F8F8F8] border border-[#EFEFEF] flex items-center justify-center">
-                        <Package className="h-8 w-8 text-[#989898]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-1">
-                          {item.fileName}
-                        </h3>
-                        <p className="text-[12px] md:text-[14px] text-[#989898]">
-                          Quantity: {item.quantity} × {formatCurrency(item.price)}
-                        </p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[16px] md:text-[18px] font-bold text-[#292929]">
-                          {formatCurrency(item.totalPrice)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Print Configuration - label (regular) : value (bold) */}
-                    <div className="bg-[#F8F8F8] border-t border-[#EFEFEF] px-4 py-4">
-                      <h4 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-3">
-                        Print Configuration
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2.5 text-[12px] md:text-[14px]">
-                        <div className="flex gap-1.5">
-                          <span className="text-[#7C7C7C] shrink-0">Material:</span>
-                          <span className="text-[#292929] font-semibold">{item.configuration.material}</span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <span className="text-[#7C7C7C] shrink-0">Color:</span>
-                          <span className="text-[#292929] font-semibold">{item.configuration.color}</span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <span className="text-[#7C7C7C] shrink-0">Layer Height:</span>
-                          <span className="text-[#292929] font-semibold">{item.configuration.layerHeight}mm</span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <span className="text-[#7C7C7C] shrink-0">Infill:</span>
-                          <span className="text-[#292929] font-semibold">{item.configuration.infill}%</span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <span className="text-[#7C7C7C] shrink-0">Wall Count:</span>
-                          <span className="text-[#292929] font-semibold">{item.configuration.wallCount}</span>
-                        </div>
-                        {item.statistics && (
-                          <div className="flex gap-1.5">
-                            <span className="text-[#7C7C7C] shrink-0">Filament Weight:</span>
-                            <span className="text-[#292929] font-semibold">{item.statistics.filamentWeight}g</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Download 3D File link */}
-                    <div className="px-4 pb-4 pt-2">
-                      <button
-                        type="button"
-                        className="text-[12px] md:text-[14px] text-[#1D0DF3] hover:text-[#1a0cd9] font-medium inline-flex items-center gap-1.5 underline underline-offset-2"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        Download 3D File
-                      </button>
-                    </div>
+                {order.items.length === 0 ? (
+                  <div className="rounded-[16px] border border-[#EFEFEF] bg-[#F8F8F8] p-6 text-center">
+                    <Package className="h-10 w-10 text-[#DCDCDC] mx-auto mb-2" />
+                    <p className="text-[14px] text-[#989898]">
+                      Item details are not available for this order.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  order.items.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-[16px] border border-[#EFEFEF] bg-white overflow-hidden ${index < order.items.length - 1 ? 'mb-6' : ''}`}
+                    >
+                      <div className="p-4 flex items-start gap-4">
+                        <div className="w-20 h-20 flex-shrink-0 rounded-[12px] bg-[#F8F8F8] border border-[#EFEFEF] flex items-center justify-center">
+                          <Package className="h-8 w-8 text-[#989898]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-1">
+                            {item.fileName}
+                          </h3>
+                          <p className="text-[12px] md:text-[14px] text-[#989898]">
+                            Quantity: {item.quantity} × {formatCurrency(item.price)}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-[16px] md:text-[18px] font-bold text-[#292929]">
+                            {formatCurrency(item.totalPrice)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#F8F8F8] border-t border-[#EFEFEF] px-4 py-4">
+                        <h4 className="text-[14px] sm:text-[16px] font-semibold text-[#292929] mb-3">
+                          Print Configuration
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2.5 text-[12px] md:text-[14px]">
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Material:</span>
+                            <span className="text-[#292929] font-semibold">{item.configuration.material}</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Color:</span>
+                            <span className="text-[#292929] font-semibold">{item.configuration.color}</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Layer Height:</span>
+                            <span className="text-[#292929] font-semibold">
+                              {item.configuration.layerHeight !== '-' ? `${item.configuration.layerHeight}mm` : '-'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Infill:</span>
+                            <span className="text-[#292929] font-semibold">
+                              {item.configuration.infill !== '-' ? `${item.configuration.infill}%` : '-'}
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <span className="text-[#7C7C7C] shrink-0">Wall Count:</span>
+                            <span className="text-[#292929] font-semibold">{item.configuration.wallCount}</span>
+                          </div>
+                          {item.statistics && (
+                            <div className="flex gap-1.5">
+                              <span className="text-[#7C7C7C] shrink-0">Filament Weight:</span>
+                              <span className="text-[#292929] font-semibold">{item.statistics.filamentWeight}g</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="px-4 pb-4 pt-2">
+                        <button
+                          type="button"
+                          className="text-[12px] md:text-[14px] text-[#1D0DF3] hover:text-[#1a0cd9] font-medium inline-flex items-center gap-1.5 underline underline-offset-2"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Download 3D File
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

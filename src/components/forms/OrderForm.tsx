@@ -307,7 +307,12 @@ export default function OrderForm() {
           throw new Error('Pricing data not available. Please go back and review the summary.')
         }
 
-        const orderItems = uploadedFiles.map((file) => {
+        const validFiles = uploadedFiles.filter((f) => f.name && f.id)
+        if (validFiles.length === 0) {
+          throw new Error('No valid files to create an order. Please go back and upload a model.')
+        }
+
+        const orderItems = validFiles.map((file) => {
           const filePrice = filePrices.find((fp) => fp.fileId === file.id)
 
           return {
@@ -332,6 +337,11 @@ export default function OrderForm() {
             totalPrice: filePrice?.totalPrice || 0,
           }
         })
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[OrderCreate] uploadedFiles count:', uploadedFiles.length, 'valid:', validFiles.length)
+          console.log('[OrderCreate] orderItems:', JSON.stringify(orderItems, null, 2))
+        }
 
         const totalWeight = uploadedFiles.reduce(
           (sum, file) => sum + (file.statistics?.filament_weight_g || 0),

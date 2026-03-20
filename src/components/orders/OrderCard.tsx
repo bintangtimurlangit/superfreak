@@ -71,31 +71,42 @@ export default function OrderCard({ order, onPayNow }: OrderCardProps) {
 
       {/* Items List */}
       <div className="space-y-4 mb-4">
-        {order.items.slice(0, 3).map((item, index) => (
-          <div key={index} className="flex items-start gap-4">
+        {order.items.length === 0 ? (
+          <div className="flex items-center gap-3 py-2">
             <div className="w-16 h-16 bg-[#F8F8F8] rounded-lg flex items-center justify-center flex-shrink-0 border border-[#EFEFEF]">
-              <Package className="h-6 w-6 text-[#989898]" />
+              <Package className="h-6 w-6 text-[#DCDCDC]" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-[14px] font-medium text-[#292929] line-clamp-2">
-                {item.fileName}
-              </h4>
-              <p className="text-[12px] md:text-[14px] text-[#989898] mt-1">
-                {item.quantity} {item.quantity > 1 ? 'items' : 'item'} ×{' '}
-                {formatCurrency(item.price)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[14px] font-semibold text-[#292929]">
-                {formatCurrency(item.price * item.quantity)}
-              </p>
-            </div>
+            <p className="text-[14px] text-[#989898]">Item details unavailable</p>
           </div>
-        ))}
-        {order.items.length > 3 && (
-          <p className="text-[14px] text-[#989898] text-center">
-            + {order.items.length - 3} more item{order.items.length - 3 > 1 ? 's' : ''}
-          </p>
+        ) : (
+          <>
+            {order.items.slice(0, 3).map((item, index) => (
+              <div key={index} className="flex items-start gap-4">
+                <div className="w-16 h-16 bg-[#F8F8F8] rounded-lg flex items-center justify-center flex-shrink-0 border border-[#EFEFEF]">
+                  <Package className="h-6 w-6 text-[#989898]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-[14px] font-medium text-[#292929] line-clamp-2">
+                    {item.fileName}
+                  </h4>
+                  <p className="text-[12px] md:text-[14px] text-[#989898] mt-1">
+                    {item.quantity} {item.quantity > 1 ? 'items' : 'item'} ×{' '}
+                    {formatCurrency(item.price)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[14px] font-semibold text-[#292929]">
+                    {formatCurrency(item.price * item.quantity)}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {order.items.length > 3 && (
+              <p className="text-[14px] text-[#989898] text-center">
+                + {order.items.length - 3} more item{order.items.length - 3 > 1 ? 's' : ''}
+              </p>
+            )}
+          </>
         )}
       </div>
 
