@@ -102,7 +102,20 @@ export default function AddAddressModal({
   const useNest = isUsingNestApi()
   const createAddressMutation = useMutation({
     mutationFn: async (data: AddressFormData) => {
-      const body = useNest ? { ...data } : { ...data, user: user?.id }
+      const sanitizeNestBody = (payload: Record<string, unknown>) => {
+        const out: Record<string, unknown> = {}
+        for (const [key, value] of Object.entries(payload)) {
+          // Nest DTO treats optional fields as absent; sending null fails validation.
+          if (value === null || value === undefined) continue
+          if (key === 'user') continue
+          out[key] = value
+        }
+        return out
+      }
+
+      const body = useNest
+        ? sanitizeNestBody(data as unknown as Record<string, unknown>)
+        : { ...data, user: user?.id }
       if (useNest) {
         const res = await api.post(ADDRESSES.base, body)
         if (!res.ok) {
@@ -167,14 +180,14 @@ export default function AddAddressModal({
       const addressData = {
         ...data,
         user: user?.id,
-        rajaOngkirDestinationId: rajaOngkirMatch?.id ?? null,
-        rajaOngkirLocationLabel: rajaOngkirMatch?.label ?? null,
-        rajaOngkirZipCode: rajaOngkirMatch?.zip_code ?? null,
-        rajaOngkirLastVerified: rajaOngkirMatch ? new Date().toISOString() : null,
-        rajaOngkirProvinceName: rajaOngkirMatch?.province_name ?? null,
-        rajaOngkirCityName: rajaOngkirMatch?.city_name ?? null,
-        rajaOngkirDistrictName: rajaOngkirMatch?.district_name ?? null,
-        rajaOngkirSubdistrictName: rajaOngkirMatch?.subdistrict_name ?? null,
+        rajaOngkirDestinationId: rajaOngkirMatch?.id,
+        rajaOngkirLocationLabel: rajaOngkirMatch?.label,
+        rajaOngkirZipCode: rajaOngkirMatch?.zip_code,
+        rajaOngkirLastVerified: rajaOngkirMatch ? new Date().toISOString() : undefined,
+        rajaOngkirProvinceName: rajaOngkirMatch?.province_name,
+        rajaOngkirCityName: rajaOngkirMatch?.city_name,
+        rajaOngkirDistrictName: rajaOngkirMatch?.district_name,
+        rajaOngkirSubdistrictName: rajaOngkirMatch?.subdistrict_name,
       }
       createAddressMutation.mutate(addressData)
     } catch (err) {
