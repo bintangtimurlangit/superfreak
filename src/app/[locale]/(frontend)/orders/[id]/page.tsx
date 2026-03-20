@@ -170,7 +170,11 @@ export default function OrderDetailsPage() {
           totalAmount: Number(summary.totalAmount) ?? 0,
           createdAt: payloadOrder.createdAt ?? new Date().toISOString(),
           items: items.map((item, index) => {
-            const row = item as unknown as Record<string, unknown>
+            const rowCandidate =
+              Array.isArray(item) && item.length > 0 && typeof item[0] === 'object'
+                ? (item[0] as unknown)
+                : item
+            const row = rowCandidate as Record<string, unknown>
             const qty = Number(row.quantity) || 0
             const totalPrice = Number((row as { totalPrice?: number }).totalPrice) ?? 0
             const config = (row.configuration as Record<string, unknown>) ?? {}
