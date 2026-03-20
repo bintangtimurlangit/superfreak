@@ -132,6 +132,9 @@ export default function OrderDetailsPage() {
     const fetchOrder = async () => {
       try {
         setLoading(true)
+        console.groupCollapsed('[OrderDebug] Fetch start')
+        console.log('orderId:', orderId)
+        console.log('usingNestApi:', isUsingNestApi())
         let payloadOrder: PayloadOrder & { _id?: string }
         if (isUsingNestApi()) {
           const res = await api.get(ORDERS.byId(orderId))
@@ -151,6 +154,9 @@ export default function OrderDetailsPage() {
           payloadOrder = await response.json()
         }
 
+        console.log('[OrderDebug] Raw payloadOrder:', payloadOrder)
+        console.log('[OrderDebug] Raw payloadOrder.items length:', payloadOrder.items?.length ?? 0)
+
         const summary = payloadOrder.summary ?? {}
         const items = payloadOrder.items ?? []
 
@@ -169,6 +175,12 @@ export default function OrderDetailsPage() {
             const totalPrice = Number((row as { totalPrice?: number }).totalPrice) ?? 0
             const config = (row.configuration as Record<string, unknown>) ?? {}
             const stats = row.statistics as Record<string, number> | undefined
+            console.log('[OrderDebug] Mapping item', {
+              index,
+              rawItem: row,
+              rawConfig: config,
+              rawStats: stats,
+            })
             return {
               id: (row.id as string) || `item-${index}`,
               fileName: (row.fileName as string) ?? '',
@@ -227,9 +239,22 @@ export default function OrderDetailsPage() {
                 : undefined,
         }
 
+        console.log('[OrderDebug] Transformed order:', transformedOrder)
+        console.log(
+          '[OrderDebug] Transformed items summary:',
+          transformedOrder.items.map((it) => ({
+            id: it.id,
+            fileName: it.fileName,
+            quantity: it.quantity,
+            configuration: it.configuration,
+            statistics: it.statistics,
+          })),
+        )
+        console.groupEnd()
         setOrder(transformedOrder)
       } catch (err) {
         console.error('Error fetching order:', err)
+        console.groupEnd()
         setError(err instanceof Error ? err.message : 'Failed to load order')
       } finally {
         setLoading(false)
@@ -240,6 +265,26 @@ export default function OrderDetailsPage() {
       fetchOrder()
     }
   }, [orderId])
+
+  // Log exactly what UI is about to render.
+  useEffect(() => {
+    if (!order) return
+    console.groupCollapsed('[OrderDebug] Render state')
+    console.log('order.id:', order.id)
+    console.log('order.status:', order.status)
+    console.log('items length:', order.items.length)
+    console.log(
+      'items:',
+      order.items.map((it) => ({
+        id: it.id,
+        fileName: it.fileName,
+        quantity: it.quantity,
+        configuration: it.configuration,
+        statistics: it.statistics,
+      })),
+    )
+    console.groupEnd()
+  }, [order])
 
   // Fetch discussion messages when order is needs-discussion
   useEffect(() => {
