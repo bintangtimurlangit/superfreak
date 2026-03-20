@@ -48,10 +48,8 @@ export async function logout(): Promise<void> {
 export async function getMe(): Promise<ApiUser | null> {
   const res = await api.get(AUTH.me)
   if (!res.ok) {
-    // Clear invalid/expired session cookie so user is fully unauthenticated
-    if (res.status === 401) {
-      await logout().catch(() => {})
-    }
+    // Do not force logout on transient 401 from /auth/me.
+    // Just treat as unauthenticated for this query cycle.
     return null
   }
   const data = (await res.json()) as ApiUser
